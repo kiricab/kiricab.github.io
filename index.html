@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KIRICAB - モダンでセキュアなWebツール</title>
+    <meta name="description" content="KIRICABは、あなたのデジタルライフを安全で快適にするための、シンプルで強力なWebツールを提供します。">
+    
+    <!-- パスワード生成ツールと同じファビコンを使い、ブランドを統一 -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><title>KIRICAB Icon</title><rect width='100' height='100' rx='20' fill='%231e3a8a'/><path fill='%23ffffff' d='M25 20 H40 V42.5 L68 20 H80 L50 50 L80 80 H68 L40 57.5 V80 H25 V20 Z'/></svg>">
+
+    <style>
+        /* ページ専用のスタイルをここに直接記述 */
+        :root {
+            --primary-color: #1e3a8a;
+            --primary-color-dark: #1e293b;
+            --background-color: #f8f9fa;
+            --text-color: #212529;
+            --text-color-light: #ffffff;
+            --gray-text-color: #6c757d;
+            --border-radius: 8px;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        header {
+            background-color: var(--primary-color);
+            color: var(--text-color-light);
+            padding: 1rem 0;
+            text-align: center;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        .hero h2 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--gray-text-color);
+            margin-bottom: 2rem;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: var(--text-color-light);
+            padding: 0.8rem 2rem;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: background-color 0.2s ease;
+        }
+        .cta-button:hover {
+            background-color: var(--primary-color-dark);
+        }
+        footer {
+            text-align: center;
+            padding: 1.5rem 0;
+            background-color: var(--primary-color-dark);
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+    </style>
+    <!-- Google AdSense-->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8141179596557780"
+     crossorigin="anonymous"></script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CN3KBWSXRE"></script>
+    <meta name="google-adsense-account" content="ca-pub-8141179596557780">
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-CN3KBWSXRE');
+    </script>
+</head>
+<body>
+
+    <header>
+        <h1>KIRICAB</h1>
+    </header>
+
+    <main class="container">
+        <div class="hero">
+            <h2>モダンでセキュアなWebツール</h2>
+            <p>
+                KIRICABは、あなたのデジタルライフを安全で快適にするための、シンプルで強力なWebツールを提供します。
+            </p>
+            <a href="./passgen/index.html" class="cta-button">
+                パスワード生成ツールへ
+            </a>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Kiricab. All Rights Reserved.</p>
+    </footer>
+
+</body>
+</html>
