@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slack絵文字ジェネレーター</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><title>KIRICAB Icon</title><rect width='100' height='100' rx='20' fill='%231e3a8a'/><path fill='%23ffffff' d='M25 20 H40 V42.5 L68 20 H80 L50 50 L80 80 H68 L40 57.5 V80 H25 V20 Z'/></svg>">
+
+    <link rel="stylesheet" href="style.css">
+    <!-- Google AdSense-->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8141179596557780"
+     crossorigin="anonymous"></script>
+    <meta name="google-adsense-account" content="ca-pub-8141179596557780">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CN3KBWSXRE"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-CN3KBWSXRE');
+    </script>
+</head>
+<body>
+
+    <header>
+        <div class="container">
+            <h1>Slack絵文字ジェネレーター</h1>
+            <p>テキストからSlack絵文字を簡単に作成</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- 設定セクション -->
+        <section class="settings-card">
+            <h2>絵文字作成</h2>
+            <div class="input-section">
+                <textarea id="text-input" rows="3" placeholder="絵文字にする文字"></textarea>
+            </div>
+            <h2>オプション</h2>
+            <div class="controls">
+                <div class="control-group">
+                    <label for="font-select">フォント:</label>
+                    <select id="font-select">
+                        <!-- フォントはJSで追加 -->
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label class="checkbox-label"><input type="checkbox" id="stretch-text" checked><span>文字を引き伸ばして余白を埋める</span></label>
+                </div>
+                <div class="control-group">
+                    <label for="color-picker">文字色:</label>
+                    <input type="color" id="color-picker" value="#000000">
+                </div>
+                <div class="control-group">
+                    <label for="bgcolor-picker">背景色:</label>
+                    <div class="bgcolor-group">
+                        <div class="control-group-checkbox-inline">
+                            <label class="checkbox-label"><input type="checkbox" id="transparent-bg" checked><span>透過</span></label>
+                        </div>
+                        <input type="color" id="bgcolor-picker" value="#ffffff">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 結果表示セクション -->
+        <section class="results-card">
+            <div class="preview-section">
+                <h2>プレビュー</h2>
+                <canvas id="preview-canvas" width="128" height="128"></canvas>
+            </div>
+            <button id="download-btn">ダウンロード</button>
+        </section>
+
+        <!-- SEO対策コンテンツ -->
+        <section class="seo-content">
+            <h2>Slack絵文字の活用法</h2>
+            <p>Slackのカスタム絵文字は、チームのコミュニケーションをより豊かで楽しいものにするための強力なツールです。テキストだけでは伝わりにくい感情やニュアンスを表現したり、特定のプロジェクトやチーム内での共通言語として使ったりすることができます。</p>
+            <p>このツールを使えば、好きなテキスト、フォント、色を組み合わせて、オリジナルのSlack絵文字を簡単に作成できます。プロジェクト名やよく使うフレーズを絵文字にすることで、コミュニケーションの効率とエンゲージメントを高めることができます。</p>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Kiricab. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
