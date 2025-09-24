@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KIRICAB - モダンでセキュアなWebツール</title>
+    <title>KIRICAB Tools - モダンでセキュアなWebツール</title>
     <meta name="description" content="KIRICABは、あなたのデジタルライフを安全で快適にするための、シンプルで強力なWebツールを提供します。">
     
     <!-- パスワード生成ツールと同じファビコンを使い、ブランドを統一 -->
@@ -59,6 +59,13 @@
             color: var(--gray-text-color);
             margin-bottom: 2rem;
         }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem; /* ボタン間のスペース */
+            margin-top: 2rem;
+        }
         .cta-button {
             display: inline-block;
             background-color: var(--primary-color);
@@ -69,6 +76,7 @@
             font-size: 1.1rem;
             font-weight: bold;
             transition: background-color 0.2s ease;
+            white-space: nowrap; /* ボタン内のテキストが改行されないようにする */
         }
         .cta-button:hover {
             background-color: var(--primary-color-dark);
@@ -98,7 +106,7 @@
 <body>
 
     <header>
-        <h1>KIRICAB</h1>
+        <h1>KIRICAB Tools</h1>
     </header>
 
     <main class="container">
@@ -106,10 +114,16 @@
             <h2>モダンでセキュアなWebツール</h2>
             <p>
                 KIRICABは、あなたのデジタルライフを安全で快適にするための、シンプルで強力なWebツールを提供します。
+                パスワード生成ツールとSlack絵文字ジェネレーターで、日々の作業をより効率的かつ安全に。
             </p>
-            <a href="./passgen/index.html" class="cta-button">
-                パスワード生成ツールへ
-            </a>
+            <div class="button-group">
+                <a href="./passgen/index.html" class="cta-button">
+                    パスワード生成ツールへ
+                </a>
+                <a href="./slackemojigen/index.html" class="cta-button">
+                    Slack絵文字ジェネレーターへ
+                </a>
+            </div>
         </div>
     </main>
 
