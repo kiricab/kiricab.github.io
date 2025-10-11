@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文章の比較 Diffツール</title>
+    <!-- パスワード生成ツールと同じファビコンを使い、ブランドを統一 -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><title>KIRICAB Icon</title><rect width='100' height='100' rx='20' fill='%231e3a8a'/><path fill='%23ffffff' d='M25 20 H40 V42.5 L68 20 H80 L50 50 L80 80 H68 L40 57.5 V80 H25 V20 Z'/></svg>">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>文章の比較 Diffツール</h1>
+            <p></p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="diff-section">
+            <div class="input-group">
+                <textarea id="text1" placeholder="元の文章を入力してください"></textarea>
+                <textarea id="text2" placeholder="比較する文章を入力してください"></textarea>
+            </div>
+            <div id="similarityOutput" class="similarity-output"></div>
+            <div class="diff-output-container">
+                <div id="diffOutput1" class="diff-output"></div>
+                <div id="diffOutput2" class="diff-output"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Kiricab. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

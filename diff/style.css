@@ -1,0 +1,208 @@
+:root {
+    --primary-color: #1e3a8a;
+    --primary-color-dark: #1e293b;
+    --secondary-color: #e9ecef;
+    --background-color: #f8f9fa;
+    --card-color: #ffffff;
+    --text-color: #212529;
+    --text-color-light: #ffffff;
+    --gray-text-color: #6c757d;
+    --border-radius: 8px;
+    --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1rem 2rem;
+}
+
+header {
+    background-color: var(--primary-color);
+    color: var(--text-color-light);
+    padding: 1.5rem 0;
+    text-align: center;
+    border-bottom: 3px solid var(--primary-color-dark);
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2rem;
+}
+
+header p {
+    margin: 0.25rem 0 0;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 0;
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+}
+
+nav a {
+    color: var(--text-color-light);
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.2s ease;
+}
+
+nav a:hover {
+    color: #a0aec0; /* Light gray for hover */
+}
+
+main {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+.diff-section {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--box-shadow);
+    border: 1px solid var(--secondary-color);
+}
+
+.input-group {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem; /* 類似度表示との間隔を調整 */
+}
+
+.similarity-output {
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    padding: 0.5rem;
+    background-color: var(--secondary-color);
+    border-radius: var(--border-radius);
+}
+
+textarea {
+    flex: 1;
+    min-height: 200px;
+    padding: 0.8rem;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1rem;
+    resize: vertical;
+}
+
+button {
+    display: block;
+    width: 100%;
+    padding: 0.8rem;
+    margin-top: 1rem;
+    background-color: var(--primary-color);
+    color: var(--text-color-light);
+    font-size: 1.1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+button:hover {
+    background-color: var(--primary-color-dark);
+}
+
+.diff-output-container {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.diff-output {
+    flex: 1;
+    padding: 1rem;
+    background-color: #f0f0f0;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    font-family: 'Courier New', Courier, monospace;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+.diff-output .diff-line {
+    padding: 0.2rem 0;
+    border-bottom: 1px solid #eee;
+    min-height: 1.4em; /* 最小行の高さを設定 */
+    line-height: 1.4em; /* テキストを垂直方向中央に配置 */
+}
+
+.diff-output .diff-line:last-child {
+    border-bottom: none;
+}
+
+.diff-output .added-line {
+    background-color: #e6ffed; /* 薄い緑色 */
+}
+
+.diff-output .removed-line {
+    background-color: #ffeef0; /* 薄い赤色 */
+}
+
+.diff-output .added-char {
+    background-color: #b3ffc9; /* 濃い緑色 */
+    color: #22863a;
+}
+
+.diff-output .removed-char {
+    background-color: #ffd7da; /* 濃い赤色 */
+    color: #d73a49;
+}
+
+.diff-output .unchanged-char {
+    color: #212529;
+}
+
+.diff-output .empty-line {
+    /* background-color: #f8f9fa; /* 背景色をメインの背景色に合わせる */
+    /* min-heightを削除し、line-heightに依存させる */
+    color: transparent; /* 文字色を透明にして見えなくする */
+    user-select: none; /* テキスト選択を無効にする */
+}
+
+footer {
+    text-align: center;
+    padding: 2rem 0;
+    margin-top: 2rem;
+    background-color: var(--primary-color-dark);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 1rem 1rem;
+    }
+
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    .input-group {
+        flex-direction: column;
+    }
+
+    .diff-output-container {
+        flex-direction: column;
+    }
+}
