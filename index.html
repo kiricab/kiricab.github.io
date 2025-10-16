@@ -1,12 +1,94 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ColorMix — カラーパレット生成ツール</title>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KIRICAB Tools - 日々のデジタル作業を効率化する無料Webツール</title>
+    <meta name="description" content="KIRICABは、安全なパスワード生成、Slack絵文字作成、テキスト比較（Diff Checker）など、日々のデジタル作業を効率化する無料Webツールを提供します。インストール不要で、誰でもすぐに利用可能。あなたのオンライン活動をより安全＆快適にサポートします。">
+    
+    <!-- パスワード生成ツールと同じファビコンを使い、ブランドを統一 -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><title>KIRICAB Icon</title><rect width='100' height='100' rx='20' fill='%231e3a8a'/><path fill='%23ffffff' d='M25 20 H40 V42.5 L68 20 H80 L50 50 L80 80 H68 L40 57.5 V80 H25 V20 Z'/></svg>">
+
+    <style>
+        /* ページ専用のスタイルをここに直接記述 */
+        :root {
+            --primary-color: #1e3a8a;
+            --primary-color-dark: #1e293b;
+            --background-color: #f8f9fa;
+            --text-color: #212529;
+            --text-color-light: #ffffff;
+            --gray-text-color: #6c757d;
+            --border-radius: 8px;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        header {
+            background-color: var(--primary-color);
+            color: var(--text-color-light);
+            padding: 1rem 0;
+            text-align: center;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        .hero h2 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--gray-text-color);
+            margin-bottom: 2rem;
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem; /* ボタン間のスペース */
+            margin-top: 2rem;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: var(--text-color-light);
+            padding: 0.8rem 2rem;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: background-color 0.2s ease;
+            white-space: nowrap; /* ボタン内のテキストが改行されないようにする */
+        }
+        .cta-button:hover {
+            background-color: var(--primary-color-dark);
+        }
+        footer {
+            text-align: center;
+            padding: 1.5rem 0;
+            background-color: var(--primary-color-dark);
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+    </style>
     <!-- Google AdSense-->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8141179596557780"
      crossorigin="anonymous"></script>
@@ -22,89 +104,34 @@
     </script>
 </head>
 <body>
-  <div class="container">
+
     <header>
-      <div class="logo">CM</div>
-      <div>
-        <h1>ColorMix — カラーパレット生成ツール</h1>
-        <p class="lead">見た目を重視したカラーパレットを即生成。保存、共有、PNG出力まで。</p>
-      </div>
+        <h1>KIRICAB Tools</h1>
     </header>
 
-    <section class="panel">
-      <div class="controls">
-        <select id="harmony" class="select" title="配色方式">
-          <option value="random">Random（ランダム）</option>
-          <option value="analogous">Analogous（類似色）</option>
-          <option value="complementary">Complementary（補色）</option>
-          <option value="triadic">Triadic（3色ハーモニー）</option>
-          <option value="monochrome">Monochrome（単一トーン）</option>
-        </select>
-
-        <button id="generateBtn" class="btn">Generate（生成）</button>
-        <button id="saveBtn" class="btn secondary">Save（保存）</button>
-        <button id="exportPNG" class="btn secondary">Export PNG</button>
-        <button id="shareBtn" class="btn secondary">Share URL</button>
-
-        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-          <label style="font-size:13px;color:var(--muted);">Format</label>
-          <select id="fmt" class="select">
-            <option value="hex">HEX</option>
-            <option value="rgb">RGB</option>
-            <option value="hsl">HSL</option>
-          </select>
-        </div>
-      </div>
-
-      <div id="palette" class="palette" aria-live="polite"></div>
-
-      <div class="controls-row">
-        <span class="chip">🔒 各色をロックして他を再生成できます</span>
-        <span class="chip">💾 保存はブラウザ内（LocalStorage）</span>
-      </div>
-
-      <div style="margin-top:14px">
-        <strong style="color:var(--muted)">Preview</strong>
-        <div class="preview" id="previewArea">
-          <div class="card-preview" id="previewCard">
-            <div style="font-weight:700;margin-bottom:8px" id="previewTitle">Title</div>
-            <div style="margin-bottom:12px;color:var(--muted)" id="previewText">サンプルテキスト — この配色がUIでどう見えるかを確認してください。</div>
-            <button class="btn-sample" id="previewButton">Primary</button>
-          </div>
-          <div class="card-preview" id="previewCard2">
-            <div style="display:flex;gap:8px;">
-              <div style="width:36px;height:36px;border-radius:8px" id="previewAvatar"></div>
-              <div>
-                <div style="font-weight:700" id="previewName">Username</div>
-                <div style="color:var(--muted);font-size:13px" id="previewMeta">meta info</div>
-              </div>
+    <main class="container">
+        <div class="hero">
+            <h2>日々のデジタル作業を効率化する無料Webツール</h2>
+            <p>
+                KIRICABは、日々のデジタル作業を効率化する無料Webツールを提供します。インストール不要で、誰でもすぐに利用可能。あなたのオンライン活動をより安全＆快適にサポートします。これらのツールはあなたのPC上のみで動作し、サーバに情報が送信されることはないので安心して利用することができます。
+            </p>
+            <div class="button-group">
+                <a href="./passgen/index.html" class="cta-button">
+                    パスワード生成ツールへ
+                </a>
+                <a href="./slackemojigen/index.html" class="cta-button">
+                    Slack絵文字ジェネレーターへ
+                </a>
+                <a href="./diff/index.html" class="cta-button">
+                    文章の比較 Diffツールへ
+                </a>
             </div>
-            <div style="margin-top:12px;color:var(--muted)" id="previewDesc">小さなカードプレビュー</div>
-          </div>
         </div>
-      </div>
-
-    </section>
-
-    <section class="panel">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <strong>Saved Palettes</strong>
-        <div style="display:flex;gap:8px">
-          <button id="exportJSON" class="small">Export JSON</button>
-          <input id="importFile" type="file" accept="application/json" style="display:none" />
-          <button id="importBtn" class="small">Import JSON</button>
-          <button id="clearAll" class="small">Clear All</button>
-        </div>
-      </div>
-
-      <div id="savedList" class="saved-list"></div>
-    </section>
+    </main>
 
     <footer>
-      このツールはローカルで色処理を行います。個人情報は送信されません。 — 作成：ColorMix
+        <p>&copy; 2025 Kiricab. All Rights Reserved.</p>
     </footer>
-  </div>
 
-<script src="script.js"></script>
 </body>
 </html>
