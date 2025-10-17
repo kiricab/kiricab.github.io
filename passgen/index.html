@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>セキュアなパスワードジェネレーター | 強力なパスワードを即座に生成</title>
-    <meta name="description" content="大文字、小文字、数字、記号を組み合わせた強力で安全なパスワードを20個一括生成します。文字数やランダムシードの指定も可能。クリックするだけで簡単にコピーできます。">
+    <title data-i18n="passgen_app_title"></title>
+    <meta name="description" data-i18n="passgen_app_description">
     
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><title>KIRICAB Icon</title><rect width='100' height='100' rx='20' fill='%231e3a8a'/><path fill='%23ffffff' d='M25 20 H40 V42.5 L68 20 H80 L50 50 L80 80 H68 L40 57.5 V80 H25 V20 Z'/></svg>">
 
@@ -27,50 +27,50 @@
 
     <header>
         <div class="container">
-            <h1>🔐 セキュア パスワードジェネレーター</h1>
-            <p>強力なパスワードをワンクリックで生成・コピー</p>
+            <h1 data-i18n="passgen_header_heading"></h1>
+            <p data-i18n="passgen_header_paragraph"></p>
         </div>
     </header>
 
     <main class="container">
         <!-- 設定セクション -->
         <section class="settings-card">
-            <h2>生成オプション</h2>
+            <h2 data-i18n="passgen_settings_heading"></h2>
             <div class="options-grid">
                 <!-- パスワード長 & 生成数 -->
                 <div class="option-group">
-                    <label>パスワードの長さ:</label>
+                    <label data-i18n="passgen_length_label"></label>
                     <div class="length-options">
-                        <button class="length-btn active" data-length="8">8文字</button>
-                        <button class="length-btn" data-length="12">12文字</button>
-                        <button class="length-btn" data-length="16">16文字</button>
-                        <input type="number" id="custom-length" min="4" max="64" placeholder="カスタム (4-64)">
+                        <button class="length-btn active" data-length="8" data-i18n="passgen_length_8"></button>
+                        <button class="length-btn" data-length="12" data-i18n="passgen_length_12"></button>
+                        <button class="length-btn" data-length="16" data-i18n="passgen_length_16"></button>
+                        <input type="number" id="custom-length" min="4" max="64" data-i18n-placeholder="passgen_length_custom">
                     </div>
                 </div>
                 <!-- 文字種 -->
                 <div class="option-group">
-                    <label>含める文字種:</label>
+                    <label data-i18n="passgen_char_type_label"></label>
                     <div class="char-type-options">
-                        <label class="checkbox-label"><input type="checkbox" id="include-uppercase" checked><span>大文字 (ABC)</span></label>
-                        <label class="checkbox-label"><input type="checkbox" id="include-lowercase" checked><span>小文字 (abc)</span></label>
-                        <label class="checkbox-label"><input type="checkbox" id="include-numbers" checked><span>数字 (123)</span></label>
-                        <label class="checkbox-label"><input type="checkbox" id="include-symbols" checked><span>記号</span></label>
+                        <label class="checkbox-label"><input type="checkbox" id="include-uppercase" checked><span data-i18n="passgen_char_uppercase"></span></label>
+                        <label class="checkbox-label"><input type="checkbox" id="include-lowercase" checked><span data-i18n="passgen_char_lowercase"></span></label>
+                        <label class="checkbox-label"><input type="checkbox" id="include-numbers" checked><span data-i18n="passgen_char_numbers"></span></label>
+                        <label class="checkbox-label"><input type="checkbox" id="include-symbols" checked><span data-i18n="passgen_char_symbols"></span></label>
                     </div>
                     <div id="symbols-detail-grid" class="symbols-detail-container"></div>
                 </div>
                 <div class="option-group-row">
                     <div class="option-group">
-                        <label for="password-count">生成数:</label>
+                        <label for="password-count" data-i18n="passgen_count_label"></label>
                         <input type="number" id="password-count" min="1" max="1000" value="20">
                     </div>
                     <!-- ランダムシード -->
                     <div class="option-group">
-                        <label for="random-seed">ランダムシード (これを指定するとリンクを共有できます):</label>
-                        <input type="text" id="random-seed" placeholder="シードを入力...">
+                        <label for="random-seed" data-i18n="passgen_seed_label"></label>
+                        <input type="text" id="random-seed" data-i18n-placeholder="passgen_seed_placeholder">
                     </div>
                 </div>
             </div>
-            <button id="generate-btn">パスワードを生成</button>
+            <button id="generate-btn" data-i18n="passgen_generate_button"></button>
         </section>
 
         <!-- 広告エリア 一旦コメントアウト -->
@@ -84,27 +84,28 @@
         <!-- 結果表示セクション -->
         <section class="results-card">
             <div class="results-header">
-                <h2>生成結果 (クリックしてコピー)</h2>
-                <button id="copy-link-btn">🔗 リンクをコピー</button>
+                <h2 data-i18n="passgen_results_heading"></h2>
+                <button id="copy-link-btn" data-i18n="passgen_copy_link_button"></button>
             </div>
             <div id="password-grid" class="password-grid"></div>
         </section>
 
         <!-- SEO対策コンテンツ -->
         <section class="seo-content">
-            <h2>なぜ強力なパスワードが必要なのか？</h2>
-            <p>現代のデジタル社会では、個人情報や企業データが常にサイバー攻撃の脅威にさらされています。推測されやすい単純なパスワード（例：「password123」や誕生日など）は、ブルートフォース攻撃（総当たり攻撃）によって数秒で破られてしまう可能性があります。</p>
-            <p>このツールで生成されるような、大文字、小文字、数字、記号をランダムに組み合わせた長いパスワードは、解読が非常に困難になり、あなたのアカウントを不正アクセスから守るための最も簡単で効果的な第一歩となります。</p>
+            <h2 data-i18n="passgen_seo_heading"></h2>
+            <p data-i18n="passgen_seo_paragraph1"></p>
+            <p data-i18n="passgen_seo_paragraph2"></p>
         </section>
 
     </main>
 
     <footer>
         <div class="container">
-            <p>&copy; 2025 Kiricab. All Rights Reserved.</p>
+            <p data-i18n="footer_copyright"></p>
         </div>
     </footer>
 
+    <script src="../locales/locales.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
