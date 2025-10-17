@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!seed) {
             history.pushState({}, '', window.location.pathname);
             copyLinkBtn.disabled = true;
-            copyLinkBtn.title = window.translations.passgen_seed_disabled_tooltip || "ランダムシードを入力すると有効になります";
+            copyLinkBtn.title = "ランダムシードを入力すると有効になります";
             return;
         }
         const settings = {
@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const base64String = btoa(jsonString);
         history.pushState({}, '', `${window.location.pathname}?c=${base64String}`);
         copyLinkBtn.disabled = false;
-        copyLinkBtn.title = window.translations.passgen_copy_link_tooltip || "設定を反映したリンクをコピー";
+        copyLinkBtn.title = "設定を反映したリンクをコピー";
     }
 
     function generatePasswords() {
@@ -131,11 +131,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (includeNumbers.checked) selectedCharsets.push(CHARSETS.NUMBERS);
         if (includeSymbols.checked) {
             const customSymbols = Array.from(document.querySelectorAll('.symbol-checkbox:checked')).map(cb => cb.value).join('');
-            if (customSymbols.length === 0) { alert(window.translations.passgen_alert_select_symbol || '使用する記号を少なくとも1つ選択してください。'); return; }
+            if (customSymbols.length === 0) { alert('使用する記号を少なくとも1つ選択してください。'); return; }
             selectedCharsets.push(customSymbols);
         }
-        if (selectedCharsets.length === 0) { alert(window.translations.passgen_alert_select_charset || '少なくとも1つの文字種を選択してください。'); return; }
-        if (length < selectedCharsets.length) { alert(window.translations.passgen_alert_length_mismatch.replace('{count}', selectedCharsets.length) || `パスワードの長さは、選択した文字種の数 (${selectedCharsets.length}) 以上に設定してください。`); return; }
+        if (selectedCharsets.length === 0) { alert('少なくとも1つの文字種を選択してください。'); return; }
+        if (length < selectedCharsets.length) { alert(`パスワードの長さは、選択した文字種の数 (${selectedCharsets.length}) 以上に設定してください。`); return; }
         const charPool = selectedCharsets.join('');
         const seed = randomSeedInput.value;
         const rng = seed ? new LCG(seed) : null;
@@ -159,9 +159,9 @@ document.addEventListener('DOMContentLoaded', () => {
     copyLinkBtn.addEventListener('click', () => {
         navigator.clipboard.writeText(window.location.href).then(() => {
             const originalText = copyLinkBtn.innerHTML;
-            copyLinkBtn.textContent = window.translations.passgen_copy_complete || 'コピー完了!';
+            copyLinkBtn.textContent = 'コピー完了!';
             setTimeout(() => { copyLinkBtn.innerHTML = originalText; }, 2000);
-        }).catch(err => console.error(window.translations.passgen_copy_link_error || "リンクのコピーに失敗しました", err));
+        }).catch(err => console.error("リンクのコピーに失敗しました", err));
     });
 
     randomSeedInput.addEventListener('input', updateQueryFromSettings);
@@ -193,13 +193,13 @@ document.addEventListener('DOMContentLoaded', () => {
         item.textContent = password;
         const tooltip = document.createElement('span');
         tooltip.className = 'tooltip';
-        tooltip.textContent = window.translations.passgen_copied_tooltip || 'コピーしました！';
+        tooltip.textContent = 'コピーしました！';
         item.appendChild(tooltip);
         item.addEventListener('click', () => {
             navigator.clipboard.writeText(password).then(() => {
                 item.classList.add('copied');
                 setTimeout(() => item.classList.remove('copied'), 1500);
-            }).catch(err => console.error(window.translations.passgen_copy_error || 'クリップボードへのコピーに失敗しました: ', err));
+            }).catch(err => console.error('クリップボードへのコピーに失敗しました: ', err));
         });
         passwordGrid.appendChild(item);
     }
