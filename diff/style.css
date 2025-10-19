@@ -1,31 +1,4 @@
-:root {
-    --primary-color: #1e3a8a;
-    --primary-color-dark: #1e293b;
-    --secondary-color: #e9ecef;
-    --background-color: #f8f9fa;
-    --card-color: #ffffff;
-    --text-color: #212529;
-    --text-color-light: #ffffff;
-    --gray-text-color: #6c757d;
-    --border-radius: 8px;
-    --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    margin: 0;
-    background-color: var(--background-color);
-    color: var(--text-color);
-    line-height: 1.6;
-}
-
-    .container {
-        max-width: 900px;
-        margin: 0 auto;
-        padding: 1rem;
-    }
-
-    .how-to-use {
+.how-to-use {
         background-color: #f8f9fa;
         border: 1px solid #e0e0e0;
         border-radius: 8px;
@@ -60,24 +33,6 @@ body {
         text-align: center;
     }
 
-header {
-    background-color: var(--primary-color);
-    color: var(--text-color-light);
-    padding: 1.5rem 0;
-    text-align: center;
-    border-bottom: 3px solid var(--primary-color-dark);
-}
-
-header h1 {
-    margin: 0;
-    font-size: 2rem;
-}
-
-header p {
-    margin: 0.25rem 0 0;
-    color: rgba(255, 255, 255, 0.8);
-}
-
 nav ul {
     list-style: none;
     padding: 0;
@@ -96,20 +51,6 @@ nav a {
 
 nav a:hover {
     color: #a0aec0; /* Light gray for hover */
-}
-
-main {
-    padding-top: 2rem;
-    padding-bottom: 2rem;
-}
-
-.diff-section {
-    background-color: var(--card-color);
-    border-radius: var(--border-radius);
-    padding: 1.5rem 2rem;
-    margin-bottom: 2rem;
-    box-shadow: var(--box-shadow);
-    border: 1px solid var(--secondary-color);
 }
 
 .input-group {
@@ -215,24 +156,7 @@ button:hover {
     user-select: none; /* テキスト選択を無効にする */
 }
 
-footer {
-    text-align: center;
-    padding: 2rem 0;
-    margin-top: 2rem;
-    background-color: var(--primary-color-dark);
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 0.9rem;
-}
-
 @media (max-width: 600px) {
-    .container {
-        padding: 1rem 1rem;
-    }
-
-    header h1 {
-        font-size: 1.5rem;
-    }
-
     .input-group {
         flex-direction: column;
     }
