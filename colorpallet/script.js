@@ -331,7 +331,7 @@ exportPNG.addEventListener('click', ()=>{
     const y = 80;
     ctx.fillStyle = hex; ctx.fillRect(x,y,swW,swW);
     // draw text
-    ctx.fillStyle = getContrastText(hex)==='light' ? '#FFF' : '#111';
+    ctx.fillStyle = '#FFF'; // 文字色を白に固定
     ctx.font = 'bold 22px Inter, sans-serif';
     ctx.fillText(hex.toUpperCase(), x+10, y + swW + 30);
   });
