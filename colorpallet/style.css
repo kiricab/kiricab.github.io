@@ -1,75 +1,266 @@
-:root{
-  --bg:#0f1724;
-  --card:#0b1220;
-  --muted:#94a3b8;
-  --glass: rgba(255,255,255,0.04);
-  --accent:#60a5fa;
-  --radius:14px;
-  --gap:16px;
-}
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0;
-  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
-  background: linear-gradient(180deg,#071025 0%, #07121a 60%);
-  color: #e6eef8;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-  padding:28px;
-}
-.container{max-width:1100px;margin:0 auto}
-header{display:flex;align-items:center;gap:16px;margin-bottom:20px}
-.logo{
-  width:56px;height:56px;border-radius:12px;
-  background:linear-gradient(135deg,#60a5fa,#7c3aed);
-  display:flex;align-items:center;justify-content:center;font-weight:700;color:white;font-size:18px;box-shadow:0 6px 18px rgba(124,58,237,0.18)
-}
-h1{margin:0;font-size:20px}
-p.lead{margin:6px 0 0;color:var(--muted);font-size:13px}
+/* colorpallet/style.css */
 
-.panel{background:var(--card);border-radius:var(--radius);padding:18px;margin-bottom:18px;box-shadow:0 6px 24px rgba(2,6,23,0.6)}
-.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
-.select, .btn, .small{font-size:14px;padding:10px 12px;border-radius:10px;border:0;outline:none}
-.select{background:var(--glass);color:var(--muted)}
-.btn{background:linear-gradient(90deg,#60a5fa,#7c3aed);color:white;cursor:pointer;box-shadow:0 6px 18px rgba(96,165,250,0.14)}
-.btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-.small{padding:8px 10px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+/* 共通スタイルシートで定義されている変数を上書き */
+:root {
+    --text-color: #212529; /* ダークテーマからライトテーマへ */
+    --gray-text-color: #6c757d;
+    --card-color: #ffffff;
+    --background-color: #f8f9fa;
+    --primary-color: #1e3a8a;
+    --primary-color-dark: #1e293b;
+    --secondary-color: #e9ecef;
+    --border-radius: 8px;
+    --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* bodyのスタイルはcommon/style.cssに任せる */
+body {
+    padding: 0; /* common/style.cssでmarginが設定されているため */
+}
+
+/* ヘッダーのロゴとリード文は共通ヘッダーに移行したため削除 */
+header .logo,
+header p.lead {
+    display: none;
+}
+
+/* .panelを.settings-cardに合わせる */
+.settings-card {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--box-shadow);
+    border: 1px solid var(--secondary-color);
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+
+.select, .btn, .small {
+    font-size: 14px;
+    padding: 10px 12px;
+    border-radius: var(--border-radius); /* 共通のborder-radiusを使用 */
+    border: 1px solid var(--secondary-color); /* 共通のボーダーを使用 */
+    outline: none;
+    background-color: var(--background-color); /* 共通の背景色を使用 */
+    color: var(--text-color); /* 共通のテキスト色を使用 */
+}
+
+.btn {
+    background-color: var(--primary-color); /* 共通のプライマリカラーを使用 */
+    color: var(--text-color-light);
+    cursor: pointer;
+    box-shadow: var(--box-shadow);
+    border: none; /* ボタンのボーダーは不要 */
+}
+
+.btn.secondary {
+    background-color: var(--secondary-color); /* 共通のセカンダリカラーを使用 */
+    color: var(--text-color);
+    border: none; /* ボタンのボーダーは不要 */
+}
+
+.small {
+    padding: 8px 10px;
+    background-color: var(--background-color);
+    border: 1px solid var(--secondary-color);
+    color: var(--text-color);
+}
 
 /* Palette grid */
-.palette{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:16px}
-.swatch{
-  height:160px;border-radius:12px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:12px;
-  color:white;text-shadow:0 2px 8px rgba(0,0,0,0.4)
+.palette {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-top: 16px;
 }
-.swatch .meta{display:flex;justify-content:space-between;align-items:center;font-size:12px;background:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.3) 60%);padding-top:6px}
-.swatch .left{display:flex;gap:8px;align-items:center}
-.swatch .code{background:rgba(255,255,255,0.08);padding:5px 8px;border-radius:8px;font-weight:600}
-.icon-btn{background:rgba(255,255,255,0.06);border-radius:8px;padding:6px;cursor:pointer;border:0;color:white;font-size:13px}
-.lock{opacity:0.9;padding:6px;border-radius:8px}
 
-.controls-row{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;align-items:center}
+.swatch {
+    height: 160px;
+    border-radius: var(--border-radius);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 12px;
+    color: white;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
 
-.fav-list{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.chip{padding:8px 12px;border-radius:999px;background:rgba(255,255,255,0.03);font-size:13px;color:var(--muted);display:inline-flex;gap:8px;align-items:center}
+.swatch .meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.3) 60%);
+    padding-top: 6px;
+}
+
+.swatch .left {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.swatch .code {
+    background: rgba(0, 0, 0, 0.1); /* 背景色を調整 */
+    padding: 5px 8px;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+}
+
+.icon-btn {
+    background: rgba(0, 0, 0, 0.1); /* 背景色を調整 */
+    border-radius: var(--border-radius);
+    padding: 6px;
+    cursor: pointer;
+    border: 0;
+    color: currentColor; /* 親要素のテキスト色を継承 */
+    font-size: 13px;
+    display: flex; /* SVGを中央に配置 */
+    align-items: center;
+    justify-content: center;
+}
+
+.lock {
+    opacity: 0.9;
+    padding: 6px;
+    border-radius: var(--border-radius);
+}
+
+.lock svg {
+    stroke: white; /* デフォルトは白 */
+}
+
+.lock.locked svg {
+    stroke: var(--primary-color); /* ロック時はプライマリカラー */
+}
+
+.controls-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.chip {
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: var(--secondary-color); /* 共通のセカンダリカラーを使用 */
+    font-size: 13px;
+    color: var(--text-color); /* 共通のテキスト色を使用 */
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+}
 
 /* preview area */
-.preview{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap}
-.card-preview{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:14px;border-radius:12px;width:220px}
-.btn-sample{padding:10px 14px;border-radius:8px;border:0;font-weight:600}
+.preview {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+    justify-content: space-around; /* カードを均等に配置 */
+}
+
+.card-preview {
+    background: var(--card-color); /* 共通のカード背景色を使用 */
+    padding: 14px;
+    border-radius: var(--border-radius);
+    flex: 1; /* 均等な幅を占める */
+    min-width: 220px; /* 最小幅 */
+    box-shadow: var(--box-shadow);
+    border: 1px solid var(--secondary-color);
+}
+
+.btn-sample {
+    padding: 10px 14px;
+    border-radius: var(--border-radius);
+    border: 0;
+    font-weight: 600;
+    background-color: var(--primary-color);
+    color: var(--text-color-light);
+}
 
 /* saved palette list */
-.saved-list{margin-top:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
-.saved-card{background:rgba(255,255,255,0.02);padding:10px;border-radius:10px;display:flex;flex-direction:column;gap:10px}
+.saved-list {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(275px, 1fr)); /* 最小幅を調整 */
+    gap: 10px;
+}
 
-footer{color:var(--muted);font-size:13px;margin-top:20px;text-align:center}
+.saved-card {
+    background: var(--card-color); /* 共通のカード背景色を使用 */
+    padding: 10px;
+    border-radius: var(--border-radius);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: var(--box-shadow);
+    border: 1px solid var(--secondary-color);
+}
+
+.saved-card .saved-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
+/* footerはcommon/style.cssに任せる */
+footer {
+    display: none; /* HTML側で共通フッターを導入したため、このフッターは非表示 */
+}
 
 /* responsive */
-@media (max-width:900px){
-  .palette{grid-template-columns:repeat(2,1fr)}
-  .controls{flex-direction:column;align-items:stretch}
+@media (max-width: 900px) {
+    .palette {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
 }
-@media (max-width:520px){
-  .palette{grid-template-columns:repeat(1,1fr)}
-  .card-preview{width:100%}
+@media (max-width: 520px) {
+    .palette {
+        grid-template-columns: repeat(1, 1fr);
+    }
+    .card-preview {
+        width: 100%;
+    }
+}
+
+.bar-chart-preview {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 16px;
+    box-shadow: var(--box-shadow);
+    border: 1px solid var(--secondary-color);
+    flex: 1; /* 均等な幅を占める */
+    min-width: 220px; /* 最小幅 */
+}
+
+.bar-chart-container {
+    display: flex;
+    align-items: flex-end;
+    height: 100px;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.bar {
+    width: 20%; /* 5本の棒グラフなので20% */
+    height: 0; /* 初期値 */
+    background-color: var(--primary-color); /* デフォルト色 */
+    border-radius: 4px 4px 0 0;
+    transition: height 0.3s ease-out;
 }
