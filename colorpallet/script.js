@@ -111,8 +111,11 @@ const importBtn = document.getElementById('importBtn');
 const importFile = document.getElementById('importFile');
 const clearAll = document.getElementById('clearAll');
 
+const lockIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-lock"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`;
+const unlockIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-unlock"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></path></svg>`;
+
 let state = {
-  colors: ['#111111','#222222','#333333','#444444','#555555'],
+  colors: ['#111111','#222222','#333333','#434343','#555555'],
   locks: [false,false,false,false,false]
 };
 
@@ -132,9 +135,9 @@ function renderPalette(){
             <div class="left">
               <button class="icon-btn" data-copy="${idx}" title="Copy">${fmt==='hex' ? hex.toUpperCase() : formatColor(hex,fmt)}</button>
             </div>
-            <div style="display:flex;gap:6px;align-items:center">
-              <button class="icon-btn lock" data-lock="${idx}" title="Lock/Unlock">${state.locks[idx] ? '🔒' : '🔓'}</button>
-            </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="icon-btn lock ${state.locks[idx] ? 'locked' : ''}" data-lock="${idx}" title="Lock/Unlock">${state.locks[idx] ? lockIcon : unlockIcon}</button>
+      </div>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center">
             <div class="code">${formatColor(hex,fmt)}</div>
@@ -227,6 +230,17 @@ function updatePreview(){
   document.getElementById('previewName').style.color = colors[1];
   document.getElementById('previewMeta').style.color = colors[3];
   document.getElementById('previewDesc').style.color = colors[2];
+
+  // Update bar chart preview
+  document.getElementById('previewBarChart').style.background = colors[0]+'22';
+  const barHeights = [80, 60, 40, 70, 50]; // サンプルの高さ
+  for (let i = 0; i < 5; i++) {
+    const bar = document.getElementById(`bar${i + 1}`);
+    if (bar) {
+      bar.style.backgroundColor = colors[i];
+      bar.style.height = `${barHeights[i]}%`;
+    }
+  }
 }
 
 /* --------- saving & localStorage --------- */
@@ -255,9 +269,9 @@ function renderSaved(){
     el.innerHTML = `
       <div style="display:flex;gap:8px;align-items:center">
         <div style="display:flex;gap:6px;flex:1">
-          ${item.colors.map(c=>`<div style="width:38px;height:38px;border-radius:6px;background:${c};box-shadow:inset 0 -4px 10px rgba(0,0,0,0.2)"></div>`).join('')}
+          ${item.colors.map(c=>`<div style="width:50px;height:50px;border-radius:6px;background:${c};box-shadow:inset 0 -4px 10px rgba(0,0,0,0.2)"></div>`).join('')}
         </div>
-        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+        <div class="saved-card-actions">
           <button class="small" data-load="${item.id}">Load</button>
           <button class="small" data-del="${item.id}">Del</button>
         </div>
@@ -317,7 +331,7 @@ exportPNG.addEventListener('click', ()=>{
     const y = 80;
     ctx.fillStyle = hex; ctx.fillRect(x,y,swW,swW);
     // draw text
-    ctx.fillStyle = getContrastText(hex)==='light' ? '#FFF' : '#111';
+    ctx.fillStyle = '#FFF'; // 文字色を白に固定
     ctx.font = 'bold 22px Inter, sans-serif';
     ctx.fillText(hex.toUpperCase(), x+10, y + swW + 30);
   });
