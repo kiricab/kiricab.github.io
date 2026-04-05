@@ -5,22 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KIRICAB Tools - 日々のデジタル作業を効率化する無料Webツール</title>
     <meta name="description" content="KIRICAB Toolsは、安全なパスワード生成、Slack絵文字作成、テキスト比較（Diff Checker）など、日々のデジタル作業を効率化する無料Webツールを提供します。インストール不要で、誰でもすぐに利用可能。あなたのオンライン活動をより安全＆快適にサポートします。">
-    
-    <!-- パスワード生成ツールと同じファビコンを使い、ブランドを統一 -->
+
+    <!-- OGP -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://kiricab.github.io/">
+    <meta property="og:title" content="KIRICAB Tools - 日々のデジタル作業を効率化する無料Webツール">
+    <meta property="og:description" content="KIRICAB Toolsは、安全なパスワード生成、Slack絵文字作成、テキスト比較（Diff Checker）など、日々のデジタル作業を効率化する無料Webツールを提供します。インストール不要で、誰でもすぐに利用可能。">
+    <meta property="og:site_name" content="KIRICAB Tools">
+    <meta property="og:locale" content="ja_JP">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="KIRICAB Tools - 日々のデジタル作業を効率化する無料Webツール">
+    <meta name="twitter:description" content="KIRICAB Toolsは、安全なパスワード生成、Slack絵文字作成、テキスト比較（Diff Checker）など、日々のデジタル作業を効率化する無料Webツールを提供します。インストール不要で、誰でもすぐに利用可能。">
+    <!-- Canonical -->
+    <link rel="canonical" href="https://kiricab.github.io/">
+
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><title>KIRICAB Icon</title><rect width='100' height='100' rx='20' fill='%231e3a8a'/><path fill='%23ffffff' d='M25 20 H40 V42.5 L68 20 H80 L50 50 L80 80 H68 L40 57.5 V80 H25 V20 Z'/></svg>">
     <link rel="stylesheet" href="common/style.css">
 
     <style>
-        /* ページ専用のスタイルをここに直接記述 */
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 2rem;
-            text-align: center;
-            flex-grow: 1;
+        body {
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 2rem 2rem 3rem;
+            flex-grow: 1;
         }
         header {
             background-color: var(--primary-color);
@@ -32,37 +45,89 @@
             margin: 0;
             font-size: 1.5rem;
         }
+        .hero {
+            text-align: center;
+            padding: 2rem 0 1rem;
+        }
         .hero h2 {
-            font-size: 2.5rem;
+            font-size: 2rem;
             color: var(--primary-color);
             margin-bottom: 0.5rem;
+            border: none;
+            padding: 0;
         }
         .hero p {
-            font-size: 1.2rem;
+            font-size: 1rem;
             color: var(--gray-text-color);
-            margin-bottom: 2rem;
+            margin-bottom: 0;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
-        .button-group {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 1rem; /* ボタン間のスペース */
+        .privacy-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-top: 1rem;
+            padding: 0.3rem 0.8rem;
+            background: #e8f0fe;
+            color: var(--primary-color);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.25rem;
             margin-top: 2rem;
         }
-        .cta-button {
-            display: inline-block;
-            background-color: var(--primary-color);
-            color: var(--text-color-light);
-            padding: 0.8rem 2rem;
-            border-radius: var(--border-radius);
+        .tool-card {
+            background: var(--card-color);
+            border-radius: 12px;
+            padding: 1.5rem;
             text-decoration: none;
-            font-size: 1.1rem;
-            font-weight: bold;
-            transition: background-color 0.2s ease;
-            white-space: nowrap; /* ボタン内のテキストが改行されないようにする */
+            color: var(--text-color);
+            box-shadow: var(--box-shadow);
+            border: 1px solid var(--secondary-color);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
         }
-        .cta-button:hover {
-            background-color: var(--primary-color-dark);
+        .tool-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+        .tool-icon {
+            font-size: 2rem;
+            line-height: 1;
+        }
+        .tool-name {
+            margin: 0.25rem 0 0;
+            color: var(--primary-color);
+            font-size: 1.05rem;
+        }
+        .tool-desc {
+            margin: 0;
+            color: var(--gray-text-color);
+            font-size: 0.875rem;
+            flex-grow: 1;
+            line-height: 1.5;
+        }
+        .tool-cta {
+            margin-top: 0.5rem;
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 0.875rem;
+        }
+        @media (max-width: 600px) {
+            .hero h2 {
+                font-size: 1.5rem;
+            }
+            .tools-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
     <!-- Google AdSense-->
@@ -75,7 +140,6 @@
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
-
         gtag('config', 'G-CN3KBWSXRE');
     </script>
 </head>
@@ -88,23 +152,35 @@
     <main class="container">
         <div class="hero">
             <h2>日々のデジタル作業を効率化する無料Webツール</h2>
-            <p>
-                KIRICAB Toolsは、日々のデジタル作業を効率化する無料Webツールを提供します。インストール不要で、誰でもすぐに利用可能。あなたのオンライン活動をより安全＆快適にサポートします。これらのツールはあなたのPC上のみで動作し、サーバに情報が送信されることはないので安心して利用することができます。
-            </p>
-            <div class="button-group">
-                <a href="./passgen/index.html" class="cta-button">
-                    パスワード生成ツールへ
-                </a>
-                <a href="./slackemojigen/index.html" class="cta-button">
-                    Slack絵文字ジェネレーターへ
-                </a>
-                <a href="./diff/index.html" class="cta-button">
-                    オンラインDiffツールへ
-                </a>
-                <a href="./colorpallet/index.html" class="cta-button">
-                    カラーパレット生成へ
-                </a>
-            </div>
+            <p>インストール不要。すべての処理はあなたのブラウザ上で完結し、情報はサーバに送信されません。</p>
+            <span class="privacy-badge">🔒 完全クライアントサイド処理</span>
+        </div>
+
+        <div class="tools-grid">
+            <a href="./passgen/index.html" class="tool-card">
+                <div class="tool-icon">🔐</div>
+                <h3 class="tool-name">パスワード生成</h3>
+                <p class="tool-desc">文字種・桁数・生成数を自由に指定。安全でランダムなパスワードを一括生成してコピー。</p>
+                <span class="tool-cta">使ってみる →</span>
+            </a>
+            <a href="./slackemojigen/index.html" class="tool-card">
+                <div class="tool-icon">✏️</div>
+                <h3 class="tool-name">Slack絵文字生成</h3>
+                <p class="tool-desc">テキストとフォント・色を指定して、Slack用カスタム絵文字画像を即作成・ダウンロード。</p>
+                <span class="tool-cta">使ってみる →</span>
+            </a>
+            <a href="./diff/index.html" class="tool-card">
+                <div class="tool-icon">🔍</div>
+                <h3 class="tool-name">テキスト比較（Diff）</h3>
+                <p class="tool-desc">2つの文章をリアルタイムに比較し、追加・削除箇所を色分けして差分を可視化。</p>
+                <span class="tool-cta">使ってみる →</span>
+            </a>
+            <a href="./colorpallet/index.html" class="tool-card">
+                <div class="tool-icon">🎨</div>
+                <h3 class="tool-name">カラーパレット生成</h3>
+                <p class="tool-desc">調和モードを選ぶだけで配色を自動提案。ロック・保存・PNG/JSONエクスポートに対応。</p>
+                <span class="tool-cta">使ってみる →</span>
+            </a>
         </div>
     </main>
 
@@ -118,6 +194,17 @@
         </div>
         <p>&copy; 2025 Kiricab. All Rights Reserved.</p>
     </footer>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "KIRICAB Tools",
+      "url": "https://kiricab.github.io/",
+      "description": "日々のデジタル作業を効率化する無料Webツール集。パスワード生成、Slack絵文字作成、テキスト比較、カラーパレット生成に対応。",
+      "inLanguage": "ja"
+    }
+    </script>
 
 </body>
 </html>

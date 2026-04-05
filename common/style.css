@@ -97,6 +97,15 @@ footer {
     text-decoration: underline;
 }
 
+@media (max-width: 900px) {
+    header h1 {
+        font-size: 1.8rem;
+    }
+    .container {
+        padding: 1rem 1.5rem;
+    }
+}
+
 @media (max-width: 600px) {
     .container {
         padding: 1rem;
@@ -104,5 +113,32 @@ footer {
 
     header h1 {
         font-size: 1.5rem;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --primary-color: #4a6fd4;
+        --primary-color-dark: #1e293b;
+        --secondary-color: #2d3748;
+        --background-color: #1a202c;
+        --card-color: #2d3748;
+        --text-color: #e2e8f0;
+        --text-color-light: #ffffff;
+        --gray-text-color: #a0aec0;
+        --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    h2 {
+        border-bottom-color: var(--secondary-color);
+    }
+
+    .settings-card,
+    .results-card,
+    .seo-content,
+    .ad-placeholder,
+    .diff-section,
+    .how-to-use {
+        border-color: var(--secondary-color);
     }
 }
