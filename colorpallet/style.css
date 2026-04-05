@@ -1,24 +1,9 @@
 /* colorpallet/style.css */
 
-/* 共通スタイルシートで定義されている変数を上書き */
-:root {
-    --text-color: #212529; /* ダークテーマからライトテーマへ */
-    --gray-text-color: #6c757d;
-    --card-color: #ffffff;
-    --background-color: #f8f9fa;
-    --primary-color: #1e3a8a;
-    --primary-color-dark: #1e293b;
-    --secondary-color: #e9ecef;
-    --border-radius: 8px;
-    --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-/* bodyのスタイルはcommon/style.cssに任せる */
 body {
-    padding: 0; /* common/style.cssでmarginが設定されているため */
+    padding: 0;
 }
 
-/* ヘッダーのロゴとリード文は共通ヘッダーに移行したため削除 */
 header .logo,
 header p.lead {
     display: none;
