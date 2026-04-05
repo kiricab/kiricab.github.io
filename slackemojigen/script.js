@@ -61,8 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.width = size;
         canvas.height = size;
 
-        console.log(font)
-
         ctx.clearRect(0, 0, size, size);
 
         if (!isTransparent) {

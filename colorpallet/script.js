@@ -391,19 +391,6 @@ clearAll.addEventListener('click', ()=>{
   }
 });
 
-/* --------- init: try to read from query param and saved --------- */
-// If query present, it was already handled on loadFromQuery.
-// otherwise show loaded saved first if exists
-(function init(){
-  const q = new URLSearchParams(window.location.search);
-  if(!q.has('colors')){
-    const saved = loadSaved();
-    if(saved.length>0){
-      // do nothing: keep current generated palette. Optionally load newest
-    }
-  }
-})();
-
 /* --------- accessibility hint: keyboard generate (space) --------- */
 document.addEventListener('keydown', (e)=>{
   if(e.code === 'Space' && !['INPUT','TEXTAREA','SELECT','BUTTON'].includes(document.activeElement.tagName)) {
