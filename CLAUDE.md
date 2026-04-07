@@ -31,6 +31,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **アナリティクス・広告** — 本番ページにはGoogle Analytics（`G-CN3KBWSXRE`）とAdSense（`ca-pub-8141179596557780`）が含まれる。`mdeditor` ツールにはまだ設定されていない。
 
+## 実装ワークフロー
+
+新しいツールの実装は以下の手順で進める：
+
+1. **planner** がユーザーとコミュニケーションしながら仕様を固め、仕様書を作成する
+2. **developer** が仕様書をもとに実装する
+3. **evaluator** が実装内容を確認し、仕様を満たしているかを検証する
+4. evaluatorの確認で修正箇所があれば 2. に戻り、**developer** が実装を修正する
+
+以降 2〜3 を繰り返し、すべての仕様を満たしたら実装完了とする。
+
 ## 新しいツールを追加する際のチェックリスト
 
 1. `index.html`・`script.js`・`style.css` を格納した新規ディレクトリを作成する
