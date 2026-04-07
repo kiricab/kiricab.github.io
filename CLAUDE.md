@@ -27,6 +27,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **npmを使わない外部依存** — 外部ライブラリはすべてCDN経由で読み込む `package.json` は存在しない。
 
+**ライセンスポリシー** — 使用するすべての外部ライブラリ・フォント・アセットは **無償かつ商用利用可能なライセンス**（MIT・Apache 2.0・BSD・ISC・CC0・OFL等）でなければならない。GPL・LGPL・有償ライセンス・商用利用に条件が付くライセンスは使用禁止。ライブラリを追加する際は必ずライセンスを確認すること。
+
 **アナリティクス・広告** — 本番ページにはGoogle Analytics（`G-CN3KBWSXRE`）とAdSense（`ca-pub-8141179596557780`）が含まれる。`mdeditor` ツールにはまだ設定されていない。
 
 ## 新しいツールを追加する際のチェックリスト
