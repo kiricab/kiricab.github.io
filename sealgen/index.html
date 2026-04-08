@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>印鑑ジェネレーター | 名前を入力して印影画像を無料作成</title>
+    <meta name="description" content="名前を入力するだけで印鑑（はんこ）の印影画像を無料で作成できるWebツールです。丸印・角印に対応し、傾き・色・書体を自由に設定。透過PNG形式でダウンロード可能。インストール不要でブラウザから即使用。">
+
+    <!-- OGP -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://kiricab.github.io/sealgen/">
+    <meta property="og:title" content="印鑑ジェネレーター | 名前を入力して印影画像を無料作成">
+    <meta property="og:description" content="名前を入力するだけで印鑑（はんこ）の印影画像を無料で作成できるWebツールです。丸印・角印に対応し、傾き・色・書体を自由に設定。透過PNG形式でダウンロード可能。">
+    <meta property="og:site_name" content="KIRICAB Tools">
+    <meta property="og:locale" content="ja_JP">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="印鑑ジェネレーター | 名前を入力して印影画像を無料作成">
+    <meta name="twitter:description" content="名前を入力するだけで印鑑（はんこ）の印影画像を無料で作成できるWebツールです。丸印・角印に対応し、傾き・色・書体を自由に設定。透過PNG形式でダウンロード可能。">
+    <!-- Canonical -->
+    <link rel="canonical" href="https://kiricab.github.io/sealgen/">
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><title>KIRICAB Icon</title><rect width='100' height='100' rx='20' fill='%231e3a8a'/><path fill='%23ffffff' d='M25 20 H40 V42.5 L68 20 H80 L50 50 L80 80 H68 L40 57.5 V80 H25 V20 Z'/></svg>">
+
+    <link rel="stylesheet" href="../common/style.css">
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8141179596557780"
+     crossorigin="anonymous"></script>
+    <meta name="google-adsense-account" content="ca-pub-8141179596557780">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CN3KBWSXRE"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-CN3KBWSXRE');
+    </script>
+</head>
+<body>
+
+    <header>
+        <div class="container">
+            <h1>印鑑ジェネレーター</h1>
+            <p>名前を入力して印影画像を即作成・ダウンロード</p>
+        </div>
+    </header>
+
+    <main class="container">
+
+        <!-- 設定カード -->
+        <section class="settings-card">
+            <h2>印鑑の設定</h2>
+
+            <!-- テキスト入力 -->
+            <div class="form-group">
+                <label for="seal-text">印字するテキスト</label>
+                <input
+                    type="text"
+                    id="seal-text"
+                    placeholder="例：山田"
+                    maxlength="10"
+                    aria-label="印字するテキストを入力してください"
+                >
+            </div>
+
+            <!-- スタイル選択 -->
+            <div class="form-group">
+                <label>印のスタイル</label>
+                <div class="btn-group" role="group" aria-label="印のスタイル選択">
+                    <button class="btn-option active" data-group="shape" data-value="circle" aria-pressed="true">丸印</button>
+                    <button class="btn-option" data-group="shape" data-value="square" aria-pressed="false">角印</button>
+                </div>
+            </div>
+
+            <!-- 傾き選択 -->
+            <div class="form-group">
+                <label>傾き</label>
+                <div class="btn-group" role="group" aria-label="傾き選択">
+                    <button class="btn-option active" data-group="tilt" data-value="0" aria-pressed="true">通常（0°）</button>
+                    <button class="btn-option" data-group="tilt" data-value="-15" aria-pressed="false">お辞儀印（-15°）</button>
+                    <button class="btn-option" data-group="tilt" data-value="custom" aria-pressed="false">カスタム</button>
+                </div>
+                <!-- カスタムスライダー（カスタム選択時のみ表示） -->
+                <div class="custom-tilt-area" id="custom-tilt-area" hidden>
+                    <div class="slider-row">
+                        <span class="slider-label">-45°</span>
+                        <input
+                            type="range"
+                            id="tilt-slider"
+                            min="-45"
+                            max="45"
+                            value="0"
+                            step="1"
+                            aria-label="傾き角度のスライダー"
+                        >
+                        <span class="slider-label">+45°</span>
+                    </div>
+                    <div class="slider-value-display">現在の角度: <span id="tilt-value-display">0</span>°</div>
+                </div>
+            </div>
+
+            <!-- 色選択 -->
+            <div class="form-group">
+                <label>色</label>
+                <div class="color-options">
+                    <button
+                        class="color-swatch active"
+                        data-color="#c0392b"
+                        style="background-color: #c0392b;"
+                        aria-label="朱色"
+                        aria-pressed="true"
+                        title="朱色"
+                    ></button>
+                    <button
+                        class="color-swatch"
+                        data-color="#1a1a1a"
+                        style="background-color: #1a1a1a;"
+                        aria-label="黒"
+                        aria-pressed="false"
+                        title="黒"
+                    ></button>
+                    <button
+                        class="color-swatch"
+                        data-color="#1a3a6b"
+                        style="background-color: #1a3a6b;"
+                        aria-label="藍色"
+                        aria-pressed="false"
+                        title="藍色"
+                    ></button>
+                    <div class="color-picker-wrapper">
+                        <label class="color-picker-label" for="color-picker" title="カスタムカラー">
+                            <span class="color-picker-icon" aria-hidden="true">+</span>
+                        </label>
+                        <input
+                            type="color"
+                            id="color-picker"
+                            value="#c0392b"
+                            aria-label="カスタムカラーピッカー"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <!-- 書体選択 -->
+            <div class="form-group">
+                <label for="font-select">書体</label>
+                <select id="font-select" aria-label="書体を選択してください">
+                    <option value="'Noto Serif JP', serif">明朝体（Noto Serif JP）</option>
+                    <option value="'Noto Sans JP', sans-serif">ゴシック体（Noto Sans JP）</option>
+                </select>
+            </div>
+
+            <!-- サイズ選択 -->
+            <div class="form-group">
+                <label>サイズ</label>
+                <div class="btn-group" role="group" aria-label="印鑑サイズ選択">
+                    <button class="btn-option" data-group="size" data-value="200" aria-pressed="false">小（200px）</button>
+                    <button class="btn-option active" data-group="size" data-value="300" aria-pressed="true">中（300px）</button>
+                    <button class="btn-option" data-group="size" data-value="400" aria-pressed="false">大（400px）</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 結果カード -->
+        <section class="results-card">
+            <h2>プレビュー</h2>
+            <div class="preview-area">
+                <div class="canvas-wrapper" id="canvas-wrapper">
+                    <!-- テキスト未入力時のプレースホルダー -->
+                    <div class="preview-placeholder" id="preview-placeholder" aria-live="polite">
+                        テキストを入力してください
+                    </div>
+                    <canvas id="seal-canvas" aria-label="印鑑プレビュー"></canvas>
+                </div>
+            </div>
+            <button
+                id="download-btn"
+                disabled
+                aria-disabled="true"
+            >
+                PNGでダウンロード
+            </button>
+        </section>
+
+        <!-- SEOコンテンツ -->
+        <section class="seo-content">
+            <h2>印鑑ジェネレーターの使い方</h2>
+            <p>このツールはブラウザ上で動作する無料の印影作成ツールです。名前や文字を入力するだけで、丸印・角印の印鑑画像をリアルタイムでプレビューしながら作成できます。生成した印影は透過PNG形式でダウンロードでき、書類への押印イメージの作成や、デジタル文書への電子印鑑としての活用など、さまざまなシーンでご利用いただけます。</p>
+            <p>「お辞儀印」オプションを選ぶと、日本のビジネス慣習にならい印鑑を15度傾けた「敬礼印」スタイルで生成します。また「カスタム」オプションでは-45度から+45度の範囲で自由に角度を指定できます。書体は明朝体とゴシック体から選択可能で、色は朱色・黒・藍色のほか、カラーピッカーで任意の色を指定できます。</p>
+        </section>
+
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="../index.html">ホーム</a>
+                <a href="../passgen/index.html">パスワード生成</a>
+                <a href="../slackemojigen/index.html">Slack絵文字生成</a>
+                <a href="../diff/index.html">テキスト比較</a>
+                <a href="../colorpallet/index.html">カラーパレット生成</a>
+                <a href="../sealgen/index.html">印鑑生成</a>
+            </div>
+            <p>&copy; 2025 Kiricab. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "印鑑ジェネレーター",
+      "url": "https://kiricab.github.io/sealgen/",
+      "description": "名前を入力するだけで丸印・角印の印影画像を無料で作成できるWebツール。傾き・色・書体を自由に設定して透過PNG形式でダウンロード可能。",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "All",
+      "inLanguage": "ja",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "JPY"
+      },
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "KIRICAB Tools",
+        "url": "https://kiricab.github.io/"
+      }
+    }
+    </script>
+</body>
+</html>

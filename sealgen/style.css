@@ -1,0 +1,324 @@
+/* ========================================
+   印鑑ジェネレーター固有スタイル
+   共通スタイルは ../common/style.css を先にリンク
+======================================== */
+
+/* Google Fonts: Noto Serif JP / Noto Sans JP */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap');
+
+/* --- フォームグループ --- */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: bold;
+    color: var(--gray-text-color);
+    margin-bottom: 0.5rem;
+}
+
+.form-group input[type="text"] {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border: 1px solid var(--secondary-color);
+    border-radius: var(--border-radius);
+    background-color: var(--card-color);
+    color: var(--text-color);
+    box-sizing: border-box;
+    transition: border-color 0.2s ease;
+}
+
+.form-group input[type="text"]:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
+}
+
+.form-group select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border: 1px solid var(--secondary-color);
+    border-radius: var(--border-radius);
+    background-color: var(--card-color);
+    color: var(--text-color);
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+/* --- ボタングループ（スタイル・傾き・サイズ選択） --- */
+.btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.btn-option {
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--secondary-color);
+    border-radius: var(--border-radius);
+    background-color: var(--card-color);
+    color: var(--text-color);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-option:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.btn-option.active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--text-color-light);
+}
+
+/* --- カスタム傾きエリア --- */
+.custom-tilt-area {
+    margin-top: 0.75rem;
+    padding: 0.75rem 1rem;
+    background-color: var(--background-color);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--secondary-color);
+}
+
+.slider-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.slider-label {
+    font-size: 0.8rem;
+    color: var(--gray-text-color);
+    white-space: nowrap;
+    min-width: 2.5rem;
+    text-align: center;
+}
+
+.slider-row input[type="range"] {
+    flex: 1;
+    cursor: pointer;
+    accent-color: var(--primary-color);
+}
+
+.slider-value-display {
+    margin-top: 0.5rem;
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--gray-text-color);
+}
+
+.slider-value-display span {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+/* --- 色選択 --- */
+.color-options {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.color-swatch {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: border-color 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.color-swatch:hover {
+    transform: scale(1.1);
+}
+
+.color-swatch.active {
+    border-color: var(--primary-color);
+    outline: 2px solid var(--text-color-light);
+    outline-offset: -5px;
+}
+
+/* カラーピッカーラッパー */
+.color-picker-wrapper {
+    position: relative;
+    width: 40px;
+    height: 40px;
+}
+
+.color-picker-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px dashed var(--gray-text-color);
+    background-color: var(--background-color);
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+    font-weight: bold;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.color-picker-icon {
+    font-size: 1.2rem;
+    color: var(--gray-text-color);
+    line-height: 1;
+}
+
+.color-picker-label:hover {
+    border-color: var(--primary-color);
+}
+
+.color-picker-label:hover .color-picker-icon {
+    color: var(--primary-color);
+}
+
+/* ネイティブのカラーピッカーを非表示にしてラベル経由で操作 */
+#color-picker {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+}
+
+/* --- プレビューエリア --- */
+.preview-area {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.canvas-wrapper {
+    position: relative;
+    /* チェッカーボード柄で透過背景を視覚化 */
+    background-color: #fff;
+    background-image:
+        linear-gradient(45deg, #e0e0e0 25%, transparent 25%),
+        linear-gradient(-45deg, #e0e0e0 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #e0e0e0 75%),
+        linear-gradient(-45deg, transparent 75%, #e0e0e0 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    border-radius: var(--border-radius);
+    border: 2px dashed var(--secondary-color);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 160px;
+    min-height: 160px;
+    overflow: hidden;
+}
+
+.preview-placeholder {
+    color: var(--gray-text-color);
+    font-size: 0.9rem;
+    padding: 2rem;
+    text-align: center;
+}
+
+#seal-canvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+/* キャンバスが表示されているときはプレースホルダーを非表示 */
+#seal-canvas.visible + .preview-placeholder,
+.preview-placeholder.hidden {
+    display: none;
+}
+
+/* --- ダウンロードボタン --- */
+#download-btn {
+    display: block;
+    width: 100%;
+    padding: 0.9rem;
+    background-color: var(--primary-color);
+    color: var(--text-color-light);
+    font-size: 1.05rem;
+    font-weight: bold;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+#download-btn:hover:not(:disabled) {
+    background-color: var(--primary-color-dark);
+}
+
+#download-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* --- SEOコンテンツ --- */
+.seo-content p {
+    color: var(--gray-text-color);
+    line-height: 1.8;
+}
+
+/* --- レスポンシブ --- */
+@media (max-width: 600px) {
+    .btn-group {
+        gap: 0.4rem;
+    }
+
+    .btn-option {
+        padding: 0.45rem 0.75rem;
+        font-size: 0.85rem;
+    }
+
+    .color-swatch,
+    .color-picker-wrapper,
+    .color-picker-label {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+/* --- ダークモード対応 --- */
+@media (prefers-color-scheme: dark) {
+    .form-group input[type="text"],
+    .form-group select {
+        border-color: var(--secondary-color);
+    }
+
+    .form-group input[type="text"]:focus {
+        box-shadow: 0 0 0 3px rgba(74, 111, 212, 0.25);
+    }
+
+    .canvas-wrapper {
+        background-color: #333;
+        background-image:
+            linear-gradient(45deg, #444 25%, transparent 25%),
+            linear-gradient(-45deg, #444 25%, transparent 25%),
+            linear-gradient(45deg, transparent 75%, #444 75%),
+            linear-gradient(-45deg, transparent 75%, #444 75%);
+    }
+
+    .custom-tilt-area {
+        border-color: var(--secondary-color);
+    }
+
+    .color-picker-label {
+        border-color: var(--gray-text-color);
+        background-color: var(--background-color);
+    }
+}
