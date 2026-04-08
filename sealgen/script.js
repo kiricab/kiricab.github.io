@@ -20,12 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 状態管理 ---
     const state = {
         text: '',
-        shape: 'circle',    // 'circle' | 'square'
-        tiltMode: '0',      // '0' | '-15' | 'custom'
-        customAngle: 0,     // カスタム時の角度（度）
-        color: '#c0392b',   // 朱色デフォルト
+        shape: 'circle',        // 'circle' | 'square'
+        borderStyle: 'double',  // 'double' | 'single'
+        tiltMode: '0',          // '0' | '-15' | 'custom'
+        customAngle: 0,         // カスタム時の角度（度）
+        color: '#c0392b',       // 朱色デフォルト
         font: "'Noto Serif JP', serif",
-        size: 300,          // キャンバスサイズ（px）
+        size: 300,              // キャンバスサイズ（px）
     };
 
     // --- Google Fontsを動的に読み込む（OFLライセンス） ---
@@ -87,57 +88,83 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ========================================
-    // 丸印の描画（二重円 + 縦書き文字）
+    // 丸印の描画（縦書き文字）
     // ========================================
     function drawCircleSeal(ctx, size, text) {
         const radius = size / 2;
-        // 外側の円と内側の円の線幅・間隔
-        const outerLineWidth = size * 0.035;
-        const innerLineWidth = size * 0.025;
-        const gapBetweenCircles = size * 0.04;
-        const outerRadius = radius - outerLineWidth / 2;
-        const innerRadius = outerRadius - outerLineWidth / 2 - gapBetweenCircles - innerLineWidth / 2;
-
         ctx.strokeStyle = state.color;
-        ctx.lineWidth = outerLineWidth;
 
-        // 外側の円
-        ctx.beginPath();
-        ctx.arc(0, 0, outerRadius, 0, Math.PI * 2);
-        ctx.stroke();
+        let textAreaRadius;
 
-        // 内側の円
-        ctx.lineWidth = innerLineWidth;
-        ctx.beginPath();
-        ctx.arc(0, 0, innerRadius, 0, Math.PI * 2);
-        ctx.stroke();
+        if (state.borderStyle === 'double') {
+            // 二重円
+            const outerLineWidth = size * 0.035;
+            const innerLineWidth = size * 0.025;
+            const gapBetweenCircles = size * 0.04;
+            const outerRadius = radius - outerLineWidth / 2;
+            const innerRadius = outerRadius - outerLineWidth / 2 - gapBetweenCircles - innerLineWidth / 2;
 
-        // 縦書き文字を内側の円の中に収める
-        const textAreaRadius = innerRadius - innerLineWidth / 2 - size * 0.03;
+            ctx.lineWidth = outerLineWidth;
+            ctx.beginPath();
+            ctx.arc(0, 0, outerRadius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.lineWidth = innerLineWidth;
+            ctx.beginPath();
+            ctx.arc(0, 0, innerRadius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            textAreaRadius = innerRadius - innerLineWidth / 2 - size * 0.03;
+        } else {
+            // 単一線
+            const lineWidth = size * 0.04;
+            const circleRadius = radius - lineWidth / 2;
+
+            ctx.lineWidth = lineWidth;
+            ctx.beginPath();
+            ctx.arc(0, 0, circleRadius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            textAreaRadius = circleRadius - lineWidth / 2 - size * 0.03;
+        }
+
         drawVerticalText(ctx, text, textAreaRadius * 2, textAreaRadius * 2, size);
     }
 
     // ========================================
-    // 角印の描画（二重矩形 + 縦書き文字）
+    // 角印の描画（縦書き文字）
     // ========================================
     function drawSquareSeal(ctx, size, text) {
-        const outerLineWidth = size * 0.035;
-        const innerLineWidth = size * 0.025;
-        const gapBetweenRects = size * 0.04;
-
-        // 外側の正方形（中心を原点として描画）
-        const outerHalf = size / 2 - outerLineWidth / 2;
         ctx.strokeStyle = state.color;
-        ctx.lineWidth = outerLineWidth;
-        ctx.strokeRect(-outerHalf, -outerHalf, outerHalf * 2, outerHalf * 2);
 
-        // 内側の正方形
-        const innerHalf = outerHalf - outerLineWidth / 2 - gapBetweenRects - innerLineWidth / 2;
-        ctx.lineWidth = innerLineWidth;
-        ctx.strokeRect(-innerHalf, -innerHalf, innerHalf * 2, innerHalf * 2);
+        let textArea;
 
-        // 縦書き文字を内側の枠の中に収める
-        const textArea = (innerHalf - innerLineWidth / 2 - size * 0.03) * 2;
+        if (state.borderStyle === 'double') {
+            // 二重矩形
+            const outerLineWidth = size * 0.035;
+            const innerLineWidth = size * 0.025;
+            const gapBetweenRects = size * 0.04;
+
+            const outerHalf = size / 2 - outerLineWidth / 2;
+            ctx.lineWidth = outerLineWidth;
+            ctx.strokeRect(-outerHalf, -outerHalf, outerHalf * 2, outerHalf * 2);
+
+            const innerHalf = outerHalf - outerLineWidth / 2 - gapBetweenRects - innerLineWidth / 2;
+            ctx.lineWidth = innerLineWidth;
+            ctx.strokeRect(-innerHalf, -innerHalf, innerHalf * 2, innerHalf * 2);
+
+            textArea = (innerHalf - innerLineWidth / 2 - size * 0.03) * 2;
+        } else {
+            // 単一線
+            const lineWidth = size * 0.04;
+            const half = size / 2 - lineWidth / 2;
+
+            ctx.lineWidth = lineWidth;
+            ctx.strokeRect(-half, -half, half * 2, half * 2);
+
+            textArea = (half - lineWidth / 2 - size * 0.03) * 2;
+        }
+
         drawVerticalText(ctx, text, textArea, textArea, size);
     }
 
@@ -216,6 +243,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // 状態更新
             if (group === 'shape') {
                 state.shape = value;
+            } else if (group === 'border') {
+                state.borderStyle = value;
             } else if (group === 'tilt') {
                 state.tiltMode = value;
                 // カスタムスライダーの表示切り替え
