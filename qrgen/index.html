@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QRコード生成ツール - 無料・登録不要 | Kiricab Tools</title>
+  <meta name="description" content="URLや名刺・Wi-Fiなど6タイプのQRコードを無料生成。デザインカスタマイズ・ロゴ埋め込み・PNG/SVGエクスポート対応。">
+
+  <!-- OGP -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://kiricab.github.io/qrgen/">
+  <meta property="og:title" content="QRコード生成ツール - 無料・登録不要 | Kiricab Tools">
+  <meta property="og:description" content="URLや名刺・Wi-Fiなど6タイプのQRコードを無料生成。デザインカスタマイズ・ロゴ埋め込み・PNG/SVGエクスポート対応。">
+  <meta property="og:site_name" content="KIRICAB Tools">
+  <meta property="og:locale" content="ja_JP">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="QRコード生成ツール - 無料・登録不要 | Kiricab Tools">
+  <meta name="twitter:description" content="URLや名刺・Wi-Fiなど6タイプのQRコードを無料生成。デザインカスタマイズ・ロゴ埋め込み・PNG/SVGエクスポート対応。">
+  <!-- Canonical -->
+  <link rel="canonical" href="https://kiricab.github.io/qrgen/">
+
+  <link rel="icon" href="../common/favicon.svg">
+  <meta name="google-adsense-account" content="ca-pub-8141179596557780">
+  <link rel="stylesheet" href="../common/style.css">
+  <link rel="stylesheet" href="style.css">
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8141179596557780" crossorigin="anonymous"></script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-CN3KBWSXRE"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-CN3KBWSXRE');
+  </script>
+</head>
+<body>
+
+  <header>
+    <div class="container">
+      <h1>📱 QRコード生成ツール</h1>
+      <p>URL・名刺・Wi-Fiなど6タイプ対応。デザインカスタマイズ・ロゴ埋め込みも無料。</p>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- セクション1: コンテンツ入力 -->
+    <section class="settings-card" id="input-section">
+      <h2>コンテンツを入力</h2>
+
+      <!-- タイプタブ -->
+      <div class="type-tabs" role="tablist">
+        <button class="type-tab active" data-type="url" role="tab" aria-selected="true">URL</button>
+        <button class="type-tab" data-type="text" role="tab" aria-selected="false">テキスト</button>
+        <button class="type-tab" data-type="wifi" role="tab" aria-selected="false">Wi-Fi</button>
+        <button class="type-tab" data-type="vcard" role="tab" aria-selected="false">名刺</button>
+        <button class="type-tab" data-type="email" role="tab" aria-selected="false">メール</button>
+        <button class="type-tab" data-type="sms" role="tab" aria-selected="false">SMS</button>
+      </div>
+
+      <!-- URL パネル -->
+      <div class="type-panel active" id="panel-url" role="tabpanel">
+        <div class="form-group">
+          <label for="url-input">URL</label>
+          <input type="url" id="url-input" placeholder="https://example.com" autocomplete="off">
+        </div>
+      </div>
+
+      <!-- テキスト パネル -->
+      <div class="type-panel" id="panel-text" role="tabpanel">
+        <div class="form-group">
+          <label for="text-input">テキスト</label>
+          <textarea id="text-input" rows="4" placeholder="任意のテキストを入力"></textarea>
+        </div>
+      </div>
+
+      <!-- Wi-Fi パネル -->
+      <div class="type-panel" id="panel-wifi" role="tabpanel">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="wifi-ssid">SSID（ネットワーク名）</label>
+            <input type="text" id="wifi-ssid" placeholder="MyNetwork">
+          </div>
+          <div class="form-group">
+            <label for="wifi-password">パスワード</label>
+            <div class="password-wrap">
+              <input type="password" id="wifi-password" placeholder="パスワード">
+              <button type="button" class="toggle-password" id="toggle-wifi-pass" aria-label="パスワード表示切替">👁</button>
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="wifi-encryption">暗号化</label>
+            <select id="wifi-encryption">
+              <option value="WPA">WPA/WPA2</option>
+              <option value="WEP">WEP</option>
+              <option value="nopass">なし</option>
+            </select>
+          </div>
+          <div class="form-group form-group-center">
+            <label class="checkbox-label-inline">
+              <input type="checkbox" id="wifi-hidden">
+              <span>隠しSSID</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- vCard パネル -->
+      <div class="type-panel" id="panel-vcard" role="tabpanel">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="vcard-lastname">姓</label>
+            <input type="text" id="vcard-lastname" placeholder="山田">
+          </div>
+          <div class="form-group">
+            <label for="vcard-firstname">名</label>
+            <input type="text" id="vcard-firstname" placeholder="太郎">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="vcard-org">会社名・組織</label>
+            <input type="text" id="vcard-org" placeholder="株式会社〇〇">
+          </div>
+          <div class="form-group">
+            <label for="vcard-title">役職</label>
+            <input type="text" id="vcard-title" placeholder="エンジニア">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="vcard-tel">電話番号</label>
+            <input type="tel" id="vcard-tel" placeholder="090-1234-5678">
+          </div>
+          <div class="form-group">
+            <label for="vcard-email">メールアドレス</label>
+            <input type="email" id="vcard-email" placeholder="you@example.com">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="vcard-url">ウェブサイト</label>
+          <input type="url" id="vcard-url" placeholder="https://example.com">
+        </div>
+        <div class="form-group">
+          <label for="vcard-address">住所</label>
+          <input type="text" id="vcard-address" placeholder="東京都〇〇区...">
+        </div>
+        <div class="form-group">
+          <label for="vcard-note">メモ</label>
+          <input type="text" id="vcard-note" placeholder="">
+        </div>
+      </div>
+
+      <!-- メール パネル -->
+      <div class="type-panel" id="panel-email" role="tabpanel">
+        <div class="form-group">
+          <label for="email-to">宛先</label>
+          <input type="email" id="email-to" placeholder="to@example.com">
+        </div>
+        <div class="form-group">
+          <label for="email-subject">件名</label>
+          <input type="text" id="email-subject" placeholder="件名">
+        </div>
+        <div class="form-group">
+          <label for="email-body">本文</label>
+          <textarea id="email-body" rows="3" placeholder="本文"></textarea>
+        </div>
+      </div>
+
+      <!-- SMS パネル -->
+      <div class="type-panel" id="panel-sms" role="tabpanel">
+        <div class="form-group">
+          <label for="sms-to">電話番号</label>
+          <input type="tel" id="sms-to" placeholder="090-1234-5678">
+        </div>
+        <div class="form-group">
+          <label for="sms-body">メッセージ</label>
+          <textarea id="sms-body" rows="3" placeholder="メッセージ内容"></textarea>
+        </div>
+      </div>
+
+      <!-- エラー訂正レベル -->
+      <div class="form-group ec-level-container">
+        <label>エラー訂正レベル</label>
+        <div class="ec-level-group" role="group" aria-label="エラー訂正レベル選択">
+          <label class="ec-radio"><input type="radio" name="ec-level" value="L"> L（低・7%）</label>
+          <label class="ec-radio"><input type="radio" name="ec-level" value="M" checked> M（中・15%）</label>
+          <label class="ec-radio"><input type="radio" name="ec-level" value="Q"> Q（高・25%）</label>
+          <label class="ec-radio"><input type="radio" name="ec-level" value="H"> H（最高・30%）</label>
+        </div>
+        <p class="form-hint" id="ec-hint">ロゴを埋め込む場合はH推奨</p>
+      </div>
+    </section>
+
+    <!-- セクション2: デザインカスタマイズ -->
+    <section class="settings-card" id="customize-section">
+      <h2>デザインカスタマイズ</h2>
+      <div class="customize-grid">
+
+        <!-- カラー -->
+        <div class="customize-group">
+          <h3>カラー</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="dot-color">ドット色</label>
+              <div class="color-input-wrap">
+                <input type="color" id="dot-color" value="#000000" aria-label="ドット色カラーピッカー">
+                <input type="text" id="dot-color-hex" value="#000000" maxlength="7" class="hex-input" aria-label="ドット色HEX値">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="bg-color">背景色</label>
+              <div class="color-input-wrap">
+                <input type="color" id="bg-color" value="#ffffff" aria-label="背景色カラーピッカー">
+                <input type="text" id="bg-color-hex" value="#ffffff" maxlength="7" class="hex-input" aria-label="背景色HEX値">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ドット形状 -->
+        <div class="customize-group">
+          <h3>ドット形状</h3>
+          <div class="shape-options" id="dot-shape-options" role="group" aria-label="ドット形状選択">
+            <button class="shape-opt active" data-value="square" aria-pressed="true">
+              <span class="shape-thumb" data-shape="square"></span>
+              <span>Square</span>
+            </button>
+            <button class="shape-opt" data-value="rounded" aria-pressed="false">
+              <span class="shape-thumb" data-shape="rounded"></span>
+              <span>Rounded</span>
+            </button>
+            <button class="shape-opt" data-value="dots" aria-pressed="false">
+              <span class="shape-thumb" data-shape="dots"></span>
+              <span>Dots</span>
+            </button>
+            <button class="shape-opt" data-value="classy" aria-pressed="false">
+              <span class="shape-thumb" data-shape="classy"></span>
+              <span>Classy</span>
+            </button>
+            <button class="shape-opt" data-value="classy-rounded" aria-pressed="false">
+              <span class="shape-thumb" data-shape="classy-rounded"></span>
+              <span>Classy R.</span>
+            </button>
+            <button class="shape-opt" data-value="extra-rounded" aria-pressed="false">
+              <span class="shape-thumb" data-shape="extra-rounded"></span>
+              <span>Extra R.</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- コーナー形状 -->
+        <div class="customize-group">
+          <h3>コーナー形状</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="corner-dot-style">コーナードット</label>
+              <select id="corner-dot-style">
+                <option value="square">Square</option>
+                <option value="dot">Dot</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="corner-square-style">コーナー枠</label>
+              <select id="corner-square-style">
+                <option value="square">Square</option>
+                <option value="extra-rounded">Rounded</option>
+                <option value="dot">Dot</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- ロゴ埋め込み -->
+        <div class="customize-group">
+          <h3>ロゴ埋め込み</h3>
+          <div class="logo-upload-area" id="logo-drop-zone" aria-label="ロゴ画像アップロードエリア">
+            <input type="file" id="logo-file" accept="image/png,image/jpeg,image/svg+xml" hidden aria-label="ロゴ画像ファイル選択">
+            <button type="button" class="btn secondary" id="logo-upload-btn">画像を選択</button>
+            <p class="form-hint">PNG / JPG / SVG（最大2MB）<br>ドラッグ&amp;ドロップも可</p>
+            <div id="logo-preview-wrap" style="display:none">
+              <img id="logo-preview-img" alt="ロゴプレビュー">
+              <button type="button" class="remove-logo-btn" id="logo-remove-btn" aria-label="ロゴを削除">✕</button>
+            </div>
+          </div>
+          <div class="form-group" id="logo-size-group" style="display:none">
+            <label for="logo-size">ロゴサイズ: <span id="logo-size-val">30</span>%</label>
+            <input type="range" id="logo-size" min="10" max="50" value="30" aria-label="ロゴサイズ調整">
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- セクション3: プレビュー・エクスポート -->
+    <section class="results-card" id="preview-section">
+      <h2>プレビュー・エクスポート</h2>
+      <div class="preview-layout">
+        <div class="qr-preview-container">
+          <div id="qr-canvas-wrap" aria-label="QRコードプレビュー" role="img"></div>
+          <p class="qr-char-count">
+            データ量: <span id="qr-char-count">0</span>文字
+            <span id="qr-warning" class="qr-warning" style="display:none" role="alert">⚠ データ量が多すぎます</span>
+          </p>
+        </div>
+        <div class="export-controls">
+          <div class="form-group">
+            <label>エクスポートサイズ</label>
+            <div class="size-options" role="group" aria-label="エクスポートサイズ選択">
+              <label class="size-opt"><input type="radio" name="export-size" value="512" checked> 512px</label>
+              <label class="size-opt"><input type="radio" name="export-size" value="1024"> 1024px</label>
+            </div>
+          </div>
+          <div class="export-btn-group">
+            <button class="btn" id="export-png-btn">PNG でダウンロード</button>
+            <button class="btn secondary" id="export-svg-btn">SVG でダウンロード</button>
+          </div>
+          <div class="share-group">
+            <button class="btn secondary" id="share-url-btn">🔗 設定をURLで共有</button>
+            <span id="share-copied-msg" style="display:none" aria-live="polite">コピーしました！</span>
+          </div>
+          <p class="form-hint">※ ロゴ画像はURL共有に含まれません</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEOコンテンツ -->
+    <section class="seo-content">
+      <h2>QRコード生成ツールについて</h2>
+      <p>このQRコード生成ツールは、URL・テキスト・Wi-Fi・名刺（vCard）・メール・SMSの6種類のQRコードを無料で生成できます。登録不要でブラウザ上で完結するため、安全にご利用いただけます。</p>
+      <h3>主な機能</h3>
+      <ul>
+        <li><strong>6種類のQRコードタイプ</strong>: URL、テキスト、Wi-Fi接続情報、名刺情報（vCard）、メール、SMS</li>
+        <li><strong>リアルタイムプレビュー</strong>: 入力内容がすぐにQRコードに反映</li>
+        <li><strong>デザインカスタマイズ</strong>: ドット形状6種、コーナー形状、カラー変更</li>
+        <li><strong>ロゴ埋め込み</strong>: 企業ロゴや画像をQRコード中央に配置</li>
+        <li><strong>高解像度エクスポート</strong>: PNG（512px/1024px）・SVG形式でダウンロード</li>
+        <li><strong>URL共有</strong>: QRコードの設定をURLとして共有可能</li>
+      </ul>
+      <h3>QRコードのタイプ別用途</h3>
+      <ul>
+        <li><strong>URL</strong>: ウェブサイトへのアクセス、ランディングページへの誘導</li>
+        <li><strong>Wi-Fi</strong>: 店舗やオフィスのWi-Fi接続情報を簡単共有</li>
+        <li><strong>名刺（vCard）</strong>: 連絡先情報をスマートフォンに取り込み</li>
+        <li><strong>メール</strong>: 問い合わせフォームの代替として活用</li>
+        <li><strong>SMS</strong>: テキストメッセージの送信先設定</li>
+      </ul>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="../index.html">ホーム</a>
+        <a href="../passgen/index.html">パスワード生成</a>
+        <a href="../slackemojigen/index.html">Slack絵文字生成</a>
+        <a href="../diff/index.html">テキスト比較</a>
+        <a href="../colorpallet/index.html">カラーパレット生成</a>
+        <a href="../qrgen/index.html">QRコード生成</a>
+      </div>
+      <p>&copy; 2025 Kiricab. All Rights Reserved.</p>
+    </div>
+  </footer>
+
+  <!-- qr-code-styling: MIT License - https://github.com/kozakdenys/qr-code-styling -->
+  <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.6.0/lib/qr-code-styling.js"></script>
+  <script src="script.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "QRコード生成ツール",
+    "url": "https://kiricab.github.io/qrgen/",
+    "description": "URLや名刺・Wi-Fiなど6タイプのQRコードを無料生成。デザインカスタマイズ・ロゴ埋め込み・PNG/SVGエクスポート対応。",
+    "applicationCategory": "UtilityApplication",
+    "operatingSystem": "Any",
+    "inLanguage": "ja",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "JPY"
+    },
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": "KIRICAB Tools",
+      "url": "https://kiricab.github.io/"
+    }
+  }
+  </script>
+
+</body>
+</html>
