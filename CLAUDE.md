@@ -46,6 +46,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 1. `index.html`・`script.js`・`style.css` を格納した新規ディレクトリを作成する
 2. `../common/style.css` をツール固有のスタイルシートより先にリンクする
-3. 既存の全 `index.html` のフッターナビにリンクを追加する
-4. `sitemap.xml` を更新する
-5. ルートの `index.html` にボタンを追加する
+3. ファビコンは `<link rel="icon" href="../common/favicon.svg">` で共通ファイルを参照する
+4. 既存の全 `index.html` のフッターナビにリンクを追加する
+5. `sitemap.xml` を更新する
+6. ルートの `index.html` にボタンを追加する

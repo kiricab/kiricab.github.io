@@ -1,0 +1,511 @@
+/* QRコード生成ツール固有スタイル */
+/* ../common/style.css のカスタムプロパティを活用する */
+
+/* === タイプタブ === */
+.type-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 1.5rem;
+}
+
+.type-tab {
+  padding: 6px 18px;
+  border-radius: 20px;
+  border: 2px solid var(--secondary-color);
+  background: var(--background-color);
+  color: var(--text-color);
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.type-tab.active,
+.type-tab:hover {
+  border-color: var(--primary-color);
+  background: var(--primary-color);
+  color: var(--text-color-light);
+}
+
+/* === タイプパネル === */
+.type-panel {
+  display: none;
+}
+
+.type-panel.active {
+  display: block;
+}
+
+/* === フォームグループ === */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 0.75rem;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gray-text-color);
+}
+
+.form-group input[type="text"],
+.form-group input[type="url"],
+.form-group input[type="email"],
+.form-group input[type="tel"],
+.form-group input[type="password"],
+.form-group select,
+.form-group textarea {
+  padding: 8px 12px;
+  border: 1px solid var(--secondary-color);
+  border-radius: var(--border-radius);
+  background: var(--background-color);
+  color: var(--text-color);
+  font-size: 0.95rem;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.12);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-hint {
+  font-size: 0.78rem;
+  color: var(--gray-text-color);
+  margin: 4px 0 0;
+  line-height: 1.5;
+}
+
+/* パスワード表示切替ラップ */
+.password-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-wrap input {
+  flex: 1;
+  padding-right: 40px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0;
+  line-height: 1;
+  color: var(--gray-text-color);
+}
+
+/* チェックボックスインラインレイアウト */
+.form-group-center {
+  justify-content: flex-end;
+  padding-bottom: 2px;
+}
+
+.checkbox-label-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  padding: 8px 0;
+  color: var(--text-color);
+}
+
+.checkbox-label-inline input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+}
+
+/* === エラー訂正レベル === */
+.ec-level-container {
+  margin-top: 1.25rem;
+}
+
+.ec-level-group {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.ec-radio {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: var(--text-color);
+}
+
+.ec-radio input[type="radio"] {
+  accent-color: var(--primary-color);
+}
+
+/* === カスタマイズグリッド === */
+.customize-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.75rem;
+}
+
+.customize-group h3 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin: 0 0 0.75rem;
+}
+
+/* === カラーインプット === */
+.color-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-input-wrap input[type="color"] {
+  width: 48px;
+  height: 38px;
+  padding: 3px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--secondary-color);
+  cursor: pointer;
+  background: none;
+  flex-shrink: 0;
+}
+
+.hex-input {
+  flex: 1;
+  font-family: monospace;
+}
+
+/* === ドット形状オプション === */
+.shape-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.shape-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 4px;
+  border: 2px solid var(--secondary-color);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 0.72rem;
+  text-align: center;
+  background: var(--background-color);
+  color: var(--text-color);
+  transition: all 0.15s;
+}
+
+.shape-opt.active,
+.shape-opt:hover {
+  border-color: var(--primary-color);
+  background: rgba(30, 58, 138, 0.07);
+}
+
+/* ドット形状のサムネイル（CSS図形で視覚的に表現） */
+.shape-thumb {
+  display: block;
+  width: 28px;
+  height: 28px;
+  background: var(--text-color);
+}
+
+.shape-thumb[data-shape="square"]         { border-radius: 0; }
+.shape-thumb[data-shape="rounded"]        { border-radius: 6px; }
+.shape-thumb[data-shape="dots"]           { border-radius: 50%; }
+.shape-thumb[data-shape="classy"]         { clip-path: polygon(0 0, 70% 0, 100% 30%, 100% 100%, 0 100%); }
+.shape-thumb[data-shape="classy-rounded"] { clip-path: polygon(0 0, 70% 0, 100% 30%, 100% 100%, 0 100%); border-radius: 4px; }
+.shape-thumb[data-shape="extra-rounded"]  { border-radius: 40%; }
+
+/* === ロゴアップロード === */
+.logo-upload-area {
+  border: 2px dashed var(--secondary-color);
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.logo-upload-area.drag-over {
+  border-color: var(--primary-color);
+  background: rgba(30, 58, 138, 0.04);
+}
+
+#logo-preview-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  position: relative;
+}
+
+#logo-preview-img {
+  max-width: 72px;
+  max-height: 72px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--secondary-color);
+  object-fit: contain;
+}
+
+.remove-logo-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: #e53e3e;
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.remove-logo-btn:hover {
+  opacity: 0.85;
+}
+
+#logo-size-group {
+  margin-top: 0.75rem;
+}
+
+#logo-size-group input[type="range"] {
+  width: 100%;
+  margin-top: 4px;
+  accent-color: var(--primary-color);
+}
+
+/* === プレビューレイアウト === */
+.preview-layout {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.qr-preview-container {
+  flex-shrink: 0;
+  text-align: center;
+}
+
+#qr-canvas-wrap {
+  display: inline-block;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--box-shadow);
+  border: 1px solid var(--secondary-color);
+}
+
+#qr-canvas-wrap canvas {
+  display: block;
+}
+
+.qr-char-count {
+  font-size: 0.8rem;
+  color: var(--gray-text-color);
+  margin-top: 8px;
+}
+
+.qr-warning {
+  color: #e53e3e;
+  font-weight: 600;
+}
+
+/* === エクスポートコントロール === */
+.export-controls {
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.size-options {
+  display: flex;
+  gap: 1.25rem;
+  margin-top: 2px;
+}
+
+.size-opt {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--text-color);
+}
+
+.size-opt input[type="radio"] {
+  accent-color: var(--primary-color);
+}
+
+.export-btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.export-btn-group .btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s, transform 0.1s;
+  background: var(--primary-color);
+  color: var(--text-color-light);
+}
+
+.export-btn-group .btn.secondary {
+  background: var(--secondary-color);
+  color: var(--text-color);
+}
+
+.export-btn-group .btn:hover {
+  opacity: 0.88;
+}
+
+.export-btn-group .btn:active {
+  transform: scale(0.98);
+}
+
+.share-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.share-group .btn {
+  padding: 8px 14px;
+  font-size: 0.875rem;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  background: var(--secondary-color);
+  color: var(--text-color);
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+
+.share-group .btn:hover {
+  opacity: 0.8;
+}
+
+#share-copied-msg {
+  font-size: 0.85rem;
+  color: #38a169;
+  font-weight: 600;
+}
+
+/* === 汎用ボタン === */
+.btn {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: var(--border-radius);
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: var(--primary-color);
+  color: var(--text-color-light);
+  transition: opacity 0.15s;
+}
+
+.btn.secondary {
+  background: var(--secondary-color);
+  color: var(--text-color);
+}
+
+.btn:hover {
+  opacity: 0.85;
+}
+
+/* === レスポンシブ対応 === */
+@media (max-width: 700px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .customize-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-layout {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .export-controls {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .type-tab {
+    padding: 5px 12px;
+    font-size: 0.8rem;
+  }
+
+  .shape-options {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* === ダークモード補完 === */
+/* common/style.css のダークモード変数を活用しているが、
+   一部要素でコントラスト調整が必要なものを追記する */
+@media (prefers-color-scheme: dark) {
+  .shape-opt.active,
+  .shape-opt:hover {
+    background: rgba(74, 111, 212, 0.15);
+  }
+
+  .logo-upload-area.drag-over {
+    background: rgba(74, 111, 212, 0.08);
+  }
+
+  .form-group input[type="text"],
+  .form-group input[type="url"],
+  .form-group input[type="email"],
+  .form-group input[type="tel"],
+  .form-group input[type="password"],
+  .form-group select,
+  .form-group textarea {
+    border-color: var(--secondary-color);
+  }
+
+  .color-input-wrap input[type="color"] {
+    border-color: var(--secondary-color);
+  }
+}
