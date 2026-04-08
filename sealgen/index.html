@@ -53,122 +53,135 @@
         <section class="settings-card">
             <h2>印鑑の設定</h2>
 
-            <!-- テキスト入力 -->
-            <div class="form-group">
-                <label for="seal-text">印字するテキスト</label>
-                <input
-                    type="text"
-                    id="seal-text"
-                    placeholder="例：山田"
-                    maxlength="10"
-                    aria-label="印字するテキストを入力してください"
-                >
-            </div>
+            <div class="settings-grid">
 
-            <!-- スタイル選択 -->
-            <div class="form-group">
-                <label>印のスタイル</label>
-                <div class="btn-group" role="group" aria-label="印のスタイル選択">
-                    <button class="btn-option active" data-group="shape" data-value="circle" aria-pressed="true">丸印</button>
-                    <button class="btn-option" data-group="shape" data-value="square" aria-pressed="false">角印</button>
+                <!-- テキスト入力（全幅） -->
+                <div class="form-group full-width">
+                    <label for="seal-text">印字するテキスト</label>
+                    <input
+                        type="text"
+                        id="seal-text"
+                        placeholder="例：山田"
+                        maxlength="10"
+                        aria-label="印字するテキストを入力してください"
+                    >
                 </div>
-            </div>
 
-            <!-- 縁スタイル選択 -->
-            <div class="form-group">
-                <label>縁のスタイル</label>
-                <div class="btn-group" role="group" aria-label="縁のスタイル選択">
-                    <button class="btn-option active" data-group="border" data-value="double" aria-pressed="true">二重線</button>
-                    <button class="btn-option" data-group="border" data-value="single" aria-pressed="false">単一線</button>
-                </div>
-            </div>
-
-            <!-- 傾き選択 -->
-            <div class="form-group">
-                <label>傾き</label>
-                <div class="btn-group" role="group" aria-label="傾き選択">
-                    <button class="btn-option active" data-group="tilt" data-value="0" aria-pressed="true">通常（0°）</button>
-                    <button class="btn-option" data-group="tilt" data-value="-15" aria-pressed="false">お辞儀印（-15°）</button>
-                    <button class="btn-option" data-group="tilt" data-value="custom" aria-pressed="false">カスタム</button>
-                </div>
-                <!-- カスタムスライダー（カスタム選択時のみ表示） -->
-                <div class="custom-tilt-area" id="custom-tilt-area" hidden>
-                    <div class="slider-row">
-                        <span class="slider-label">-45°</span>
-                        <input
-                            type="range"
-                            id="tilt-slider"
-                            min="-45"
-                            max="45"
-                            value="0"
-                            step="1"
-                            aria-label="傾き角度のスライダー"
-                        >
-                        <span class="slider-label">+45°</span>
-                    </div>
-                    <div class="slider-value-display">現在の角度: <span id="tilt-value-display">0</span>°</div>
-                </div>
-            </div>
-
-            <!-- 色選択 -->
-            <div class="form-group">
-                <label>色</label>
-                <div class="color-options">
-                    <button
-                        class="color-swatch active"
-                        data-color="#c0392b"
-                        style="background-color: #c0392b;"
-                        aria-label="朱色"
-                        aria-pressed="true"
-                        title="朱色"
-                    ></button>
-                    <button
-                        class="color-swatch"
-                        data-color="#1a1a1a"
-                        style="background-color: #1a1a1a;"
-                        aria-label="黒"
-                        aria-pressed="false"
-                        title="黒"
-                    ></button>
-                    <button
-                        class="color-swatch"
-                        data-color="#1a3a6b"
-                        style="background-color: #1a3a6b;"
-                        aria-label="藍色"
-                        aria-pressed="false"
-                        title="藍色"
-                    ></button>
-                    <div class="color-picker-wrapper">
-                        <label class="color-picker-label" for="color-picker" title="カスタムカラー">
-                            <span class="color-picker-icon" aria-hidden="true">+</span>
-                        </label>
-                        <input
-                            type="color"
-                            id="color-picker"
-                            value="#c0392b"
-                            aria-label="カスタムカラーピッカー"
-                        >
+                <!-- スタイル選択 -->
+                <div class="form-group">
+                    <label>印のスタイル</label>
+                    <div class="btn-group" role="group" aria-label="印のスタイル選択">
+                        <button class="btn-option active" data-group="shape" data-value="circle" aria-pressed="true">丸印</button>
+                        <button class="btn-option" data-group="shape" data-value="square" aria-pressed="false">角印</button>
                     </div>
                 </div>
-            </div>
 
-            <!-- 書体選択 -->
-            <div class="form-group">
-                <label for="font-select">書体</label>
-                <select id="font-select" aria-label="書体を選択してください">
-                    <option value="'Noto Serif JP', serif">明朝体（Noto Serif JP）</option>
-                    <option value="'Noto Sans JP', sans-serif">ゴシック体（Noto Sans JP）</option>
-                </select>
-            </div>
-
-            <!-- サイズ選択 -->
-            <div class="form-group">
-                <label>サイズ</label>
-                <div class="btn-group" role="group" aria-label="印鑑サイズ選択">
-                    <button class="btn-option" data-group="size" data-value="200" aria-pressed="false">小（200px）</button>
-                    <button class="btn-option active" data-group="size" data-value="300" aria-pressed="true">中（300px）</button>
-                    <button class="btn-option" data-group="size" data-value="400" aria-pressed="false">大（400px）</button>
+                <!-- 縁スタイル選択 -->
+                <div class="form-group">
+                    <label>縁のスタイル</label>
+                    <div class="btn-group" role="group" aria-label="縁のスタイル選択">
+                        <button class="btn-option active" data-group="border" data-value="single" aria-pressed="true">単一線</button>
+                        <button class="btn-option" data-group="border" data-value="double" aria-pressed="false">二重線</button>
+                    </div>
                 </div>
+
+                <!-- 文字方向選択 -->
+                <div class="form-group">
+                    <label>文字方向</label>
+                    <div class="btn-group" role="group" aria-label="文字方向選択">
+                        <button class="btn-option active" data-group="direction" data-value="vertical" aria-pressed="true">縦書き</button>
+                        <button class="btn-option" data-group="direction" data-value="horizontal" aria-pressed="false">横書き</button>
+                    </div>
+                </div>
+
+                <!-- 書体選択 -->
+                <div class="form-group">
+                    <label for="font-select">書体</label>
+                    <select id="font-select" aria-label="書体を選択してください">
+                        <option value="'Noto Serif JP', serif">明朝体（Noto Serif JP）</option>
+                        <option value="'Noto Sans JP', sans-serif">ゴシック体（Noto Sans JP）</option>
+                    </select>
+                </div>
+
+                <!-- 傾き選択（全幅） -->
+                <div class="form-group full-width">
+                    <label>傾き</label>
+                    <div class="btn-group" role="group" aria-label="傾き選択">
+                        <button class="btn-option active" data-group="tilt" data-value="0" aria-pressed="true">通常（0°）</button>
+                        <button class="btn-option" data-group="tilt" data-value="-15" aria-pressed="false">お辞儀印（-15°）</button>
+                        <button class="btn-option" data-group="tilt" data-value="custom" aria-pressed="false">カスタム</button>
+                    </div>
+                    <!-- カスタムスライダー（カスタム選択時のみ表示） -->
+                    <div class="custom-tilt-area" id="custom-tilt-area" hidden>
+                        <div class="slider-row">
+                            <span class="slider-label">-45°</span>
+                            <input
+                                type="range"
+                                id="tilt-slider"
+                                min="-45"
+                                max="45"
+                                value="0"
+                                step="1"
+                                aria-label="傾き角度のスライダー"
+                            >
+                            <span class="slider-label">+45°</span>
+                        </div>
+                        <div class="slider-value-display">現在の角度: <span id="tilt-value-display">0</span>°</div>
+                    </div>
+                </div>
+
+                <!-- 色選択 -->
+                <div class="form-group">
+                    <label>色</label>
+                    <div class="color-options">
+                        <button
+                            class="color-swatch active"
+                            data-color="#c0392b"
+                            style="background-color: #c0392b;"
+                            aria-label="朱色"
+                            aria-pressed="true"
+                            title="朱色"
+                        ></button>
+                        <button
+                            class="color-swatch"
+                            data-color="#1a1a1a"
+                            style="background-color: #1a1a1a;"
+                            aria-label="黒"
+                            aria-pressed="false"
+                            title="黒"
+                        ></button>
+                        <button
+                            class="color-swatch"
+                            data-color="#1a3a6b"
+                            style="background-color: #1a3a6b;"
+                            aria-label="藍色"
+                            aria-pressed="false"
+                            title="藍色"
+                        ></button>
+                        <div class="color-picker-wrapper">
+                            <label class="color-picker-label" for="color-picker" title="カスタムカラー">
+                                <span class="color-picker-icon" aria-hidden="true">+</span>
+                            </label>
+                            <input
+                                type="color"
+                                id="color-picker"
+                                value="#c0392b"
+                                aria-label="カスタムカラーピッカー"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- サイズ選択 -->
+                <div class="form-group">
+                    <label>サイズ</label>
+                    <div class="btn-group" role="group" aria-label="印鑑サイズ選択">
+                        <button class="btn-option" data-group="size" data-value="200" aria-pressed="false">小</button>
+                        <button class="btn-option active" data-group="size" data-value="300" aria-pressed="true">中</button>
+                        <button class="btn-option" data-group="size" data-value="400" aria-pressed="false">大</button>
+                    </div>
+                </div>
+
             </div>
         </section>
 

@@ -6,6 +6,17 @@
 /* Google Fonts: Noto Serif JP / Noto Sans JP */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap');
 
+/* --- 設定グリッド（2段組） --- */
+.settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 1.5rem;
+}
+
+.settings-grid .full-width {
+    grid-column: 1 / -1;
+}
+
 /* --- フォームグループ --- */
 .form-group {
     margin-bottom: 1.5rem;
@@ -165,15 +176,16 @@
     background-color: var(--background-color);
     cursor: pointer;
     transition: border-color 0.2s ease;
-    font-weight: bold;
     margin: 0;
     box-sizing: border-box;
 }
 
 .color-picker-icon {
-    font-size: 1.2rem;
+    font-size: 1.4rem;
     color: var(--gray-text-color);
     line-height: 1;
+    display: block;
+    margin-top: -2px;
 }
 
 .color-picker-label:hover {
@@ -276,6 +288,14 @@
 
 /* --- レスポンシブ --- */
 @media (max-width: 600px) {
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .settings-grid .full-width {
+        grid-column: 1;
+    }
+
     .btn-group {
         gap: 0.4rem;
     }

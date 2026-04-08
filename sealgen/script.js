@@ -21,7 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const state = {
         text: '',
         shape: 'circle',        // 'circle' | 'square'
-        borderStyle: 'double',  // 'double' | 'single'
+        borderStyle: 'single',  // 'single' | 'double'
+        textDirection: 'vertical', // 'vertical' | 'horizontal'
         tiltMode: '0',          // '0' | '-15' | 'custom'
         customAngle: 0,         // カスタム時の角度（度）
         color: '#c0392b',       // 朱色デフォルト
@@ -128,11 +129,11 @@ document.addEventListener('DOMContentLoaded', () => {
             textAreaRadius = circleRadius - lineWidth / 2 - size * 0.03;
         }
 
-        drawVerticalText(ctx, text, textAreaRadius * 2, textAreaRadius * 2, size);
+        drawText(ctx, text, textAreaRadius * 2, textAreaRadius * 2, size);
     }
 
     // ========================================
-    // 角印の描画（縦書き文字）
+    // 角印の描画（縦書き / 横書き文字）
     // ========================================
     function drawSquareSeal(ctx, size, text) {
         ctx.strokeStyle = state.color;
@@ -165,15 +166,23 @@ document.addEventListener('DOMContentLoaded', () => {
             textArea = (half - lineWidth / 2 - size * 0.03) * 2;
         }
 
-        drawVerticalText(ctx, text, textArea, textArea, size);
+        drawText(ctx, text, textArea, textArea, size);
     }
 
     // ========================================
-    // 縦書き文字の描画
-    // 1文字ずつY座標をずらして縦に並べる
+    // 文字描画（縦書き / 横書きを切り替え）
     // ========================================
+    function drawText(ctx, text, areaWidth, areaHeight, sealSize) {
+        if (state.textDirection === 'horizontal') {
+            drawHorizontalText(ctx, text, areaWidth, areaHeight, sealSize);
+        } else {
+            drawVerticalText(ctx, text, areaWidth, areaHeight, sealSize);
+        }
+    }
+
+    // 縦書き: 1文字ずつY座標をずらして縦に並べる
     function drawVerticalText(ctx, text, areaWidth, areaHeight, sealSize) {
-        const chars = [...text]; // Unicode対応のために分割
+        const chars = [...text];
         const charCount = chars.length;
         if (charCount === 0) return;
 
@@ -181,25 +190,42 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
-        // 文字数に応じてフォントサイズを自動スケーリング
-        // 縦方向に全文字を収めるよう調整
         let fontSize = Math.floor(areaHeight / charCount);
-        // 横方向にも収まるよう上限を設ける
         fontSize = Math.min(fontSize, Math.floor(areaWidth * 0.85));
-        // 最小フォントサイズ
         fontSize = Math.max(fontSize, 8);
 
         ctx.font = `bold ${fontSize}px ${state.font}`;
 
-        // 全文字の合計高さ
         const totalHeight = fontSize * charCount;
-        // 最初の文字のY座標（中央揃え）
         const startY = -totalHeight / 2 + fontSize / 2;
 
         chars.forEach((char, i) => {
-            const x = 0;
-            const y = startY + i * fontSize;
-            ctx.fillText(char, x, y);
+            ctx.fillText(char, 0, startY + i * fontSize);
+        });
+    }
+
+    // 横書き: 文字を1行で横に並べる
+    function drawHorizontalText(ctx, text, areaWidth, areaHeight, sealSize) {
+        const chars = [...text];
+        const charCount = chars.length;
+        if (charCount === 0) return;
+
+        ctx.fillStyle = state.color;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // 横方向に全文字を収めるようフォントサイズを決定
+        let fontSize = Math.floor(areaWidth / charCount);
+        fontSize = Math.min(fontSize, Math.floor(areaHeight * 0.85));
+        fontSize = Math.max(fontSize, 8);
+
+        ctx.font = `bold ${fontSize}px ${state.font}`;
+
+        const totalWidth = fontSize * charCount;
+        const startX = -totalWidth / 2 + fontSize / 2;
+
+        chars.forEach((char, i) => {
+            ctx.fillText(char, startX + i * fontSize, 0);
         });
     }
 
@@ -245,6 +271,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.shape = value;
             } else if (group === 'border') {
                 state.borderStyle = value;
+            } else if (group === 'direction') {
+                state.textDirection = value;
             } else if (group === 'tilt') {
                 state.tiltMode = value;
                 // カスタムスライダーの表示切り替え
