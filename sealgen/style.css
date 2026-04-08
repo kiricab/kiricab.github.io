@@ -166,9 +166,8 @@
 }
 
 .color-picker-label {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: relative;
+    display: block;
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -180,20 +179,40 @@
     box-sizing: border-box;
 }
 
+/* CSSで十字を描画（フォントメトリクスのずれを回避） */
+.color-picker-label::before,
+.color-picker-label::after {
+    content: '';
+    position: absolute;
+    background-color: var(--gray-text-color);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: background-color 0.2s ease;
+    border-radius: 1px;
+}
+
+.color-picker-label::before {
+    width: 2px;
+    height: 14px;
+}
+
+.color-picker-label::after {
+    width: 14px;
+    height: 2px;
+}
+
 .color-picker-icon {
-    font-size: 1.4rem;
-    color: var(--gray-text-color);
-    line-height: 1;
-    display: block;
-    margin-top: -2px;
+    display: none;
 }
 
 .color-picker-label:hover {
     border-color: var(--primary-color);
 }
 
-.color-picker-label:hover .color-picker-icon {
-    color: var(--primary-color);
+.color-picker-label:hover::before,
+.color-picker-label:hover::after {
+    background-color: var(--primary-color);
 }
 
 /* ネイティブのカラーピッカーを非表示にしてラベル経由で操作 */
