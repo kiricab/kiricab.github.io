@@ -27,12 +27,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **npmを使わない外部依存** — 外部ライブラリはすべてCDN経由で読み込む `package.json` は存在しない。
 
+**ライセンスポリシー** — 使用するすべての外部ライブラリ・フォント・アセットは **無償かつ商用利用可能なライセンス**（MIT・Apache 2.0・BSD・ISC・CC0・OFL等）でなければならない。GPL・LGPL・有償ライセンス・商用利用に条件が付くライセンスは使用禁止。ライブラリを追加する際は必ずライセンスを確認すること。
+
 **アナリティクス・広告** — 本番ページにはGoogle Analytics（`G-CN3KBWSXRE`）とAdSense（`ca-pub-8141179596557780`）が含まれる。`mdeditor` ツールにはまだ設定されていない。
+
+## 実装ワークフロー
+
+新しいツールの実装は以下の手順で進める：
+
+1. **planner** がユーザーとコミュニケーションしながら仕様を固め、仕様書を作成する
+2. **developer** が仕様書をもとに実装する
+3. **evaluator** が実装内容を確認し、仕様を満たしているかを検証する
+4. evaluatorの確認で修正箇所があれば 2. に戻り、**developer** が実装を修正する
+
+以降 2〜3 を繰り返し、すべての仕様を満たしたら実装完了とする。
 
 ## 新しいツールを追加する際のチェックリスト
 
 1. `index.html`・`script.js`・`style.css` を格納した新規ディレクトリを作成する
 2. `../common/style.css` をツール固有のスタイルシートより先にリンクする
-3. 既存の全 `index.html` のフッターナビにリンクを追加する
-4. `sitemap.xml` を更新する
-5. ルートの `index.html` にボタンを追加する
+3. ファビコンは `<link rel="icon" href="../common/favicon.svg">` で共通ファイルを参照する
+4. 既存の全 `index.html` のフッターナビにリンクを追加する
+5. `sitemap.xml` を更新する
+6. ルートの `index.html` にボタンを追加する
