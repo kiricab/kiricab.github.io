@@ -41,4 +41,10 @@
   <priority>0.80</priority>
 </url>
 
+<url>
+  <loc>https://kiricab.github.io/amida/index.html</loc>
+  <lastmod>2026-04-10T00:00:00+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+
 </urlset>

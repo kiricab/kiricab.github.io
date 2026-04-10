@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>あみだくじ | 公平なランダム抽選をブラウザで | KIRICAB Tools</title>
+    <meta name="description" content="参加者名と結果を入力するだけで、公平なあみだくじを自動生成。SVGアニメーションで経路をリアルタイム表示。インストール不要、ブラウザ完結。">
+    <!-- OGP -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://kiricab.github.io/amida/">
+    <meta property="og:title" content="あみだくじ | 公平なランダム抽選をブラウザで | KIRICAB Tools">
+    <meta property="og:description" content="参加者名と結果を入力するだけで、公平なあみだくじを自動生成。SVGアニメーションで経路をリアルタイム表示。">
+    <meta property="og:site_name" content="KIRICAB Tools">
+    <meta property="og:locale" content="ja_JP">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="あみだくじ | KIRICAB Tools">
+    <meta name="twitter:description" content="参加者名と結果を入力するだけで、公平なあみだくじを自動生成。">
+    <!-- Canonical -->
+    <link rel="canonical" href="https://kiricab.github.io/amida/">
+    <link rel="icon" href="../common/favicon.svg">
+    <link rel="stylesheet" href="../common/style.css">
+    <link rel="stylesheet" href="style.css">
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8141179596557780" crossorigin="anonymous"></script>
+    <meta name="google-adsense-account" content="ca-pub-8141179596557780">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CN3KBWSXRE"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-CN3KBWSXRE');
+    </script>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🎯 あみだくじ</h1>
+            <p>参加者と結果を入力して、公平なあみだくじを生成</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- 入力セクション -->
+        <section class="settings-card" id="input-section">
+            <h2>参加者と結果の設定</h2>
+            <div class="input-grid">
+                <div class="input-group">
+                    <label for="participants-input">参加者名（1行に1名、2〜10名）</label>
+                    <textarea id="participants-input" rows="6" placeholder="山田&#10;田中&#10;鈴木"></textarea>
+                    <p class="input-hint" id="participants-count">0名入力中</p>
+                </div>
+                <div class="input-group">
+                    <label for="results-input">結果ラベル（参加者と同数）</label>
+                    <textarea id="results-input" rows="6" placeholder="当たり&#10;はずれ&#10;はずれ"></textarea>
+                    <p class="input-hint" id="results-count">0個入力中</p>
+                </div>
+            </div>
+            <div class="density-group">
+                <label>横線の密度</label>
+                <div class="density-options">
+                    <button class="density-btn" data-density="low">少ない</button>
+                    <button class="density-btn active" data-density="medium">普通</button>
+                    <button class="density-btn" data-density="high">多い</button>
+                </div>
+            </div>
+            <p id="input-error" class="error-msg" role="alert" hidden></p>
+            <button id="generate-btn" disabled>あみだくじを生成</button>
+        </section>
+
+        <!-- あみだ図セクション -->
+        <section class="results-card" id="amida-section" hidden>
+            <div class="amida-header">
+                <h2>あみだくじ</h2>
+                <div class="amida-controls">
+                    <button id="start-btn">スタート</button>
+                    <button id="skip-btn" disabled>スキップ</button>
+                    <button id="copy-url-btn" disabled>URLをコピー</button>
+                    <button id="retry-btn">やり直す</button>
+                </div>
+            </div>
+            <div class="amida-scroll-wrapper">
+                <div class="amida-container" id="amida-container">
+                    <svg id="amida-svg" xmlns="http://www.w3.org/2000/svg" role="img" focusable="false" aria-label="あみだくじの図"></svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- 結果一覧セクション -->
+        <section class="results-card" id="result-list-section" hidden>
+            <h2>結果一覧</h2>
+            <ul id="result-list" class="result-list"></ul>
+        </section>
+
+        <!-- SEOコンテンツ -->
+        <section class="seo-content">
+            <h2>あみだくじとは</h2>
+            <p>あみだくじは日本で広く使われる公平な抽選方法です。縦に並んだ線（参加者の数だけ）と、それを横につなぐ横線で構成されます。上から下へ線を辿り、横線があれば必ず横に移動するルールに従って結果が決まります。</p>
+            <p>このツールでは参加者名と割り当てたい結果を入力するだけで、あみだくじの構造を自動生成します。SVGアニメーションで全員の経路をリアルタイムに表示するため、誰がどの結果になるか視覚的に確認できます。急いでいるときはスキップボタンで即座に結果を表示することも可能です。</p>
+            <p>担当割り当て・順番決め・景品当てなど、あらゆるシーンで活用できます。</p>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="../index.html">ホーム</a>
+                <a href="../passgen/index.html">パスワード生成</a>
+                <a href="../slackemojigen/index.html">Slack絵文字生成</a>
+                <a href="../diff/index.html">テキスト比較</a>
+                <a href="../colorpallet/index.html">カラーパレット生成</a>
+                <a href="../qrgen/index.html">QRコード生成</a>
+                <a href="../sealgen/index.html">印鑑生成</a>
+                <a href="../amida/index.html">あみだくじ</a>
+            </div>
+            <p>&copy; 2025 Kiricab. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "あみだくじ",
+      "url": "https://kiricab.github.io/amida/",
+      "description": "参加者名と結果を入力するだけで、公平なあみだくじを自動生成。SVGアニメーションで経路をリアルタイム表示。",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "All",
+      "inLanguage": "ja",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "JPY" },
+      "isPartOf": { "@type": "WebSite", "name": "KIRICAB Tools", "url": "https://kiricab.github.io/" }
+    }
+    </script>
+</body>
+</html>
