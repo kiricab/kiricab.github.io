@@ -1,44 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset
-      xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
-            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
-
-<url>
-  <loc>https://kiricab.github.io/index.html</loc>
-  <lastmod>2026-04-05T00:00:00+00:00</lastmod>
-  <priority>1.00</priority>
-</url>
-<url>
-  <loc>https://kiricab.github.io/passgen/index.html</loc>
-  <lastmod>2026-04-05T00:00:00+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://kiricab.github.io/slackemojigen/index.html</loc>
-  <lastmod>2026-04-05T00:00:00+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://kiricab.github.io/diff/index.html</loc>
-  <lastmod>2026-04-05T00:00:00+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://kiricab.github.io/colorpallet/index.html</loc>
-  <lastmod>2026-04-05T00:00:00+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://kiricab.github.io/qrgen/index.html</loc>
-  <lastmod>2026-04-08T00:00:00+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-<url>
-  <loc>https://kiricab.github.io/sealgen/index.html</loc>
-  <lastmod>2026-04-09T00:00:00+00:00</lastmod>
-  <priority>0.80</priority>
-</url>
-
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://kiricab.github.io/</loc>
+    <lastmod>2026-04-05</lastmod>
+    <priority>1.00</priority>
+  </url>
+  <url>
+    <loc>https://kiricab.github.io/passgen/</loc>
+    <lastmod>2026-04-05</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://kiricab.github.io/slackemojigen/</loc>
+    <lastmod>2026-04-05</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://kiricab.github.io/diff/</loc>
+    <lastmod>2026-04-05</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://kiricab.github.io/colorpallet/</loc>
+    <lastmod>2026-04-05</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://kiricab.github.io/qrgen/</loc>
+    <lastmod>2026-04-08</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://kiricab.github.io/sealgen/</loc>
+    <lastmod>2026-04-09</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://kiricab.github.io/amida/</loc>
+    <lastmod>2026-04-10</lastmod>
+    <priority>0.80</priority>
+  </url>
 </urlset>
