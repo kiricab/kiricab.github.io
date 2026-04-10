@@ -1,0 +1,316 @@
+/* あみだくじ固有スタイル */
+
+/* 入力グリッド（2列） */
+.input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.input-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+}
+
+.input-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--secondary-color);
+    border-radius: var(--border-radius);
+    font-size: 0.95rem;
+    font-family: inherit;
+    background-color: var(--card-color);
+    color: var(--text-color);
+    resize: vertical;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
+}
+
+.input-hint {
+    margin: 0.3rem 0 0;
+    font-size: 0.8rem;
+    color: var(--gray-text-color);
+}
+
+/* 密度設定 */
+.density-group {
+    margin-bottom: 1.5rem;
+}
+
+.density-group > label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+}
+
+.density-options {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.density-btn {
+    padding: 0.5rem 1.25rem;
+    border: 2px solid var(--secondary-color);
+    border-radius: var(--border-radius);
+    background-color: var(--card-color);
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.density-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.density-btn.active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--text-color-light);
+}
+
+/* エラーメッセージ */
+.error-msg {
+    color: #e53e3e;
+    font-size: 0.875rem;
+    margin: 0 0 1rem;
+}
+
+/* 生成ボタン */
+#generate-btn {
+    width: 100%;
+    padding: 1rem;
+    background-color: var(--primary-color);
+    color: var(--text-color-light);
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s, opacity 0.2s;
+}
+
+#generate-btn:hover:not(:disabled) {
+    background-color: var(--primary-color-dark);
+}
+
+#generate-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* あみだセクションヘッダー */
+.amida-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--card-color);
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.amida-header h2 {
+    margin: 0;
+    border: none;
+    padding: 0;
+}
+
+.amida-controls {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.amida-controls button {
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--secondary-color);
+    border-radius: var(--border-radius);
+    background-color: var(--card-color);
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.amida-controls button:hover:not(:disabled) {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.amida-controls button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+#start-btn {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--text-color-light);
+}
+
+#start-btn:hover:not(:disabled) {
+    background-color: var(--primary-color-dark);
+    border-color: var(--primary-color-dark);
+    color: var(--text-color-light);
+}
+
+/* あみだ図スクロールラッパー */
+.amida-scroll-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.amida-container {
+    display: flex;
+    justify-content: center;
+    min-width: 320px;
+}
+
+#amida-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* SVG内スタイル（CSSで制御） */
+#amida-svg .v-line {
+    stroke: var(--text-color);
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+
+#amida-svg .h-line {
+    stroke: var(--text-color);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+}
+
+#amida-svg .participant-label {
+    font-size: 13px;
+    fill: var(--text-color);
+    text-anchor: middle;
+    font-weight: 700;
+}
+
+#amida-svg .result-label {
+    font-size: 13px;
+    fill: var(--primary-color);
+    text-anchor: middle;
+    font-weight: 600;
+}
+
+#amida-svg .path-line {
+    fill: none;
+    stroke-width: 3.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* 結果一覧 */
+.result-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+}
+
+.result-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--border-radius);
+    background-color: var(--background-color);
+    border: 1px solid var(--secondary-color);
+}
+
+.result-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.result-participant {
+    font-weight: 700;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.result-arrow {
+    color: var(--gray-text-color);
+    flex-shrink: 0;
+}
+
+.result-value {
+    font-weight: 700;
+    color: var(--primary-color);
+    flex-shrink: 0;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* レスポンシブ */
+@media (max-width: 600px) {
+    .input-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .amida-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .result-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ダークモード */
+@media (prefers-color-scheme: dark) {
+    .input-group textarea {
+        border-color: var(--secondary-color);
+        background-color: var(--card-color);
+        color: var(--text-color);
+    }
+
+    .input-group textarea:focus {
+        box-shadow: 0 0 0 3px rgba(74, 111, 212, 0.25);
+    }
+
+    .density-btn {
+        background-color: var(--card-color);
+        color: var(--text-color);
+    }
+
+    .amida-controls button {
+        background-color: var(--card-color);
+        color: var(--text-color);
+    }
+}
