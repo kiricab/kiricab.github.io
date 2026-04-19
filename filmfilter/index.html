@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>フィルム風フィルター | 写真をレトロな質感に変換 | KIRICAB Tools</title>
+    <meta name="description" content="デジタル写真をアップロードするだけで、かつての名作フィルムをモチーフにした架空プリセット15種を適用。粒子感・ビネット・色調を微調整してダウンロードできる無料ツール。">
+
+    <!-- OGP -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://kiricab.github.io/filmfilter/">
+    <meta property="og:title" content="フィルム風フィルター | 写真をレトロな質感に変換 | KIRICAB Tools">
+    <meta property="og:description" content="デジタル写真にフィルム調のフィルターをかけられる無料ツール。15種のプリセットと10種の微調整スライダーで自分だけの仕上がりに。">
+    <meta property="og:site_name" content="KIRICAB Tools">
+    <meta property="og:locale" content="ja_JP">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="フィルム風フィルター | 写真をレトロな質感に変換 | KIRICAB Tools">
+    <meta name="twitter:description" content="デジタル写真にフィルム調のフィルターをかけられる無料ツール。15種のプリセットと10種の微調整スライダーで自分だけの仕上がりに。">
+    <!-- Canonical -->
+    <link rel="canonical" href="https://kiricab.github.io/filmfilter/">
+
+    <link rel="icon" href="../common/favicon.svg">
+    <link rel="stylesheet" href="../common/style.css">
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8141179596557780"
+     crossorigin="anonymous"></script>
+    <meta name="google-adsense-account" content="ca-pub-8141179596557780">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CN3KBWSXRE"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-CN3KBWSXRE');
+    </script>
+</head>
+<body>
+
+    <header>
+        <div class="container">
+            <h1>🎞️ フィルム風フィルター</h1>
+            <p>写真にフィルム調の色調・粒子感を加えてダウンロード</p>
+        </div>
+    </header>
+
+    <main class="container">
+
+        <!-- アップロードエリア -->
+        <section class="settings-card" id="upload-section">
+            <h2>写真をアップロード</h2>
+            <div class="upload-area" id="upload-area" role="button" tabindex="0" aria-label="クリックまたはドラッグで画像をアップロード">
+                <div class="upload-icon">🖼️</div>
+                <p class="upload-text">クリックまたは画像をドラッグ＆ドロップ</p>
+                <p class="upload-hint">JPG・PNG・WebP対応</p>
+                <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" aria-label="画像ファイルを選択">
+            </div>
+            <p class="privacy-note">🔒 画像はブラウザ上のみで処理され、サーバーには送信されません</p>
+        </section>
+
+        <!-- プレビュー領域 -->
+        <section class="results-card" id="preview-section" hidden>
+            <div class="preview-header">
+                <h2>プレビュー</h2>
+                <div class="compare-mode-btns">
+                    <button class="compare-btn active" id="btn-slide" aria-pressed="true">スライド比較</button>
+                    <button class="compare-btn" id="btn-toggle" aria-pressed="false">切替比較</button>
+                </div>
+            </div>
+
+            <!-- スライド比較モード -->
+            <div class="preview-canvas-wrap" id="slide-wrap">
+                <canvas id="preview-canvas" aria-label="フィルター適用プレビュー"></canvas>
+                <div class="slider-handle" id="slider-handle" role="slider" aria-label="比較スライダー" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+                    <div class="slider-line"></div>
+                    <div class="slider-knob">⇔</div>
+                </div>
+                <span class="label-before">BEFORE</span>
+                <span class="label-after">AFTER</span>
+            </div>
+
+            <!-- トグルモード -->
+            <div class="preview-canvas-wrap" id="toggle-wrap" hidden>
+                <canvas id="toggle-canvas" aria-label="フィルター適用プレビュー（トグルモード）"></canvas>
+            </div>
+
+            <div class="preview-controls">
+                <button id="btn-show-original" class="btn-secondary" hidden>元画像を表示（長押し）</button>
+                <button id="btn-change-image" class="btn-secondary">別の画像を選ぶ</button>
+            </div>
+        </section>
+
+        <!-- 処理中スピナー -->
+        <div class="spinner-overlay" id="spinner" hidden aria-live="polite" aria-label="処理中">
+            <div class="spinner"></div>
+            <p>処理中...</p>
+        </div>
+
+        <!-- フィルター選択エリア -->
+        <section class="settings-card" id="filter-section" hidden>
+            <h2>フィルター選択</h2>
+            <div class="category-tabs">
+                <button class="tab-btn active" data-category="color-negative">カラーネガ</button>
+                <button class="tab-btn" data-category="reversal">リバーサル</button>
+                <button class="tab-btn" data-category="monochrome">モノクロ</button>
+            </div>
+            <div class="preset-grid" id="preset-grid" role="radiogroup" aria-label="フィルタープリセット選択"></div>
+        </section>
+
+        <!-- 微調整パネル -->
+        <section class="settings-card" id="adjust-section" hidden>
+            <div class="adjust-header">
+                <h2>微調整</h2>
+                <button class="collapse-btn" id="collapse-btn" aria-expanded="true" aria-controls="adjust-body">折りたたむ ▲</button>
+            </div>
+            <div class="adjust-body" id="adjust-body">
+                <div class="sliders-grid">
+                    <div class="slider-item">
+                        <label for="sl-exposure">露出</label>
+                        <input type="range" id="sl-exposure" min="-100" max="100" value="0" aria-valuemin="-100" aria-valuemax="100">
+                        <span class="slider-val" id="val-exposure">0</span>
+                    </div>
+                    <div class="slider-item">
+                        <label for="sl-contrast">コントラスト</label>
+                        <input type="range" id="sl-contrast" min="-100" max="100" value="0" aria-valuemin="-100" aria-valuemax="100">
+                        <span class="slider-val" id="val-contrast">0</span>
+                    </div>
+                    <div class="slider-item">
+                        <label for="sl-saturation">彩度</label>
+                        <input type="range" id="sl-saturation" min="-100" max="100" value="0" aria-valuemin="-100" aria-valuemax="100">
+                        <span class="slider-val" id="val-saturation">0</span>
+                    </div>
+                    <div class="slider-item">
+                        <label for="sl-temperature">色温度</label>
+                        <input type="range" id="sl-temperature" min="-100" max="100" value="0" aria-valuemin="-100" aria-valuemax="100">
+                        <span class="slider-val" id="val-temperature">0</span>
+                    </div>
+                    <div class="slider-item">
+                        <label for="sl-tint">色被り</label>
+                        <input type="range" id="sl-tint" min="-100" max="100" value="0" aria-valuemin="-100" aria-valuemax="100">
+                        <span class="slider-val" id="val-tint">0</span>
+                    </div>
+                    <div class="slider-item">
+                        <label for="sl-highlights">ハイライト</label>
+                        <input type="range" id="sl-highlights" min="-100" max="100" value="0" aria-valuemin="-100" aria-valuemax="100">
+                        <span class="slider-val" id="val-highlights">0</span>
+                    </div>
+                    <div class="slider-item">
+                        <label for="sl-shadows">シャドウ</label>
+                        <input type="range" id="sl-shadows" min="-100" max="100" value="0" aria-valuemin="-100" aria-valuemax="100">
+                        <span class="slider-val" id="val-shadows">0</span>
+                    </div>
+                    <div class="slider-item">
+                        <label for="sl-grain">粒子感</label>
+                        <input type="range" id="sl-grain" min="0" max="100" value="0" aria-valuemin="0" aria-valuemax="100">
+                        <span class="slider-val" id="val-grain">0</span>
+                    </div>
+                    <div class="slider-item">
+                        <label for="sl-vignette">ビネット</label>
+                        <input type="range" id="sl-vignette" min="0" max="100" value="0" aria-valuemin="0" aria-valuemax="100">
+                        <span class="slider-val" id="val-vignette">0</span>
+                    </div>
+                    <div class="slider-item">
+                        <label for="sl-strength">フィルター強度</label>
+                        <input type="range" id="sl-strength" min="0" max="100" value="100" aria-valuemin="0" aria-valuemax="100">
+                        <span class="slider-val" id="val-strength">100</span>
+                    </div>
+                </div>
+                <button class="btn-secondary" id="reset-sliders-btn">スライダーをリセット</button>
+            </div>
+        </section>
+
+        <!-- アクションボタン -->
+        <section class="settings-card action-section" id="action-section" hidden>
+            <button class="btn-primary" id="download-btn">💾 ダウンロード</button>
+            <button class="btn-secondary" id="reset-btn">リセット</button>
+        </section>
+
+        <!-- 使い方 -->
+        <section class="how-to-use">
+            <h2>使い方</h2>
+            <ol class="how-to-list">
+                <li>
+                    <strong>写真をアップロード</strong>
+                    <p>JPG・PNG・WebP形式の画像をドラッグ＆ドロップ、またはクリックして選択します。</p>
+                </li>
+                <li>
+                    <strong>フィルターを選ぶ</strong>
+                    <p>カラーネガ・リバーサル・モノクロの15種類の架空プリセットから好みのものを選択します。</p>
+                </li>
+                <li>
+                    <strong>微調整する</strong>
+                    <p>露出・コントラスト・粒子感などのスライダーで仕上がりをお好みに調整します。</p>
+                </li>
+                <li>
+                    <strong>ダウンロード</strong>
+                    <p>「ダウンロード」ボタンでJPEG形式で保存します。すべての処理はブラウザ上のみで完結します。</p>
+                </li>
+            </ol>
+        </section>
+
+    </main>
+
+    <!-- トーストメッセージ -->
+    <div class="toast" id="toast" role="alert" aria-live="polite"></div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="../index.html">ホーム</a>
+                <a href="../passgen/index.html">パスワード生成</a>
+                <a href="../slackemojigen/index.html">Slack絵文字生成</a>
+                <a href="../diff/index.html">テキスト比較</a>
+                <a href="../colorpallet/index.html">カラーパレット生成</a>
+                <a href="../qrgen/index.html">QRコード生成</a>
+                <a href="../sealgen/index.html">印鑑生成</a>
+                <a href="../amida/index.html">あみだくじ</a>
+                <a href="../filmfilter/index.html">フィルム風フィルター</a>
+            </div>
+            <p>&copy; 2025 Kiricab. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "フィルム風フィルター",
+      "url": "https://kiricab.github.io/filmfilter/",
+      "description": "デジタル写真にフィルム調のフィルターをかけられる無料ツール。15種のプリセットと微調整スライダーに対応。",
+      "applicationCategory": "MultimediaApplication",
+      "operatingSystem": "All",
+      "inLanguage": "ja",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "JPY"
+      },
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "KIRICAB Tools",
+        "url": "https://kiricab.github.io/"
+      }
+    }
+    </script>
+</body>
+</html>

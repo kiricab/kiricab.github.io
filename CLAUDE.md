@@ -37,7 +37,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 1. **planner** がユーザーとコミュニケーションしながら仕様を固め、仕様書を作成する
 2. **developer** が仕様書をもとに実装する
-3. **evaluator** が実装内容を確認し、仕様を満たしているかを検証する
+3. **evaluator** が実装内容を確認し、仕様を満たしているかを検証する。UIの動作確認はPlaywright MCPを使ってブラウザで実際に操作・スクリーンショット取得を行うこと
 4. evaluatorの確認で修正箇所があれば 2. に戻り、**developer** が実装を修正する
 
 以降 2〜3 を繰り返し、すべての仕様を満たしたら実装完了とする。
