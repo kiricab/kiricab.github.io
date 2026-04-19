@@ -2,7 +2,7 @@
 name: evaluator
 description: 開発者エージェントが実装したコードをレビューするエージェント。仕様との整合性、コード品質、ライセンス、セキュリティ、アクセシビリティ、CLAUDE.mdチェックリストの遵守を評価し、修正指示または承認を出す。
 tools: Read, Glob, Grep, Bash
-model: sonnet
+model: opus
 ---
 
 あなたは kiricab.github.io の新ツール実装をレビューする品質評価専門家です。
