@@ -1,0 +1,526 @@
+/* ========================================
+   filmfilter/style.css
+   フィルム風フィルター ツール固有スタイル
+   common/style.css を先にリンクすること
+   ======================================== */
+
+/* hidden 属性を CSS の display 指定で上書きされないようにする */
+[hidden] { display: none !important; }
+
+/* ---- レイアウト調整 ---- */
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main.container {
+    flex-grow: 1;
+    max-width: 900px;
+    position: relative;
+}
+
+/* ---- アップロードエリア ---- */
+.upload-area {
+    border: 2px dashed var(--primary-color);
+    border-radius: var(--border-radius);
+    padding: 3rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+    position: relative;
+}
+
+.upload-area:hover,
+.upload-area.drag-over {
+    background: rgba(30, 58, 138, 0.06);
+    border-color: var(--primary-color);
+}
+
+.upload-area .upload-icon {
+    font-size: 3rem;
+    line-height: 1;
+    margin-bottom: 0.75rem;
+}
+
+.upload-area .upload-text {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.upload-area .upload-hint {
+    margin: 0.4rem 0 0;
+    font-size: 0.85rem;
+    color: var(--gray-text-color);
+}
+
+/* ファイル入力はvisually hidden */
+#file-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+}
+
+.privacy-note {
+    margin: 0.75rem 0 0;
+    font-size: 0.8rem;
+    color: var(--gray-text-color);
+    text-align: center;
+}
+
+/* ---- プレビュー領域 ---- */
+.preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.preview-header h2 {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.compare-mode-btns {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.compare-btn {
+    padding: 0.35rem 0.9rem;
+    border: 1px solid var(--primary-color);
+    background: transparent;
+    color: var(--primary-color);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.compare-btn.active {
+    background: var(--primary-color);
+    color: #fff;
+}
+
+/* キャンバスラッパー */
+.preview-canvas-wrap {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: var(--border-radius);
+    background: #000;
+    user-select: none;
+    touch-action: none;
+}
+
+.preview-canvas-wrap canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 520px;
+    object-fit: contain;
+}
+
+/* スライダーハンドル */
+.slider-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: ew-resize;
+    z-index: 10;
+}
+
+.slider-line {
+    width: 2px;
+    flex: 1;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 4px rgba(0,0,0,0.5);
+}
+
+.slider-knob {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #fff;
+    color: #333;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    pointer-events: none;
+}
+
+/* BEFORE / AFTER ラベル */
+.label-before,
+.label-after {
+    position: absolute;
+    top: 10px;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 2px 8px;
+    border-radius: 4px;
+    pointer-events: none;
+}
+
+.label-before {
+    left: 10px;
+}
+
+.label-after {
+    right: 10px;
+}
+
+/* プレビューコントロール */
+.preview-controls {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+/* ---- 処理中スピナー ---- */
+.spinner-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    color: #fff;
+    gap: 1rem;
+}
+
+.spinner {
+    width: 48px;
+    height: 48px;
+    border: 5px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ---- カテゴリータブ ---- */
+.category-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.tab-btn {
+    padding: 0.4rem 1.1rem;
+    border: 1px solid var(--secondary-color);
+    background: transparent;
+    color: var(--text-color);
+    border-radius: 20px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.tab-btn.active {
+    background: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+}
+
+/* ---- プリセットグリッド ---- */
+.preset-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 0.75rem;
+}
+
+.preset-card {
+    border: 2px solid var(--secondary-color);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s;
+    background: var(--card-color);
+}
+
+.preset-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary-color);
+}
+
+.preset-card.selected {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+.preset-thumb {
+    display: block;
+    width: 100%;
+    height: 70px;
+    object-fit: cover;
+}
+
+.preset-thumb-canvas {
+    display: block;
+    width: 100%;
+    height: 70px;
+}
+
+.preset-name {
+    display: block;
+    text-align: center;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.3rem 0.25rem;
+    color: var(--text-color);
+    word-break: break-all;
+}
+
+/* ---- 微調整パネル ---- */
+.adjust-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.adjust-header h2 {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.collapse-btn {
+    background: transparent;
+    border: 1px solid var(--secondary-color);
+    border-radius: 6px;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    color: var(--text-color);
+    transition: background 0.2s;
+}
+
+.collapse-btn:hover {
+    background: var(--secondary-color);
+}
+
+.adjust-body {
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    max-height: 1000px;
+}
+
+.adjust-body.collapsed {
+    max-height: 0;
+}
+
+.sliders-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.9rem 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.slider-item {
+    display: grid;
+    grid-template-columns: 6.5rem 1fr 2.5rem;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.slider-item label {
+    font-size: 0.875rem;
+    color: var(--text-color);
+    white-space: nowrap;
+}
+
+.slider-item input[type="range"] {
+    width: 100%;
+    accent-color: var(--primary-color);
+    cursor: pointer;
+}
+
+.slider-item input[type="range"]:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.slider-val {
+    font-size: 0.8rem;
+    text-align: right;
+    color: var(--gray-text-color);
+    min-width: 2rem;
+}
+
+/* ---- ボタン ---- */
+.btn-primary {
+    background: var(--primary-color);
+    color: #fff;
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 0.75rem 2rem;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.btn-primary:hover {
+    opacity: 0.85;
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    border-radius: var(--border-radius);
+    padding: 0.65rem 1.4rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.btn-secondary:hover {
+    background: var(--primary-color);
+    color: #fff;
+}
+
+.action-section {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* ---- 使い方リスト ---- */
+.how-to-list {
+    padding-left: 1.5rem;
+    margin: 0;
+}
+
+.how-to-list li {
+    margin-bottom: 1rem;
+}
+
+.how-to-list li strong {
+    display: block;
+    color: var(--primary-color);
+    margin-bottom: 0.2rem;
+}
+
+.how-to-list li p {
+    margin: 0;
+    color: var(--gray-text-color);
+    font-size: 0.9rem;
+}
+
+/* ---- トースト ---- */
+.toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(200%);
+    background: var(--primary-color-dark);
+    color: #fff;
+    padding: 0.7rem 1.6rem;
+    border-radius: 24px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    z-index: 2000;
+    transition: transform 0.3s ease;
+    pointer-events: none;
+}
+
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+}
+
+.toast.error {
+    background: #c0392b;
+}
+
+/* ---- レスポンシブ ---- */
+@media (max-width: 600px) {
+    .preset-grid {
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    }
+
+    .sliders-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .slider-item {
+        grid-template-columns: 6rem 1fr 2.5rem;
+    }
+
+    .action-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* ---- ダークモード ---- */
+@media (prefers-color-scheme: dark) {
+    .upload-area {
+        border-color: var(--primary-color);
+    }
+
+    .upload-area:hover,
+    .upload-area.drag-over {
+        background: rgba(74, 111, 212, 0.1);
+    }
+
+    .preset-card {
+        border-color: var(--secondary-color);
+    }
+
+    .compare-btn {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+    }
+
+    .compare-btn.active {
+        background: var(--primary-color);
+        color: #fff;
+    }
+
+    .collapse-btn {
+        border-color: var(--secondary-color);
+        color: var(--text-color);
+    }
+
+    .collapse-btn:hover {
+        background: var(--secondary-color);
+    }
+}
