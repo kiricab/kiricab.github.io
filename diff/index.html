@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>オンラインDiffツール | テキスト・文章の比較と差分チェック</title>
-    <meta name="description" content="2つのテキストや文章をオンラインで比較し、違い（差分）を瞬時にハイライト表示する無料のDiffツールです。コードレビューやレポートの校正作業を効率化します。インストール不要、ブラウザだけで安全にご利用いただけます。">
+    <meta name="description" content="2つのテキストをオンラインで比較し、差分をハイライト表示する無料Diffツール。コードレビューや文章の校正作業を効率化。インストール不要でブラウザから即利用可能。">
 
     <!-- OGP -->
     <meta property="og:type" content="website">
@@ -13,15 +13,20 @@
     <meta property="og:description" content="2つのテキストや文章をオンラインで比較し、違い（差分）を瞬時にハイライト表示する無料のDiffツールです。コードレビューやレポートの校正作業を効率化します。">
     <meta property="og:site_name" content="KIRICAB Tools">
     <meta property="og:locale" content="ja_JP">
+    <meta property="og:image" content="https://kiricab.github.io/common/og-image.svg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary">
+    <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="オンラインDiffツール | テキスト・文章の比較と差分チェック">
     <meta name="twitter:description" content="2つのテキストや文章をオンラインで比較し、差分を瞬時にハイライト表示する無料のDiffツール。インストール不要、ブラウザだけで安全にご利用。">
+    <meta name="twitter:image" content="https://kiricab.github.io/common/og-image.svg">
     <!-- Canonical -->
     <link rel="canonical" href="https://kiricab.github.io/diff/">
 
-    <!-- パスワード生成ツールと同じファビコンを使い、ブランドを統一 -->
     <link rel="icon" href="../common/favicon.svg">
+    <link rel="preconnect" href="https://www.googletagmanager.com">
+    <link rel="preconnect" href="https://pagead2.googlesyndication.com">
     <link rel="stylesheet" href="../common/style.css">
     <link rel="stylesheet" href="style.css">
     <!-- Google AdSense-->
@@ -59,15 +64,39 @@
             </div>
         </section>
 
-        <section class="how-to-use">
+        <section class="how-to-use seo-content">
             <h2>Diffツールの使い方</h2>
-            <ol>
+            <ol class="howto-steps">
                 <li>左側のテキストエリアに「元の文章」を入力します。</li>
                 <li>右側のテキストエリアに「比較したい文章」を入力します。</li>
                 <li>入力が完了すると、自動的に2つの文章が比較され、違いがハイライト表示されます。</li>
                 <li>追加された行は緑色、削除された行は赤色で表示されます。</li>
             </ol>
             <p>2つのテキストを入力するだけで、変更箇所（追加・削除）を即座にハイライト表示します。文章の校正、プログラミングコードの変更点確認、レポートの修正履歴追跡、契約書のバージョン管理など、幅広い用途で役立ちます。</p>
+
+            <h2>よくある質問</h2>
+            <div class="faq-list">
+                <details>
+                    <summary>入力したテキストは外部に送信されますか？</summary>
+                    <p>送信されません。比較処理はすべてお使いのブラウザ内で完結するため、機密情報や社外秘のテキストでも安心して利用できます。</p>
+                </details>
+                <details>
+                    <summary>何文字まで比較できますか？</summary>
+                    <p>明示的な文字数上限はありません。端末のメモリに収まる範囲であれば数万文字の比較も可能です。長文のドキュメント比較にも向いています。</p>
+                </details>
+                <details>
+                    <summary>追加・削除以外の変更（置換）も見分けられますか？</summary>
+                    <p>はい。行単位で比較し、左右で並べて表示することで、置換（削除＋追加）の形で変更箇所を視覚的に把握できます。</p>
+                </details>
+                <details>
+                    <summary>差分の結果を共有・保存できますか？</summary>
+                    <p>差分結果はブラウザで表示されるため、ブラウザの印刷機能や画面キャプチャで保存・共有いただけます。</p>
+                </details>
+                <details>
+                    <summary>デザインの配色案を比較したいのですが</summary>
+                    <p>テキストの差分以外で配色案を並べて比較したい場合は、<a href="../colorpallet/index.html">カラーパレット生成ツール</a>で生成した配色をそれぞれ保存して見比べることができます。</p>
+                </details>
+            </div>
         </section>
     </main>
 
@@ -97,8 +126,9 @@
       "url": "https://kiricab.github.io/diff/",
       "description": "2つのテキストや文章をオンラインで比較し、差分を瞬時にハイライト表示する無料ツール。",
       "applicationCategory": "UtilitiesApplication",
-      "operatingSystem": "All",
+      "operatingSystem": "Any",
       "inLanguage": "ja",
+      "image": "https://kiricab.github.io/common/og-image.svg",
       "offers": {
         "@type": "Offer",
         "price": "0",
@@ -109,6 +139,43 @@
         "name": "KIRICAB Tools",
         "url": "https://kiricab.github.io/"
       }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "ホーム", "item": "https://kiricab.github.io/" },
+        { "@type": "ListItem", "position": 2, "name": "テキスト比較", "item": "https://kiricab.github.io/diff/" }
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "Diffツールの使い方",
+      "description": "2つのテキストを貼り付けるだけで差分をハイライト表示できます。",
+      "step": [
+        { "@type": "HowToStep", "position": 1, "name": "元の文章を入力", "text": "左側のテキストエリアに元の文章を入力します" },
+        { "@type": "HowToStep", "position": 2, "name": "比較する文章を入力", "text": "右側のテキストエリアに比較したい文章を入力します" },
+        { "@type": "HowToStep", "position": 3, "name": "自動比較", "text": "入力が完了すると自動的に2つの文章が比較され、違いがハイライト表示されます" },
+        { "@type": "HowToStep", "position": 4, "name": "差分を確認", "text": "追加された行は緑色、削除された行は赤色で表示されます" }
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "入力したテキストは外部に送信されますか？", "acceptedAnswer": { "@type": "Answer", "text": "送信されません。比較処理はすべてブラウザ内で完結するため、機密情報や社外秘のテキストでも安心して利用できます。" } },
+        { "@type": "Question", "name": "何文字まで比較できますか？", "acceptedAnswer": { "@type": "Answer", "text": "明示的な文字数上限はありません。端末のメモリに収まる範囲であれば数万文字の比較も可能です。" } },
+        { "@type": "Question", "name": "追加・削除以外の変更（置換）も見分けられますか？", "acceptedAnswer": { "@type": "Answer", "text": "行単位で比較し、左右で並べて表示することで、置換の形で変更箇所を視覚的に把握できます。" } },
+        { "@type": "Question", "name": "差分の結果を共有・保存できますか？", "acceptedAnswer": { "@type": "Answer", "text": "差分結果はブラウザで表示されるため、ブラウザの印刷機能や画面キャプチャで保存・共有できます。" } },
+        { "@type": "Question", "name": "デザインの配色案を比較したいのですが", "acceptedAnswer": { "@type": "Answer", "text": "カラーパレット生成ツールで生成した配色をそれぞれ保存して見比べることができます。" } }
+      ]
     }
     </script>
 </body>

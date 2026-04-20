@@ -2,47 +2,56 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://kiricab.github.io/</loc>
-    <lastmod>2026-04-05</lastmod>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>1.00</priority>
   </url>
   <url>
     <loc>https://kiricab.github.io/passgen/</loc>
-    <lastmod>2026-04-05</lastmod>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
     <loc>https://kiricab.github.io/slackemojigen/</loc>
-    <lastmod>2026-04-05</lastmod>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
     <loc>https://kiricab.github.io/diff/</loc>
-    <lastmod>2026-04-05</lastmod>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
     <loc>https://kiricab.github.io/colorpallet/</loc>
-    <lastmod>2026-04-05</lastmod>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
     <loc>https://kiricab.github.io/qrgen/</loc>
-    <lastmod>2026-04-08</lastmod>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
     <loc>https://kiricab.github.io/sealgen/</loc>
-    <lastmod>2026-04-09</lastmod>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
     <loc>https://kiricab.github.io/amida/</loc>
-    <lastmod>2026-04-10</lastmod>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
     <loc>https://kiricab.github.io/filmfilter/</loc>
-    <lastmod>2026-04-19</lastmod>
+    <lastmod>2026-04-20</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
 </urlset>

@@ -13,15 +13,20 @@
     <meta property="og:description" content="名前を入力するだけで印鑑（はんこ）の印影画像を無料で作成できるWebツールです。丸印・角印に対応し、傾き・色・書体を自由に設定。透過PNG形式でダウンロード可能。">
     <meta property="og:site_name" content="KIRICAB Tools">
     <meta property="og:locale" content="ja_JP">
+    <meta property="og:image" content="https://kiricab.github.io/common/og-image.svg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary">
+    <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="印鑑ジェネレーター | 名前を入力して印影画像を無料作成">
     <meta name="twitter:description" content="名前を入力するだけで印鑑（はんこ）の印影画像を無料で作成できるWebツールです。丸印・角印に対応し、傾き・色・書体を自由に設定。透過PNG形式でダウンロード可能。">
+    <meta name="twitter:image" content="https://kiricab.github.io/common/og-image.svg">
     <!-- Canonical -->
     <link rel="canonical" href="https://kiricab.github.io/sealgen/">
 
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><title>KIRICAB Icon</title><rect width='100' height='100' rx='20' fill='%231e3a8a'/><path fill='%23ffffff' d='M25 20 H40 V42.5 L68 20 H80 L50 50 L80 80 H68 L40 57.5 V80 H25 V20 Z'/></svg>">
-
+    <link rel="icon" href="../common/favicon.svg">
+    <link rel="preconnect" href="https://www.googletagmanager.com">
+    <link rel="preconnect" href="https://pagead2.googlesyndication.com">
     <link rel="stylesheet" href="../common/style.css">
     <link rel="stylesheet" href="style.css">
 
@@ -210,7 +215,37 @@
         <section class="seo-content">
             <h2>印鑑ジェネレーターの使い方</h2>
             <p>このツールはブラウザ上で動作する無料の印影作成ツールです。名前や文字を入力するだけで、丸印・角印の印鑑画像をリアルタイムでプレビューしながら作成できます。生成した印影は透過PNG形式でダウンロードでき、書類への押印イメージの作成や、デジタル文書への電子印鑑としての活用など、さまざまなシーンでご利用いただけます。</p>
+            <ol class="howto-steps">
+                <li>印字するテキスト（名前・屋号など）を入力</li>
+                <li>印のスタイル（丸印・角印）、縁のスタイル、文字方向、書体を選択</li>
+                <li>傾き（通常・お辞儀印・カスタム）・色・サイズを調整</li>
+                <li>プレビューを確認し「PNGでダウンロード」ボタンで透過PNGを保存</li>
+            </ol>
             <p>「お辞儀印」オプションを選ぶと、日本のビジネス慣習にならい印鑑を15度傾けた「敬礼印」スタイルで生成します。また「カスタム」オプションでは-45度から+45度の範囲で自由に角度を指定できます。書体は明朝体とゴシック体から選択可能で、色は朱色・黒・藍色のほか、カラーピッカーで任意の色を指定できます。</p>
+
+            <h2>よくある質問</h2>
+            <div class="faq-list">
+                <details>
+                    <summary>作成した印影は公的な書類に使えますか？</summary>
+                    <p>このツールは電子文書や社内書類への押印イメージ作成を目的とした簡易ツールです。実印・銀行印としての公的効力はありませんので、公式な契約書や登記書類には実物の印鑑をご利用ください。</p>
+                </details>
+                <details>
+                    <summary>透過PNGで保存できますか？</summary>
+                    <p>はい。ダウンロードされるPNGは背景が透過されているため、Word・Excel・PDFなどの文書にそのまま重ねて配置できます。</p>
+                </details>
+                <details>
+                    <summary>何文字まで印字できますか？</summary>
+                    <p>最大10文字まで入力できます。一般的な「姓」「姓名」「会社名」であれば十分な文字数です。</p>
+                </details>
+                <details>
+                    <summary>お辞儀印とは何ですか？</summary>
+                    <p>日本のビジネス慣習で、上位者の印鑑に向かって頭を下げるように15度程度左に傾けて押す文化から来た印鑑スタイルです。本ツールでは「お辞儀印（-15°）」を選ぶと自動で傾けて生成されます。</p>
+                </details>
+                <details>
+                    <summary>印影の色をブランドカラーに合わせたい</summary>
+                    <p>カラーピッカーから任意の色を指定できます。コーポレートカラーに合わせたい場合は、<a href="../colorpallet/index.html">カラーパレット生成ツール</a>で配色の候補を検討してから色を指定すると統一感が出ます。</p>
+                </details>
+            </div>
         </section>
 
     </main>
@@ -240,9 +275,10 @@
       "name": "印鑑ジェネレーター",
       "url": "https://kiricab.github.io/sealgen/",
       "description": "名前を入力するだけで丸印・角印の印影画像を無料で作成できるWebツール。傾き・色・書体を自由に設定して透過PNG形式でダウンロード可能。",
-      "applicationCategory": "UtilitiesApplication",
-      "operatingSystem": "All",
+      "applicationCategory": "DesignApplication",
+      "operatingSystem": "Any",
       "inLanguage": "ja",
+      "image": "https://kiricab.github.io/common/og-image.svg",
       "offers": {
         "@type": "Offer",
         "price": "0",
@@ -253,6 +289,43 @@
         "name": "KIRICAB Tools",
         "url": "https://kiricab.github.io/"
       }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "ホーム", "item": "https://kiricab.github.io/" },
+        { "@type": "ListItem", "position": 2, "name": "印鑑ジェネレーター", "item": "https://kiricab.github.io/sealgen/" }
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "印鑑画像の作り方",
+      "description": "名前を入力するだけで丸印・角印の印影画像を作成できます。",
+      "step": [
+        { "@type": "HowToStep", "position": 1, "name": "テキストを入力", "text": "印字するテキスト（名前・屋号など）を入力します" },
+        { "@type": "HowToStep", "position": 2, "name": "スタイルを選択", "text": "印のスタイル（丸印・角印）、縁のスタイル、文字方向、書体を選択します" },
+        { "@type": "HowToStep", "position": 3, "name": "傾き・色・サイズを調整", "text": "傾き（通常・お辞儀印・カスタム）、色、サイズを調整します" },
+        { "@type": "HowToStep", "position": 4, "name": "ダウンロード", "text": "プレビューを確認しPNGでダウンロードボタンで透過PNGを保存します" }
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "作成した印影は公的な書類に使えますか？", "acceptedAnswer": { "@type": "Answer", "text": "電子文書や社内書類への押印イメージ作成を目的とした簡易ツールです。実印・銀行印としての公的効力はありませんので、公式な契約書や登記書類には実物の印鑑をご利用ください。" } },
+        { "@type": "Question", "name": "透過PNGで保存できますか？", "acceptedAnswer": { "@type": "Answer", "text": "ダウンロードされるPNGは背景が透過されているため、Word・Excel・PDFなどの文書にそのまま重ねて配置できます。" } },
+        { "@type": "Question", "name": "何文字まで印字できますか？", "acceptedAnswer": { "@type": "Answer", "text": "最大10文字まで入力できます。一般的な姓・姓名・会社名であれば十分な文字数です。" } },
+        { "@type": "Question", "name": "お辞儀印とは何ですか？", "acceptedAnswer": { "@type": "Answer", "text": "上位者の印鑑に向かって頭を下げるように15度程度左に傾けて押す日本のビジネス慣習から来た印鑑スタイルです。" } },
+        { "@type": "Question", "name": "印影の色をブランドカラーに合わせたい", "acceptedAnswer": { "@type": "Answer", "text": "カラーピッカーから任意の色を指定できます。カラーパレット生成ツールで配色候補を検討してから色を指定すると統一感が出ます。" } }
+      ]
     }
     </script>
 </body>

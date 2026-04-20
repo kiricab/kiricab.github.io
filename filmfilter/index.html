@@ -13,14 +13,20 @@
     <meta property="og:description" content="デジタル写真にフィルム調のフィルターをかけられる無料ツール。15種のプリセットと10種の微調整スライダーで自分だけの仕上がりに。">
     <meta property="og:site_name" content="KIRICAB Tools">
     <meta property="og:locale" content="ja_JP">
+    <meta property="og:image" content="https://kiricab.github.io/common/og-image.svg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary">
+    <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="フィルム風フィルター | 写真をレトロな質感に変換 | KIRICAB Tools">
     <meta name="twitter:description" content="デジタル写真にフィルム調のフィルターをかけられる無料ツール。15種のプリセットと10種の微調整スライダーで自分だけの仕上がりに。">
+    <meta name="twitter:image" content="https://kiricab.github.io/common/og-image.svg">
     <!-- Canonical -->
     <link rel="canonical" href="https://kiricab.github.io/filmfilter/">
 
     <link rel="icon" href="../common/favicon.svg">
+    <link rel="preconnect" href="https://www.googletagmanager.com">
+    <link rel="preconnect" href="https://pagead2.googlesyndication.com">
     <link rel="stylesheet" href="../common/style.css">
     <link rel="stylesheet" href="style.css">
 
@@ -179,7 +185,7 @@
         </section>
 
         <!-- 使い方 -->
-        <section class="how-to-use">
+        <section class="how-to-use seo-content">
             <h2>使い方</h2>
             <ol class="how-to-list">
                 <li>
@@ -199,6 +205,30 @@
                     <p>「ダウンロード」ボタンでJPEG形式で保存します。すべての処理はブラウザ上のみで完結します。</p>
                 </li>
             </ol>
+
+            <h2>よくある質問</h2>
+            <div class="faq-list">
+                <details>
+                    <summary>アップロードした画像は外部に送信されますか？</summary>
+                    <p>送信されません。すべての処理はブラウザ内のCanvas上で完結し、画像データがサーバーに送信されることはありません。プライベートな写真にも安心してご利用いただけます。</p>
+                </details>
+                <details>
+                    <summary>対応している画像形式・サイズの上限は？</summary>
+                    <p>JPG・PNG・WebP に対応しています。ファイルサイズに明示的な上限はありませんが、数十MBを超える高解像度画像は端末のメモリ負荷が高くなる点にご注意ください。</p>
+                </details>
+                <details>
+                    <summary>プリセットは実在するフィルムを再現したものですか？</summary>
+                    <p>いいえ。あくまで「それっぽい質感」を楽しむための架空のカラー／モノクロプリセットです。実在の銘柄・商標とは関係がありません。</p>
+                </details>
+                <details>
+                    <summary>保存した画像の画質は劣化しますか？</summary>
+                    <p>ダウンロード時はJPEGで書き出すため、元画像より軽いファイルになります。粒子感やビネットの効果を含めて仕上がりを保存したい場合は本ツールのダウンロードが便利です。</p>
+                </details>
+                <details>
+                    <summary>SNS共有時にカスタム絵文字を添えたい</summary>
+                    <p>フィルム風に仕上げた写真をSNSやSlackに投稿する際に雰囲気を合わせた絵文字を使いたい場合は、<a href="../slackemojigen/index.html">Slack絵文字ジェネレーター</a>でテキスト絵文字を作成してセットで使うと統一感が出ます。</p>
+                </details>
+            </div>
         </section>
 
     </main>
@@ -232,8 +262,9 @@
       "url": "https://kiricab.github.io/filmfilter/",
       "description": "デジタル写真にフィルム調のフィルターをかけられる無料ツール。15種のプリセットと微調整スライダーに対応。",
       "applicationCategory": "MultimediaApplication",
-      "operatingSystem": "All",
+      "operatingSystem": "Any",
       "inLanguage": "ja",
+      "image": "https://kiricab.github.io/common/og-image.svg",
       "offers": {
         "@type": "Offer",
         "price": "0",
@@ -244,6 +275,29 @@
         "name": "KIRICAB Tools",
         "url": "https://kiricab.github.io/"
       }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "ホーム", "item": "https://kiricab.github.io/" },
+        { "@type": "ListItem", "position": 2, "name": "フィルム風フィルター", "item": "https://kiricab.github.io/filmfilter/" }
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "アップロードした画像は外部に送信されますか？", "acceptedAnswer": { "@type": "Answer", "text": "送信されません。すべての処理はブラウザ内のCanvas上で完結し、画像データがサーバーに送信されることはありません。" } },
+        { "@type": "Question", "name": "対応している画像形式・サイズの上限は？", "acceptedAnswer": { "@type": "Answer", "text": "JPG・PNG・WebPに対応しています。ファイルサイズに明示的な上限はありませんが、数十MBを超える高解像度画像は端末のメモリ負荷が高くなる点にご注意ください。" } },
+        { "@type": "Question", "name": "プリセットは実在するフィルムを再現したものですか？", "acceptedAnswer": { "@type": "Answer", "text": "いいえ。あくまでそれっぽい質感を楽しむための架空のプリセットです。実在の銘柄・商標とは関係がありません。" } },
+        { "@type": "Question", "name": "保存した画像の画質は劣化しますか？", "acceptedAnswer": { "@type": "Answer", "text": "ダウンロード時はJPEGで書き出すため、元画像より軽いファイルになります。粒子感やビネットを含めた仕上がりを保存したい場合に適しています。" } },
+        { "@type": "Question", "name": "SNS共有時にカスタム絵文字を添えたい", "acceptedAnswer": { "@type": "Answer", "text": "Slack絵文字ジェネレーターでテキスト絵文字を作成してセットで使うと統一感が出ます。" } }
+      ]
     }
     </script>
 </body>

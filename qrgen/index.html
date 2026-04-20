@@ -13,14 +13,21 @@
   <meta property="og:description" content="URLや名刺・Wi-Fiなど6タイプのQRコードを無料生成。デザインカスタマイズ・ロゴ埋め込み・PNG/SVGエクスポート対応。">
   <meta property="og:site_name" content="KIRICAB Tools">
   <meta property="og:locale" content="ja_JP">
+  <meta property="og:image" content="https://kiricab.github.io/common/og-image.svg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary">
+  <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="QRコード生成ツール - 無料・登録不要 | Kiricab Tools">
   <meta name="twitter:description" content="URLや名刺・Wi-Fiなど6タイプのQRコードを無料生成。デザインカスタマイズ・ロゴ埋め込み・PNG/SVGエクスポート対応。">
+  <meta name="twitter:image" content="https://kiricab.github.io/common/og-image.svg">
   <!-- Canonical -->
   <link rel="canonical" href="https://kiricab.github.io/qrgen/">
 
   <link rel="icon" href="../common/favicon.svg">
+  <link rel="preconnect" href="https://www.googletagmanager.com">
+  <link rel="preconnect" href="https://pagead2.googlesyndication.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <meta name="google-adsense-account" content="ca-pub-8141179596557780">
   <link rel="stylesheet" href="../common/style.css">
   <link rel="stylesheet" href="style.css">
@@ -349,6 +356,34 @@
         <li><strong>メール</strong>: 問い合わせフォームの代替として活用</li>
         <li><strong>SMS</strong>: テキストメッセージの送信先設定</li>
       </ul>
+
+      <h2>よくある質問</h2>
+      <div class="faq-list">
+        <details>
+          <summary>生成したQRコードは商用利用できますか？</summary>
+          <p>はい。生成したQRコードは個人・商用を問わずご利用いただけます。印刷物・ウェブサイト・チラシ・商品パッケージなどに自由に使用可能です。</p>
+        </details>
+        <details>
+          <summary>ロゴ画像をQRコードの中央に埋め込みたい</summary>
+          <p>「ロゴ埋め込み」セクションからPNG/JPG/SVGのロゴ画像（最大2MB）をアップロードできます。ロゴを配置するときは読み取り精度を保つため、エラー訂正レベルを「H（最高）」にすることをおすすめします。</p>
+        </details>
+        <details>
+          <summary>入力したURLやWi-Fiパスワードは外部に送信されますか？</summary>
+          <p>送信されません。QRコード生成処理はすべてブラウザ内で完結するため、機密性の高いWi-Fiパスワード等でも安心して扱えます。</p>
+        </details>
+        <details>
+          <summary>エラー訂正レベルはどれを選ぶべき？</summary>
+          <p>通常はM（中・15%）で十分です。ロゴを埋め込む場合や印刷物で劣化が予想される場合はH（最高・30%）を推奨します。データ量が多いときはLを使うと収まりが良くなります。</p>
+        </details>
+        <details>
+          <summary>作成したQRコードの設定を後で復元したい</summary>
+          <p>「設定をURLで共有」ボタンを押すと、現在の設定がエンコードされたURLをコピーできます。URLを開くと同じ設定のQRコードが再生成されます（ロゴ画像は含まれません）。</p>
+        </details>
+        <details>
+          <summary>生成したパスワードをQRコード化できますか？</summary>
+          <p>はい。<a href="../passgen/index.html">パスワード生成ツール</a>で作成した強力なパスワードをテキストタイプに貼り付ければ、QRコード経由で安全に配布できます。Wi-Fi接続情報と合わせて使うと便利です。</p>
+        </details>
+      </div>
     </section>
 
   </main>
@@ -380,9 +415,10 @@
     "name": "QRコード生成ツール",
     "url": "https://kiricab.github.io/qrgen/",
     "description": "URLや名刺・Wi-Fiなど6タイプのQRコードを無料生成。デザインカスタマイズ・ロゴ埋め込み・PNG/SVGエクスポート対応。",
-    "applicationCategory": "UtilityApplication",
+    "applicationCategory": "UtilitiesApplication",
     "operatingSystem": "Any",
     "inLanguage": "ja",
+    "image": "https://kiricab.github.io/common/og-image.svg",
     "offers": {
       "@type": "Offer",
       "price": "0",
@@ -393,6 +429,30 @@
       "name": "KIRICAB Tools",
       "url": "https://kiricab.github.io/"
     }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "ホーム", "item": "https://kiricab.github.io/" },
+      { "@type": "ListItem", "position": 2, "name": "QRコード生成", "item": "https://kiricab.github.io/qrgen/" }
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      { "@type": "Question", "name": "生成したQRコードは商用利用できますか？", "acceptedAnswer": { "@type": "Answer", "text": "はい。個人・商用を問わず印刷物・ウェブサイト・チラシ・商品パッケージなどに自由に使用可能です。" } },
+      { "@type": "Question", "name": "ロゴ画像をQRコードの中央に埋め込みたい", "acceptedAnswer": { "@type": "Answer", "text": "ロゴ埋め込みセクションからPNG/JPG/SVGのロゴ画像（最大2MB）をアップロードできます。読み取り精度を保つためエラー訂正レベルをH（最高）にすることをおすすめします。" } },
+      { "@type": "Question", "name": "入力したURLやWi-Fiパスワードは外部に送信されますか？", "acceptedAnswer": { "@type": "Answer", "text": "送信されません。QRコード生成処理はすべてブラウザ内で完結します。" } },
+      { "@type": "Question", "name": "エラー訂正レベルはどれを選ぶべき？", "acceptedAnswer": { "@type": "Answer", "text": "通常はM（中・15%）で十分です。ロゴ埋め込みや印刷物にはH（最高・30%）を推奨します。" } },
+      { "@type": "Question", "name": "作成したQRコードの設定を後で復元したい", "acceptedAnswer": { "@type": "Answer", "text": "設定をURLで共有ボタンを押すと、現在の設定がエンコードされたURLをコピーできます（ロゴ画像は含まれません）。" } },
+      { "@type": "Question", "name": "生成したパスワードをQRコード化できますか？", "acceptedAnswer": { "@type": "Answer", "text": "はい。パスワード生成ツールで作成した強力なパスワードをテキストタイプに貼り付ければ、QRコード経由で安全に配布できます。" } }
+    ]
   }
   </script>
 

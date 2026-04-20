@@ -70,6 +70,111 @@ h2 {
     margin-bottom: 1.5rem;
 }
 
+.seo-content h3 {
+    color: var(--primary-color);
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 1.1rem;
+}
+
+.seo-content p {
+    margin: 0.75rem 0;
+}
+
+.seo-content a {
+    color: var(--primary-color);
+    text-decoration: underline;
+}
+
+.seo-content a:hover {
+    text-decoration: none;
+}
+
+.howto-steps {
+    counter-reset: step;
+    list-style: none;
+    padding-left: 0;
+    margin: 1rem 0;
+}
+
+.howto-steps > li {
+    counter-increment: step;
+    position: relative;
+    padding: 0.5rem 0 0.5rem 2.5rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+}
+
+.howto-steps > li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0.5rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    background-color: var(--primary-color);
+    color: var(--text-color-light);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.faq-list {
+    margin: 1rem 0;
+}
+
+.faq-list details {
+    border: 1px solid var(--secondary-color);
+    border-radius: var(--border-radius);
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+    background-color: var(--background-color);
+    transition: background-color 0.2s ease;
+}
+
+.faq-list details[open] {
+    background-color: var(--card-color);
+}
+
+.faq-list summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-color);
+    list-style: none;
+    padding-right: 1.5rem;
+    position: relative;
+}
+
+.faq-list summary::-webkit-details-marker {
+    display: none;
+}
+
+.faq-list summary::after {
+    content: "+";
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.25rem;
+    color: var(--primary-color);
+    font-weight: 400;
+    transition: transform 0.2s ease;
+}
+
+.faq-list details[open] summary::after {
+    content: "−";
+}
+
+.faq-list details > p,
+.faq-list details > div {
+    margin: 0.75rem 0 0.25rem;
+    color: var(--gray-text-color);
+    line-height: 1.7;
+}
+
 footer {
     text-align: center;
     padding: 2rem 0;

@@ -14,14 +14,20 @@
     <meta property="og:description" content="カラーパレット生成ツールは、見た目を重視したカラーパレットを即座に生成する無料Webツールです。保存、共有、PNG出力まで対応。">
     <meta property="og:site_name" content="KIRICAB Tools">
     <meta property="og:locale" content="ja_JP">
+    <meta property="og:image" content="https://kiricab.github.io/common/og-image.svg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="カラーパレット生成ツール | 調和の取れた配色を自動提案">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="カラーパレット生成ツール | デザインを補助する調和の取れた配色を提案">
     <meta name="twitter:description" content="調和モードを選ぶだけで配色を自動提案。ロック・保存・PNG/JSONエクスポートに対応した無料のカラーパレット生成ツール。">
+    <meta name="twitter:image" content="https://kiricab.github.io/common/og-image.svg">
     <!-- Canonical -->
     <link rel="canonical" href="https://kiricab.github.io/colorpallet/">
 
     <link rel="icon" href="../common/favicon.svg">
+    <link rel="preconnect" href="https://www.googletagmanager.com">
+    <link rel="preconnect" href="https://pagead2.googlesyndication.com">
     <link rel="stylesheet" href="../common/style.css">
     <link rel="stylesheet" href="style.css">
 
@@ -130,6 +136,53 @@
 
             <div id="savedList" class="saved-list"></div>
         </section>
+
+        <section class="seo-content">
+            <h2>カラーパレット生成ツールの使い方</h2>
+            <p>配色ハーモニーモードを選んで「Generate」を押すだけで、調和の取れたカラーパレットを自動生成できます。気に入った色をロックして他の色だけを再生成したり、ブラウザ内のLocalStorageに保存したりできます。</p>
+            <ol class="howto-steps">
+                <li>配色モード（Random/Analogous/Complementary/Triadic/Monochrome）を選択</li>
+                <li>「Generate」ボタンで配色を自動生成</li>
+                <li>気に入らない色は🔒ロックを外して再生成、気に入った配色は「Save」で保存</li>
+                <li>「Export PNG」または「Export JSON」でダウンロード、「Share URL」で共有リンクをコピー</li>
+            </ol>
+
+            <h2>配色ハーモニーモードの解説</h2>
+            <h3>Analogous（類似色）</h3>
+            <p>色相環で隣接する色を組み合わせる配色。統一感があり、穏やかで自然な印象を与えます。ブランドサイトやポートフォリオなど、落ち着いたトーンを表現したい場面におすすめです。</p>
+            <h3>Complementary（補色）</h3>
+            <p>色相環で反対側に位置する2色を組み合わせる配色。コントラストが強く、ボタンやCTAなどアクセントカラーを際立たせたい場面で効果を発揮します。</p>
+            <h3>Triadic（3色ハーモニー）</h3>
+            <p>色相環を三等分した位置にある3色を使う配色。華やかで動きのある印象を作れるため、メディアサイトやイベントページに向いています。</p>
+            <h3>Monochrome（単一トーン）</h3>
+            <p>同一色相の明度・彩度を変えた配色。シンプルで洗練された印象となり、エレガントなUIデザインに最適です。</p>
+
+            <p>生成したパレットをロゴや印影デザインに活用したい場合は、<a href="../sealgen/index.html">印鑑ジェネレーター</a>で色指定の参考にも使えます。</p>
+
+            <h2>よくある質問</h2>
+            <div class="faq-list">
+                <details>
+                    <summary>生成したカラーパレットはダウンロードできますか？</summary>
+                    <p>はい。「Export PNG」ボタンでパレット画像をPNG形式でダウンロードできます。また「Export JSON」で設定を含むJSONファイルを、「Share URL」でURLを共有できます。</p>
+                </details>
+                <details>
+                    <summary>配色はどこに保存されますか？</summary>
+                    <p>保存先はお使いのブラウザのLocalStorageです。サーバには一切送信されません。ブラウザのキャッシュを削除すると保存したパレットも消えるのでご注意ください。</p>
+                </details>
+                <details>
+                    <summary>HEX以外のカラーコードにも対応していますか？</summary>
+                    <p>右上のFormatセレクタでHEX／RGB／HSLを切り替え可能です。CSSやデザインツールに合わせた形式でコピーできます。</p>
+                </details>
+                <details>
+                    <summary>気に入った色だけ残して他を再生成できますか？</summary>
+                    <p>可能です。各色をクリックしてロックすることで、ロックした色を維持したまま他のカラーのみを再生成できます。</p>
+                </details>
+                <details>
+                    <summary>作成したパレットを他のデザインツールで使いたい</summary>
+                    <p>「Export JSON」で書き出したファイルは他のデザインツールへのインポート素材として再利用できます。また画像として使いたい場合は「Export PNG」をご利用ください。</p>
+                </details>
+            </div>
+        </section>
     </main>
 
     <footer>
@@ -157,9 +210,10 @@
       "name": "カラーパレット生成ツール",
       "url": "https://kiricab.github.io/colorpallet/",
       "description": "調和モードを選ぶだけで配色を自動提案。ロック・保存・PNG/JSONエクスポートに対応した無料のカラーパレット生成ツール。",
-      "applicationCategory": "UtilitiesApplication",
-      "operatingSystem": "All",
+      "applicationCategory": "DesignApplication",
+      "operatingSystem": "Any",
       "inLanguage": "ja",
+      "image": "https://kiricab.github.io/common/og-image.svg",
       "offers": {
         "@type": "Offer",
         "price": "0",
@@ -170,6 +224,43 @@
         "name": "KIRICAB Tools",
         "url": "https://kiricab.github.io/"
       }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "ホーム", "item": "https://kiricab.github.io/" },
+        { "@type": "ListItem", "position": 2, "name": "カラーパレット生成ツール", "item": "https://kiricab.github.io/colorpallet/" }
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "カラーパレットの作り方",
+      "description": "配色ハーモニーモードを選んで生成するだけで、調和の取れたカラーパレットを作成できます。",
+      "step": [
+        { "@type": "HowToStep", "position": 1, "name": "配色モードを選択", "text": "Random/Analogous/Complementary/Triadic/Monochromeから選択" },
+        { "@type": "HowToStep", "position": 2, "name": "Generateボタンを押す", "text": "Generateボタンで配色を自動生成" },
+        { "@type": "HowToStep", "position": 3, "name": "ロックして再生成", "text": "気に入った色をロックし、他の色を再生成" },
+        { "@type": "HowToStep", "position": 4, "name": "エクスポート", "text": "PNG・JSON・共有URLから使いたい形式で書き出す" }
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "生成したカラーパレットはダウンロードできますか？", "acceptedAnswer": { "@type": "Answer", "text": "Export PNGボタンでパレット画像をPNG形式でダウンロードできます。Export JSONで設定を含むJSONファイルを、Share URLでURLを共有できます。" } },
+        { "@type": "Question", "name": "配色はどこに保存されますか？", "acceptedAnswer": { "@type": "Answer", "text": "保存先はブラウザのLocalStorageです。サーバには送信されません。ブラウザのキャッシュを削除すると保存したパレットも消えます。" } },
+        { "@type": "Question", "name": "HEX以外のカラーコードにも対応していますか？", "acceptedAnswer": { "@type": "Answer", "text": "HEX／RGB／HSLを切り替え可能です。CSSやデザインツールに合わせた形式でコピーできます。" } },
+        { "@type": "Question", "name": "気に入った色だけ残して他を再生成できますか？", "acceptedAnswer": { "@type": "Answer", "text": "各色をクリックしてロックすることで、ロックした色を維持したまま他のカラーのみを再生成できます。" } },
+        { "@type": "Question", "name": "作成したパレットを他のデザインツールで使いたい", "acceptedAnswer": { "@type": "Answer", "text": "Export JSONで書き出したファイルは他のデザインツールへのインポート素材として再利用できます。画像として使いたい場合はExport PNGをご利用ください。" } }
+      ]
     }
     </script>
 </body>
