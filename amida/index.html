@@ -12,13 +12,19 @@
     <meta property="og:description" content="参加者名と結果を入力するだけで、公平なあみだくじを自動生成。SVGアニメーションで経路をリアルタイム表示。">
     <meta property="og:site_name" content="KIRICAB Tools">
     <meta property="og:locale" content="ja_JP">
+    <meta property="og:image" content="https://kiricab.github.io/common/og-image.svg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary">
+    <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="あみだくじ | 公平なランダム抽選をブラウザで | KIRICAB Tools">
     <meta name="twitter:description" content="参加者名と結果を入力するだけで、公平なあみだくじを自動生成。">
+    <meta name="twitter:image" content="https://kiricab.github.io/common/og-image.svg">
     <!-- Canonical -->
     <link rel="canonical" href="https://kiricab.github.io/amida/">
     <link rel="icon" href="../common/favicon.svg">
+    <link rel="preconnect" href="https://www.googletagmanager.com">
+    <link rel="preconnect" href="https://pagead2.googlesyndication.com">
     <link rel="stylesheet" href="../common/style.css">
     <link rel="stylesheet" href="style.css">
     <!-- Google AdSense -->
@@ -99,6 +105,38 @@
             <p>あみだくじは日本で広く使われる公平な抽選方法です。縦に並んだ線（参加者の数だけ）と、それを横につなぐ横線で構成されます。上から下へ線を辿り、横線があれば必ず横に移動するルールに従って結果が決まります。</p>
             <p>このツールでは参加者名と割り当てたい結果を入力するだけで、あみだくじの構造を自動生成します。SVGアニメーションで全員の経路をリアルタイムに表示するため、誰がどの結果になるか視覚的に確認できます。急いでいるときはスキップボタンで即座に結果を表示することも可能です。</p>
             <p>担当割り当て・順番決め・景品当てなど、あらゆるシーンで活用できます。</p>
+
+            <h2>あみだくじの使い方</h2>
+            <ol class="howto-steps">
+                <li>参加者名を1行に1名ずつ入力します（2〜10名）。</li>
+                <li>結果ラベル（当たり・はずれ・担当Aなど）を参加者と同数入力します。</li>
+                <li>横線の密度を「少ない／普通／多い」から選択します。</li>
+                <li>「あみだくじを生成」ボタンを押し、「スタート」でアニメーションを再生すると結果が確定します。</li>
+            </ol>
+
+            <h2>よくある質問</h2>
+            <div class="faq-list">
+                <details>
+                    <summary>結果は本当に公平ですか？</summary>
+                    <p>横線の配置にブラウザの乱数（Math.random）を使用しており、特定の参加者が有利・不利にならないように生成します。結果の当たり位置は入力順とは独立しているため、誰が先に入力しても公平性は保たれます。</p>
+                </details>
+                <details>
+                    <summary>何人まで参加できますか？</summary>
+                    <p>2〜10名まで対応しています。大人数の抽選はレイアウトが細かくなりすぎるため、グループ分けしてから実施するのがおすすめです。</p>
+                </details>
+                <details>
+                    <summary>結果をチームに共有できますか？</summary>
+                    <p>「URLをコピー」ボタンでパラメータ付きURLをコピーできます。受け取った側が開くと同じあみだくじが再現されるため、結果を後から共有したい場合にも便利です。</p>
+                </details>
+                <details>
+                    <summary>アニメーションを飛ばせますか？</summary>
+                    <p>スタート後に表示される「スキップ」ボタンで、アニメーションを飛ばして結果だけを即座に確認できます。会議中など時間がない場面でも使えます。</p>
+                </details>
+                <details>
+                    <summary>参加者のチーム分けにカラー割り当てをしたい</summary>
+                    <p>チーム名を結果ラベルに設定すれば色分けとは別にグループ分けが可能です。見た目の色を統一したい場合は、<a href="../colorpallet/index.html">カラーパレット生成ツール</a>でチームカラーの候補を用意してから割り当てると雰囲気が揃います。</p>
+                </details>
+            </div>
         </section>
     </main>
 
@@ -128,10 +166,48 @@
       "url": "https://kiricab.github.io/amida/",
       "description": "参加者名と結果を入力するだけで、公平なあみだくじを自動生成。SVGアニメーションで経路をリアルタイム表示。",
       "applicationCategory": "UtilitiesApplication",
-      "operatingSystem": "All",
+      "operatingSystem": "Any",
       "inLanguage": "ja",
+      "image": "https://kiricab.github.io/common/og-image.svg",
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "JPY" },
       "isPartOf": { "@type": "WebSite", "name": "KIRICAB Tools", "url": "https://kiricab.github.io/" }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "ホーム", "item": "https://kiricab.github.io/" },
+        { "@type": "ListItem", "position": 2, "name": "あみだくじ", "item": "https://kiricab.github.io/amida/" }
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "あみだくじの使い方",
+      "description": "参加者名と結果ラベルを入力し、横線の密度を選んであみだくじを生成します。",
+      "step": [
+        { "@type": "HowToStep", "position": 1, "name": "参加者名を入力", "text": "参加者名を1行に1名ずつ入力します（2〜10名）" },
+        { "@type": "HowToStep", "position": 2, "name": "結果ラベルを入力", "text": "結果ラベル（当たり・はずれ・担当Aなど）を参加者と同数入力します" },
+        { "@type": "HowToStep", "position": 3, "name": "横線の密度を選択", "text": "横線の密度を少ない／普通／多いから選択します" },
+        { "@type": "HowToStep", "position": 4, "name": "生成とスタート", "text": "あみだくじを生成ボタンを押し、スタートでアニメーションを再生すると結果が確定します" }
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "結果は本当に公平ですか？", "acceptedAnswer": { "@type": "Answer", "text": "横線の配置にブラウザの乱数を使用しており、特定の参加者が有利・不利にならないように生成します。結果の当たり位置は入力順とは独立しているため公平性は保たれます。" } },
+        { "@type": "Question", "name": "何人まで参加できますか？", "acceptedAnswer": { "@type": "Answer", "text": "2〜10名まで対応しています。大人数の抽選はレイアウトが細かくなりすぎるため、グループ分けしてから実施するのがおすすめです。" } },
+        { "@type": "Question", "name": "結果をチームに共有できますか？", "acceptedAnswer": { "@type": "Answer", "text": "URLをコピーボタンでパラメータ付きURLをコピーできます。受け取った側が開くと同じあみだくじが再現されます。" } },
+        { "@type": "Question", "name": "アニメーションを飛ばせますか？", "acceptedAnswer": { "@type": "Answer", "text": "スタート後に表示されるスキップボタンで、アニメーションを飛ばして結果だけを即座に確認できます。" } },
+        { "@type": "Question", "name": "参加者のチーム分けにカラー割り当てをしたい", "acceptedAnswer": { "@type": "Answer", "text": "チーム名を結果ラベルに設定すればグループ分けが可能です。カラーパレット生成ツールでチームカラーの候補を用意すると雰囲気が揃います。" } }
+      ]
     }
     </script>
 </body>

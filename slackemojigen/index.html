@@ -13,15 +13,20 @@
     <meta property="og:description" content="お好きなテキスト、フォント、色でオリジナルのSlackカスタム絵文字を簡単に作成できる無料ツールです。インストール不要で、ブラウザ上でプレビューしながらすぐにダウンロードできます。">
     <meta property="og:site_name" content="KIRICAB Tools">
     <meta property="og:locale" content="ja_JP">
+    <meta property="og:image" content="https://kiricab.github.io/common/og-image.svg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary">
+    <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Slack絵文字ジェネレーター | テキストからカスタム絵文字を無料作成">
     <meta name="twitter:description" content="お好きなテキスト、フォント、色でオリジナルのSlackカスタム絵文字を簡単に作成できる無料ツールです。インストール不要で、ブラウザ上でプレビューしながらすぐにダウンロード。">
+    <meta name="twitter:image" content="https://kiricab.github.io/common/og-image.svg">
     <!-- Canonical -->
     <link rel="canonical" href="https://kiricab.github.io/slackemojigen/">
 
     <link rel="icon" href="../common/favicon.svg">
-
+    <link rel="preconnect" href="https://www.googletagmanager.com">
+    <link rel="preconnect" href="https://pagead2.googlesyndication.com">
     <link rel="stylesheet" href="../common/style.css">
     <link rel="stylesheet" href="style.css">
     <!-- Google AdSense-->
@@ -95,6 +100,30 @@
             <h2>Slack絵文字の活用法</h2>
             <p>Slackのカスタム絵文字は、チームのコミュニケーションをより豊かで楽しいものにするための強力なツールです。テキストだけでは伝わりにくい感情やニュアンスを表現したり、特定のプロジェクトやチーム内での共通言語として使ったりすることができます。</p>
             <p>このツールを使えば、好きなテキスト、フォント、色を組み合わせて、オリジナルのSlack絵文字を簡単に作成できます。プロジェクト名やよく使うフレーズを絵文字にすることで、コミュニケーションの効率とエンゲージメントを高めることができます。</p>
+
+            <h2>よくある質問</h2>
+            <div class="faq-list">
+                <details>
+                    <summary>作成した絵文字はどうやってSlackに登録しますか？</summary>
+                    <p>ダウンロードしたPNG画像をSlackの絵文字管理画面（ワークスペース設定 → カスタマイズ → 絵文字）からアップロードします。ブラウザでSlackを開き、メッセージ欄の絵文字ピッカーから「絵文字を追加」でも登録できます。</p>
+                </details>
+                <details>
+                    <summary>画像の推奨サイズは？</summary>
+                    <p>本ツールは128×128pxのPNGを出力します。Slackの推奨サイズ（最大128KB・128px以下）に収まるため、そのままアップロードできます。</p>
+                </details>
+                <details>
+                    <summary>透過背景にできますか？</summary>
+                    <p>はい。「透過」チェックボックスをオンにすると、背景を透過したPNGとしてダウンロードできます。ダークテーマ・ライトテーマ両方で綺麗に表示されます。</p>
+                </details>
+                <details>
+                    <summary>日本語の絵文字も作れますか？</summary>
+                    <p>作れます。複数行のテキストも入力でき、Noto Sans JP などのWebフォントが選択肢に含まれています。</p>
+                </details>
+                <details>
+                    <summary>抽選やチーム分けに使う絵文字も作りたい</summary>
+                    <p>「当選」「選ばれた」などのテキスト絵文字を作り、<a href="../amida/index.html">あみだくじツール</a>の結果共有と併用すると、Slackでの盛り上げ演出に使えます。</p>
+                </details>
+            </div>
         </section>
     </main>
 
@@ -123,9 +152,10 @@
       "name": "Slack絵文字ジェネレーター",
       "url": "https://kiricab.github.io/slackemojigen/",
       "description": "テキストとフォント・色を指定してオリジナルのSlackカスタム絵文字を作成・ダウンロードできる無料ツール。",
-      "applicationCategory": "UtilitiesApplication",
-      "operatingSystem": "All",
+      "applicationCategory": "DesignApplication",
+      "operatingSystem": "Any",
       "inLanguage": "ja",
+      "image": "https://kiricab.github.io/common/og-image.svg",
       "offers": {
         "@type": "Offer",
         "price": "0",
@@ -136,6 +166,29 @@
         "name": "KIRICAB Tools",
         "url": "https://kiricab.github.io/"
       }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "ホーム", "item": "https://kiricab.github.io/" },
+        { "@type": "ListItem", "position": 2, "name": "Slack絵文字生成", "item": "https://kiricab.github.io/slackemojigen/" }
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "作成した絵文字はどうやってSlackに登録しますか？", "acceptedAnswer": { "@type": "Answer", "text": "ダウンロードしたPNG画像をSlackの絵文字管理画面（ワークスペース設定 → カスタマイズ → 絵文字）からアップロードします。" } },
+        { "@type": "Question", "name": "画像の推奨サイズは？", "acceptedAnswer": { "@type": "Answer", "text": "本ツールは128×128pxのPNGを出力します。Slackの推奨サイズ（最大128KB・128px以下）に収まります。" } },
+        { "@type": "Question", "name": "透過背景にできますか？", "acceptedAnswer": { "@type": "Answer", "text": "透過チェックボックスをオンにすると、背景を透過したPNGとしてダウンロードできます。" } },
+        { "@type": "Question", "name": "日本語の絵文字も作れますか？", "acceptedAnswer": { "@type": "Answer", "text": "作れます。複数行のテキストも入力でき、Noto Sans JPなどのWebフォントが選択肢に含まれます。" } },
+        { "@type": "Question", "name": "抽選やチーム分けに使う絵文字も作りたい", "acceptedAnswer": { "@type": "Answer", "text": "当選や選ばれたなどのテキスト絵文字を作り、あみだくじツールの結果共有と併用すると、Slackでの盛り上げ演出に使えます。" } }
+      ]
     }
     </script>
 </body>
