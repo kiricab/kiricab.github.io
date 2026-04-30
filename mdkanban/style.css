@@ -1,0 +1,788 @@
+/* mdkanban 固有スタイル
+   ライト／ダークの2モードを body[data-theme] で切替。
+   common/style.css で定義された CSS カスタムプロパティの上に
+   カンバン用のローカル変数を被せる。 */
+
+:root {
+  --kanban-col-bg: #f1f3f5;
+  --kanban-col-border: #dee2e6;
+  --kanban-card-bg: #ffffff;
+  --kanban-card-border: #dee2e6;
+  --kanban-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --kanban-tag-bg: #e7f1ff;
+  --kanban-tag-color: #1e3a8a;
+  --kanban-due-overdue-bg: #fde2e2;
+  --kanban-due-overdue-color: #b42318;
+  --kanban-due-today-bg: #fff4cc;
+  --kanban-due-today-color: #8a6100;
+  --kanban-due-future-bg: #e9ecef;
+  --kanban-due-future-color: #495057;
+  --kanban-modal-overlay: rgba(15, 23, 42, 0.55);
+}
+
+body[data-theme="dark"] {
+  --primary-color: #4a6fd4;
+  --primary-color-dark: #1e293b;
+  --secondary-color: #2d3748;
+  --background-color: #1a202c;
+  --card-color: #2d3748;
+  --text-color: #e2e8f0;
+  --gray-text-color: #a0aec0;
+  --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+  --kanban-col-bg: #232c3d;
+  --kanban-col-border: #2d3748;
+  --kanban-card-bg: #2d3748;
+  --kanban-card-border: #3a4456;
+  --kanban-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --kanban-tag-bg: #2a3a66;
+  --kanban-tag-color: #c8d4ff;
+  --kanban-due-overdue-bg: #4a1e1e;
+  --kanban-due-overdue-color: #fca5a5;
+  --kanban-due-today-bg: #4a3b00;
+  --kanban-due-today-color: #fde68a;
+  --kanban-due-future-bg: #374151;
+  --kanban-due-future-color: #d1d5db;
+  --kanban-modal-overlay: rgba(0, 0, 0, 0.7);
+}
+
+/* テーマプロパティが body 単位で再定義されるため、html/body にも反映 */
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== ヘッダー ===== */
+.kanban-header {
+  background-color: var(--primary-color);
+  color: var(--text-color-light);
+  padding: 1rem 1.5rem;
+  border-bottom: 3px solid var(--primary-color-dark);
+}
+
+.kanban-header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.kanban-title-wrap h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.kanban-tagline {
+  margin: 0.25rem 0 0;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.85rem;
+}
+
+.kanban-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.file-name-display {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-name-display:empty {
+  display: none;
+}
+
+.tb-btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--text-color-light);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  font-family: inherit;
+}
+
+.tb-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.tb-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.tb-btn.icon-btn {
+  padding: 0.4rem 0.6rem;
+  min-width: 2.4rem;
+}
+
+/* ===== メインエリア ===== */
+.kanban-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+}
+
+/* ===== 復元バナー ===== */
+.restore-banner {
+  background-color: #fff8e1;
+  border-bottom: 1px solid #f6c453;
+  color: #6b4f00;
+}
+
+body[data-theme="dark"] .restore-banner {
+  background-color: #3a2f00;
+  border-bottom-color: #6b5500;
+  color: #fde68a;
+}
+
+.restore-banner-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1.5rem;
+}
+
+.restore-banner-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ===== ステータスエリア（トースト・警告・エラー） ===== */
+.status-area {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.status-area:empty {
+  padding: 0;
+}
+
+.status-msg {
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  border: 1px solid transparent;
+}
+
+.status-msg.success {
+  background-color: #e7f5ec;
+  color: #1b6b3a;
+  border-color: #b6e0c4;
+}
+
+.status-msg.warning {
+  background-color: #fff8e1;
+  color: #6b4f00;
+  border-color: #f6c453;
+}
+
+.status-msg.error {
+  background-color: #fde2e2;
+  color: #b42318;
+  border-color: #f3a8a8;
+}
+
+body[data-theme="dark"] .status-msg.success { background:#1f3a2a; color:#9ae6b4; border-color:#2f5a3f; }
+body[data-theme="dark"] .status-msg.warning { background:#3a2f00; color:#fde68a; border-color:#6b5500; }
+body[data-theme="dark"] .status-msg.error   { background:#4a1e1e; color:#fca5a5; border-color:#7a2e2e; }
+
+/* ===== タグフィルタバー ===== */
+.tag-filter-bar {
+  background-color: var(--card-color);
+  border-bottom: 1px solid var(--secondary-color);
+}
+
+.tag-filter-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 1.5rem;
+}
+
+.tag-filter-label {
+  color: var(--gray-text-color);
+  font-size: 0.875rem;
+}
+
+.active-tag {
+  display: inline-block;
+  background-color: var(--kanban-tag-bg);
+  color: var(--kanban-tag-color);
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* ===== ボタン共通 ===== */
+.btn {
+  background-color: var(--primary-color);
+  color: var(--text-color-light);
+  border: none;
+  border-radius: 6px;
+  padding: 0.55rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s ease;
+}
+
+.btn:hover { opacity: 0.9; }
+.btn:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 2px; }
+
+.btn.secondary {
+  background-color: var(--secondary-color);
+  color: var(--text-color);
+}
+
+.btn.small {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.8rem;
+}
+
+/* ===== 空状態（ドロップゾーン） ===== */
+.empty-state {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.dropzone {
+  border: 2px dashed var(--primary-color);
+  border-radius: 12px;
+  background-color: var(--card-color);
+  padding: 3rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.dropzone:hover,
+.dropzone:focus-visible {
+  background-color: rgba(30, 58, 138, 0.05);
+  outline: none;
+}
+
+body[data-theme="dark"] .dropzone:hover,
+body[data-theme="dark"] .dropzone:focus-visible {
+  background-color: rgba(74, 111, 212, 0.12);
+}
+
+.dropzone.drag-over {
+  background-color: rgba(30, 58, 138, 0.10);
+  border-color: var(--primary-color-dark);
+  transform: scale(1.01);
+}
+
+body[data-theme="dark"] .dropzone.drag-over {
+  background-color: rgba(74, 111, 212, 0.18);
+}
+
+.dropzone-icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.dropzone-main {
+  font-size: 1.05rem;
+  margin: 1rem 0 0.5rem;
+  color: var(--text-color);
+}
+
+.dropzone-sub {
+  margin: 0 0 1.25rem;
+  color: var(--gray-text-color);
+  font-size: 0.9rem;
+}
+
+.dropzone-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* オンボーディングガイド */
+.onboarding-guide {
+  margin-top: 2rem;
+  background-color: var(--card-color);
+  border: 1px solid var(--secondary-color);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+}
+
+.onboarding-guide h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.onboarding-sample {
+  background-color: var(--background-color);
+  border: 1px solid var(--secondary-color);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  font-family: SFMono-Regular, Menlo, Consolas, monospace;
+  margin: 0.5rem 0 1rem;
+}
+
+.onboarding-points {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--text-color);
+  font-size: 0.9rem;
+  line-height: 1.8;
+}
+
+.onboarding-points code {
+  background-color: var(--background-color);
+  padding: 0.05rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+/* ===== ボード ===== */
+.board-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.board-title-row {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem 0.5rem;
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  box-sizing: border-box;
+}
+
+.board-title {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--primary-color);
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.board-title:empty {
+  display: none;
+}
+
+.board-stats {
+  color: var(--gray-text-color);
+  font-size: 0.85rem;
+}
+
+.kanban-board {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 1.5rem 2rem;
+  overflow-x: auto;
+  align-items: flex-start;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+}
+
+.kanban-column {
+  flex: 0 0 300px;
+  background-color: var(--kanban-col-bg);
+  border: 1px solid var(--kanban-col-border);
+  border-radius: 10px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 200px);
+  scroll-snap-align: start;
+}
+
+.kanban-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.25rem 0.25rem 0.5rem;
+  font-weight: 600;
+  color: var(--text-color);
+  border-bottom: 1px solid var(--kanban-col-border);
+  margin-bottom: 0.5rem;
+}
+
+.kanban-column-title {
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kanban-column-count {
+  background-color: var(--secondary-color);
+  color: var(--gray-text-color);
+  border-radius: 999px;
+  padding: 0.05rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.kanban-column-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.kanban-card {
+  background-color: var(--kanban-card-bg);
+  border: 1px solid var(--kanban-card-border);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  box-shadow: var(--kanban-card-shadow);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+.kanban-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.10);
+}
+
+.kanban-card:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.kanban-card.is-done {
+  opacity: 0.55;
+}
+
+.kanban-card.is-done .kanban-card-title {
+  text-decoration: line-through;
+}
+
+.kanban-card-title {
+  font-size: 0.92rem;
+  line-height: 1.4;
+  color: var(--text-color);
+  word-break: break-word;
+  margin: 0;
+}
+
+/* コンパクト：1〜2行までで切る */
+body[data-density="compact"] .kanban-card-preview { display: none; }
+body[data-density="compact"] .kanban-card-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 詳細：本文プレビュー1〜2行を表示 */
+.kanban-card-preview {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  color: var(--gray-text-color);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
+}
+
+.kanban-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+
+.kanban-card-meta:empty { display: none; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: default;
+}
+
+.badge.tag {
+  background-color: var(--kanban-tag-bg);
+  color: var(--kanban-tag-color);
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+}
+
+.badge.tag:hover { filter: brightness(0.95); }
+.badge.tag:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 1px; }
+
+.badge.due-overdue { background-color: var(--kanban-due-overdue-bg); color: var(--kanban-due-overdue-color); }
+.badge.due-today   { background-color: var(--kanban-due-today-bg);   color: var(--kanban-due-today-color); }
+.badge.due-future  { background-color: var(--kanban-due-future-bg);  color: var(--kanban-due-future-color); }
+
+.badge.subtask {
+  background-color: var(--secondary-color);
+  color: var(--gray-text-color);
+}
+
+/* ===== カード詳細モーダル ===== */
+.card-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.card-modal[hidden] { display: none; }
+
+.card-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: var(--kanban-modal-overlay);
+}
+
+.card-modal-dialog {
+  position: relative;
+  background-color: var(--card-color);
+  color: var(--text-color);
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  max-width: 720px;
+  width: calc(100% - 2rem);
+  max-height: calc(100vh - 2rem);
+  display: flex;
+  flex-direction: column;
+}
+
+.card-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--secondary-color);
+}
+
+.card-modal-title {
+  margin: 0;
+  font-size: 1.15rem;
+  color: var(--primary-color);
+  border-bottom: none;
+  padding-bottom: 0;
+  word-break: break-word;
+}
+
+.card-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--gray-text-color);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.card-modal-close:hover { background-color: var(--secondary-color); }
+.card-modal-close:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 2px; }
+
+.card-modal-body {
+  padding: 1rem 1.25rem 1.25rem;
+  overflow-y: auto;
+  line-height: 1.7;
+}
+
+.card-modal-body h1,
+.card-modal-body h2,
+.card-modal-body h3,
+.card-modal-body h4 {
+  color: var(--primary-color);
+  border-bottom: none;
+  padding-bottom: 0;
+  margin: 1rem 0 0.5rem;
+}
+
+.card-modal-body h1 { font-size: 1.3rem; }
+.card-modal-body h2 { font-size: 1.15rem; }
+.card-modal-body h3 { font-size: 1.05rem; }
+
+.card-modal-body p { margin: 0.5rem 0; }
+
+.card-modal-body a {
+  color: var(--primary-color);
+  text-decoration: underline;
+}
+
+.card-modal-body a:hover { text-decoration: none; }
+
+.card-modal-body ul,
+.card-modal-body ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.card-modal-body code {
+  background-color: var(--background-color);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-family: SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.card-modal-body pre {
+  background-color: var(--background-color);
+  border: 1px solid var(--secondary-color);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+}
+
+.card-modal-body pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.card-modal-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+
+.card-modal-body blockquote {
+  border-left: 3px solid var(--primary-color);
+  margin: 0.5rem 0;
+  padding: 0.25rem 0.75rem;
+  color: var(--gray-text-color);
+  background-color: var(--background-color);
+  border-radius: 0 6px 6px 0;
+}
+
+.card-modal-body input[type="checkbox"] {
+  margin-right: 0.4rem;
+}
+
+.card-modal-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--secondary-color);
+}
+
+.card-modal-meta:empty { display: none; }
+
+/* ===== seo-content（共通スタイルを上書き調整） ===== */
+.seo-content {
+  margin: 1rem auto 2rem;
+}
+
+.seo-content code {
+  background-color: var(--background-color);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-family: SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* ===== レスポンシブ ===== */
+@media (max-width: 900px) {
+  .kanban-header-inner { flex-direction: column; align-items: flex-start; }
+  .kanban-toolbar { width: 100%; }
+  .file-name-display { flex: 1 1 auto; max-width: none; }
+  .board-title { font-size: 1.2rem; }
+}
+
+@media (max-width: 600px) {
+  .kanban-header { padding: 0.75rem 1rem; }
+  .kanban-title-wrap h1 { font-size: 1.25rem; }
+  .kanban-tagline { font-size: 0.78rem; }
+  .container { padding: 1rem; }
+  .empty-state { padding: 1.5rem 1rem; }
+  .dropzone { padding: 2rem 1rem; }
+  .dropzone-icon { font-size: 2.4rem; }
+  .dropzone-main { font-size: 0.95rem; }
+  .kanban-board { padding: 1rem; gap: 0.75rem; }
+  .kanban-column { flex-basis: 84vw; max-width: 320px; max-height: none; }
+  .kanban-column-cards { max-height: 60vh; }
+  .card-modal-dialog {
+    width: calc(100% - 1rem);
+    max-height: calc(100vh - 1rem);
+  }
+  .card-modal-header { padding: 0.75rem 1rem; }
+  .card-modal-body { padding: 0.75rem 1rem 1rem; }
+  .tb-btn {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.8rem;
+  }
+  .file-name-display {
+    font-size: 0.8rem;
+    max-width: 100%;
+    flex-basis: 100%;
+    margin-bottom: 0.25rem;
+  }
+}
+
+/* ===== prefers-color-scheme: 自動ダーク化はユーザー操作優先のため無効化 ===== */
+/* common/style.css の prefers-color-scheme は :root に対するので、
+   body[data-theme="light"] を明示的に上書きしておく */
+@media (prefers-color-scheme: dark) {
+  body[data-theme="light"] {
+    --primary-color: #1e3a8a;
+    --primary-color-dark: #1e293b;
+    --secondary-color: #e9ecef;
+    --background-color: #f8f9fa;
+    --card-color: #ffffff;
+    --text-color: #212529;
+    --gray-text-color: #6c757d;
+    --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+    --kanban-col-bg: #f1f3f5;
+    --kanban-col-border: #dee2e6;
+    --kanban-card-bg: #ffffff;
+    --kanban-card-border: #dee2e6;
+  }
+}

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mdkanban - Markdownをそのままカンバン表示｜ログイン不要・ブラウザ完結ビューワー</title>
+  <meta name="description" content="Obsidian Kanban互換のMarkdownファイルをドラッグ&ドロップするだけでカンバンボード表示。ログイン不要・インストール不要・サーバー送信なし。スマホでも閲覧できる無料Webツール。">
+
+  <!-- OGP -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://kiricab.github.io/mdkanban/">
+  <meta property="og:title" content="mdkanban - Markdownをそのままカンバン表示｜ログイン不要・ブラウザ完結ビューワー">
+  <meta property="og:description" content="Obsidian Kanban互換のMarkdownファイルをドラッグ&ドロップするだけでカンバンボード表示。ログイン不要・インストール不要・サーバー送信なし。スマホでも閲覧できる無料Webツール。">
+  <meta property="og:site_name" content="KIRICAB Tools">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:image" content="https://kiricab.github.io/common/og-image.svg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="mdkanban - Markdownをそのままカンバン表示｜ログイン不要・ブラウザ完結ビューワー">
+  <meta name="twitter:description" content="Obsidian Kanban互換のMarkdownファイルをドラッグ&ドロップするだけでカンバンボード表示。ログイン不要・インストール不要・サーバー送信なし。">
+  <meta name="twitter:image" content="https://kiricab.github.io/common/og-image.svg">
+  <!-- Canonical -->
+  <link rel="canonical" href="https://kiricab.github.io/mdkanban/">
+
+  <link rel="icon" href="../common/favicon.svg">
+  <link rel="preconnect" href="https://www.googletagmanager.com">
+  <link rel="preconnect" href="https://pagead2.googlesyndication.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <meta name="google-adsense-account" content="ca-pub-8141179596557780">
+  <link rel="stylesheet" href="../common/style.css">
+  <link rel="stylesheet" href="style.css">
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8141179596557780" crossorigin="anonymous"></script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-CN3KBWSXRE"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-CN3KBWSXRE');
+  </script>
+</head>
+<body data-theme="light">
+
+  <header class="kanban-header">
+    <div class="kanban-header-inner">
+      <div class="kanban-title-wrap">
+        <h1>📋 mdkanban</h1>
+        <p class="kanban-tagline">Markdownをドロップするだけでカンバン表示。ログイン不要・全部ローカル。</p>
+      </div>
+      <div class="kanban-toolbar" role="toolbar" aria-label="ツールバー">
+        <span id="file-name-display" class="file-name-display" aria-live="polite"></span>
+        <button type="button" class="tb-btn" id="open-file-btn" aria-label="Markdownファイルを開く">📂 ファイルを開く</button>
+        <button type="button" class="tb-btn" id="sample-btn" aria-label="サンプルを表示">✨ サンプル</button>
+        <button type="button" class="tb-btn icon-btn" id="theme-toggle" aria-label="テーマ切替（ライト/ダーク）" title="テーマ切替">🌙</button>
+        <button type="button" class="tb-btn icon-btn" id="density-toggle" aria-label="表示密度切替（コンパクト/詳細）" title="表示密度切替">▦</button>
+        <input type="file" id="file-input" accept=".md,.markdown,text/markdown" hidden>
+      </div>
+    </div>
+  </header>
+
+  <main class="kanban-main">
+
+    <!-- 復元提案バナー -->
+    <div id="restore-banner" class="restore-banner" hidden>
+      <div class="restore-banner-inner container">
+        <span id="restore-banner-msg">前回開いたファイルがあります。復元しますか？</span>
+        <div class="restore-banner-actions">
+          <button type="button" class="btn" id="restore-yes-btn">復元する</button>
+          <button type="button" class="btn secondary" id="restore-no-btn">閉じる</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 状態表示（成功トースト・警告・エラー） -->
+    <div id="status-area" class="status-area" aria-live="polite"></div>
+
+    <!-- タグフィルタバー -->
+    <div id="tag-filter-bar" class="tag-filter-bar" hidden>
+      <div class="container tag-filter-inner">
+        <span class="tag-filter-label">フィルタ中:</span>
+        <span id="active-tag-display" class="active-tag"></span>
+        <button type="button" class="btn small secondary" id="clear-filter-btn">フィルタを解除</button>
+      </div>
+    </div>
+
+    <!-- 空状態（ドロップゾーン） -->
+    <section id="empty-state" class="empty-state">
+      <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Markdownファイルをドラッグ&ドロップまたはクリックして選択">
+        <div class="dropzone-icon" aria-hidden="true">📋</div>
+        <p class="dropzone-main">Markdownファイル（.md）をドラッグ&ドロップ<br>または<strong>ここをクリックして選択</strong></p>
+        <p class="dropzone-sub">処理はすべてブラウザ内で完結します。ファイルは外部に送信されません。</p>
+        <div class="dropzone-actions">
+          <button type="button" class="btn" id="dropzone-open-btn">📂 ファイルを開く</button>
+          <button type="button" class="btn secondary" id="dropzone-sample-btn">✨ サンプルを表示</button>
+        </div>
+      </div>
+
+      <div class="onboarding-guide">
+        <h2>対応Markdown形式</h2>
+        <p>下記のような Obsidian Kanban プラグイン互換の構造に対応しています。</p>
+<pre class="onboarding-sample"><code># ボードタイトル
+
+## TODO
+
+- [ ] 未完了タスク
+- [x] 完了タスク
+
+## Doing
+
+- 進行中タスク #tag @2026-05-01</code></pre>
+        <ul class="onboarding-points">
+          <li><code>##</code> 見出し → カンバンの <strong>列</strong> になります</li>
+          <li><code>-</code> 箇条書き → 列内の <strong>カード</strong> になります</li>
+          <li><code>- [x]</code> → 取り消し線で完了表示されます</li>
+          <li><code>#tag</code> → タグバッジ／<code>@YYYY-MM-DD</code> → 期限バッジ</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- カンバンボード本体 -->
+    <section id="board-section" class="board-section" hidden>
+      <div id="board-title-row" class="board-title-row">
+        <h2 id="board-title" class="board-title"></h2>
+        <span id="board-stats" class="board-stats" aria-live="polite"></span>
+      </div>
+      <div id="kanban-board" class="kanban-board" role="list" aria-label="カンバンボード"></div>
+    </section>
+
+    <!-- SEOコンテンツ -->
+    <section class="seo-content container">
+      <h2>mdkanbanについて</h2>
+      <p>mdkanbanは、Markdownファイル（<code>.md</code>）をブラウザにドラッグ&ドロップするだけでカンバンボードとして表示する無料ツールです。Obsidian Kanbanプラグインで作成したボードファイルをそのまま開けるため、Obsidianを開けない共有PCやスマートフォンでも、見慣れた列ごとのレイアウトでタスクを俯瞰できます。</p>
+      <p>すべての処理はお使いのブラウザ内で完結し、ファイルがサーバーに送信されることはありません。情報セキュリティに敏感な業務でのMarkdown閲覧にもご利用いただけます。</p>
+
+      <h3>使い方</h3>
+      <ol class="howto-steps">
+        <li>このページを開く（インストール・登録は不要です）</li>
+        <li>Markdownファイル（<code>.md</code>）をページ内にドラッグ&ドロップする、または「ファイルを開く」ボタンから選択する</li>
+        <li>自動でカンバンボードとして表示されます（<code>##</code> 見出しが列、<code>-</code> 箇条書きがカードに変換されます）</li>
+        <li>カードをクリックすると詳細を表示。タグや期限が含まれていれば自動でバッジ化されます</li>
+        <li>テーマ（ライト／ダーク）と表示密度（コンパクト／詳細）はヘッダーから切替できます。設定はブラウザに保存されます</li>
+      </ol>
+
+      <h3>主な機能</h3>
+      <ul>
+        <li><strong>Obsidian Kanban互換</strong>: <code>kanban-plugin: basic</code> frontmatter付きファイルもそのまま読み込み可能</li>
+        <li><strong>タグ＆期限バッジ</strong>: <code>#tag</code> はバッジ表示、<code>@YYYY-MM-DD</code> は今日基準で赤（期限切れ）／黄（当日）／灰（未来）に自動色分け</li>
+        <li><strong>サブタスク進捗</strong>: ネストした箇条書きを <code>2/5</code> 形式の進捗バッジで表示</li>
+        <li><strong>カード詳細モーダル</strong>: 段落・コードブロック・リンクをフルレンダリング</li>
+        <li><strong>タグフィルタ</strong>: バッジクリックで該当タグのカードのみ絞り込み</li>
+        <li><strong>復元機能</strong>: 最後に開いたファイル内容をブラウザに保存し、再訪問時に復元提案</li>
+        <li><strong>ダークモード対応</strong>: ヘッダーのトグルから切替、設定は永続化</li>
+        <li><strong>XSS対策</strong>: Markdown内の <code>&lt;script&gt;</code> や <code>javascript:</code> URLはサニタイズして無害化</li>
+      </ul>
+
+      <p>2つのカンバンmdの差分を確認したいときは、同じKIRICAB Toolsの<a href="../diff/index.html">テキスト比較ツール</a>と組み合わせるとレビューがスムーズです。</p>
+
+      <h2>よくある質問</h2>
+      <div class="faq-list">
+        <details>
+          <summary>どんなMarkdown形式に対応していますか？</summary>
+          <p>Obsidian Kanbanプラグインの <code>## 見出し</code>＝列、<code>- [ ] タスク</code>＝カード形式に対応しています。frontmatter（<code>---</code>で囲まれたYAML部分）もパースして無視します。<code>kanban-plugin: basic</code> の有無は問いません。</p>
+        </details>
+        <details>
+          <summary>アップロードしたファイルはサーバーに送信されますか？</summary>
+          <p>いいえ。すべての処理はお使いのブラウザ内で完結します。ファイル内容が外部のサーバーに送信されることはありません。社内Wikiや個人ノートのMarkdownでも安心してご利用いただけます。</p>
+        </details>
+        <details>
+          <summary>編集や保存はできますか？</summary>
+          <p>現バージョンは閲覧専用（ビューワー）です。カードのドラッグ&ドロップ並べ替えや、Markdownへの書き戻しといった編集機能は今後のアップデートで検討中です。</p>
+        </details>
+        <details>
+          <summary>2つのカンバンmdの差分を比較したいときは？</summary>
+          <p>同じKIRICAB Toolsの<a href="../diff/index.html">テキスト比較ツール（diff）</a>をご利用ください。Markdownのテキストを左右に貼り付けるだけで、追加・削除箇所を色分けして確認できます。</p>
+        </details>
+        <details>
+          <summary>タグや期限の色はカスタマイズできますか？</summary>
+          <p>期限バッジは今日基準で自動色分け（赤＝期限切れ／黄＝当日／灰＝未来）しており、カスタマイズには対応していません。タグ自体の配色を考えるときは<a href="../colorpallet/index.html">カラーパレット生成ツール</a>もご活用いただけます。</p>
+        </details>
+        <details>
+          <summary>スマートフォンでも使えますか？</summary>
+          <p>はい。横スクロールで列を移動でき、カード詳細はモバイル幅に最適化されたモーダルで表示されます。タッチ操作の慣性スクロールにも対応しています。</p>
+        </details>
+        <details>
+          <summary>対応していない記法はありますか？</summary>
+          <p>担当者記法 <code>@username</code>（日付以外の <code>@文字列</code>）や複数H1ボードなどは現バージョン非対応です。期限記法 <code>@YYYY-MM-DD</code> のみ特別扱いし、それ以外の <code>@文字列</code> は通常テキストとして表示します。</p>
+        </details>
+        <details>
+          <summary>読み込めるファイルサイズの上限は？</summary>
+          <p>1ファイルあたり5MBまでです。これを超えるファイルはエラー表示となります。1000カード規模のmdまでは快適に表示できるよう設計しています。</p>
+        </details>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- カード詳細モーダル -->
+  <div id="card-modal" class="card-modal" hidden role="dialog" aria-modal="true" aria-labelledby="card-modal-title">
+    <div class="card-modal-backdrop" id="card-modal-backdrop" tabindex="-1"></div>
+    <div class="card-modal-dialog" role="document">
+      <div class="card-modal-header">
+        <h2 id="card-modal-title" class="card-modal-title"></h2>
+        <button type="button" class="card-modal-close" id="card-modal-close" aria-label="閉じる">✕</button>
+      </div>
+      <div id="card-modal-body" class="card-modal-body"></div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="../index.html">ホーム</a>
+        <a href="../passgen/index.html">パスワード生成</a>
+        <a href="../slackemojigen/index.html">Slack絵文字生成</a>
+        <a href="../diff/index.html">テキスト比較</a>
+        <a href="../colorpallet/index.html">カラーパレット生成</a>
+        <a href="../qrgen/index.html">QRコード生成</a>
+        <a href="../sealgen/index.html">印鑑生成</a>
+        <a href="../amida/index.html">あみだくじ</a>
+        <a href="../filmfilter/index.html">フィルム風フィルター</a>
+        <a href="../mdkanban/index.html">mdカンバン</a>
+      </div>
+      <p>&copy; 2025 Kiricab. All Rights Reserved.</p>
+    </div>
+  </footer>
+
+  <!-- marked: MIT License - https://github.com/markedjs/marked -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+  <!-- DOMPurify: Apache-2.0 / MPL-2.0 - https://github.com/cure53/DOMPurify -->
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.11/dist/purify.min.js"></script>
+  <script src="script.js"></script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "mdkanban",
+    "url": "https://kiricab.github.io/mdkanban/",
+    "description": "Obsidian Kanban互換のMarkdownファイルをドラッグ&ドロップするだけでカンバンボード表示。ログイン不要・インストール不要・サーバー送信なしのブラウザ完結ビューワー。",
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Any",
+    "inLanguage": "ja",
+    "image": "https://kiricab.github.io/common/og-image.svg",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "JPY"
+    },
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": "KIRICAB Tools",
+      "url": "https://kiricab.github.io/"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "ホーム", "item": "https://kiricab.github.io/" },
+      { "@type": "ListItem", "position": 2, "name": "mdkanban", "item": "https://kiricab.github.io/mdkanban/" }
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      { "@type": "Question", "name": "どんなMarkdown形式に対応していますか？", "acceptedAnswer": { "@type": "Answer", "text": "Obsidian Kanbanプラグインの ## 見出し＝列、- [ ] タスク＝カード形式に対応します。frontmatterもパースして無視します。kanban-plugin: basic の有無は問いません。" } },
+      { "@type": "Question", "name": "アップロードしたファイルはサーバーに送信されますか？", "acceptedAnswer": { "@type": "Answer", "text": "いいえ。すべての処理はお使いのブラウザ内で完結します。ファイル内容が外部のサーバーに送信されることはありません。" } },
+      { "@type": "Question", "name": "編集や保存はできますか？", "acceptedAnswer": { "@type": "Answer", "text": "現バージョンは閲覧専用です。カードの並べ替えやMarkdownへの書き戻し等の編集機能は今後のアップデートで検討中です。" } },
+      { "@type": "Question", "name": "2つのカンバンmdの差分を比較したいときは？", "acceptedAnswer": { "@type": "Answer", "text": "同じKIRICAB Toolsのテキスト比較ツール（diff）をご利用ください。Markdownを左右に貼り付けるだけで差分を確認できます。" } },
+      { "@type": "Question", "name": "タグや期限の色はカスタマイズできますか？", "acceptedAnswer": { "@type": "Answer", "text": "期限バッジは今日基準で自動色分け（赤＝期限切れ／黄＝当日／灰＝未来）しています。タグの配色を考えるときはカラーパレット生成ツールもご活用ください。" } },
+      { "@type": "Question", "name": "スマートフォンでも使えますか？", "acceptedAnswer": { "@type": "Answer", "text": "はい。横スクロールで列を移動でき、カード詳細はモバイル最適化されたモーダルで表示します。" } },
+      { "@type": "Question", "name": "対応していない記法はありますか？", "acceptedAnswer": { "@type": "Answer", "text": "担当者記法 @username や複数H1ボードなどは現バージョン非対応です。期限記法 @YYYY-MM-DD のみ特別扱いします。" } },
+      { "@type": "Question", "name": "読み込めるファイルサイズの上限は？", "acceptedAnswer": { "@type": "Answer", "text": "1ファイルあたり5MBまでです。これを超えるファイルはエラー表示となります。" } }
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "mdkanbanでMarkdownファイルをカンバン表示する手順",
+    "inLanguage": "ja",
+    "totalTime": "PT1M",
+    "step": [
+      { "@type": "HowToStep", "position": 1, "name": "ページを開く", "text": "mdkanbanのページを開きます。インストールやアカウント登録は不要です。" },
+      { "@type": "HowToStep", "position": 2, "name": "ファイルを読み込む", "text": "Markdownファイル（.md）をページ内にドラッグ&ドロップする、または「ファイルを開く」ボタンから選択します。" },
+      { "@type": "HowToStep", "position": 3, "name": "カンバン表示を確認する", "text": "自動でカンバンボードとして表示されます。## 見出しが列、- 箇条書きがカードに変換されます。" },
+      { "@type": "HowToStep", "position": 4, "name": "カード詳細を開く", "text": "カードをクリックすると詳細モーダルが開き、本文中のリンクやコードブロックが整形表示されます。タグや期限は自動でバッジ化されます。" },
+      { "@type": "HowToStep", "position": 5, "name": "表示を切り替える", "text": "ヘッダーのトグルからテーマ（ライト／ダーク）と表示密度（コンパクト／詳細）を切替できます。設定はブラウザに保存されます。" }
+    ]
+  }
+  </script>
+
+</body>
+</html>
