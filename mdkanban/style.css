@@ -470,13 +470,264 @@ body[data-theme="dark"] .dropzone.drag-over {
 }
 
 .kanban-card {
+  position: relative;
   background-color: var(--kanban-card-bg);
   border: 1px solid var(--kanban-card-border);
   border-radius: 8px;
   padding: 0.6rem 0.75rem;
   box-shadow: var(--kanban-card-shadow);
+  cursor: grab;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease, opacity 0.12s ease;
+}
+
+.kanban-card:active { cursor: grabbing; }
+
+/* ===== カード操作ボタン（右上に常駐、hover/focusで可視化） ===== */
+.card-actions {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  display: flex;
+  gap: 0.15rem;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  pointer-events: none;
+}
+
+.kanban-card:hover .card-actions,
+.kanban-card:focus-within .card-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* タッチデバイス（hoverできない環境）では常時表示 */
+@media (hover: none) {
+  .card-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.card-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--kanban-card-border);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  line-height: 1;
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+  color: var(--text-color);
+  font-family: inherit;
+}
+
+body[data-theme="dark"] .card-action-btn {
+  background: rgba(40, 50, 70, 0.92);
+}
+
+.card-action-btn:hover {
+  background: var(--secondary-color);
+}
+
+.card-action-btn:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 1px;
+}
+
+.card-action-btn.is-delete:hover {
+  background: #fde2e2;
+  color: #b42318;
+}
+
+body[data-theme="dark"] .card-action-btn.is-delete:hover {
+  background: #4a1e1e;
+  color: #fca5a5;
+}
+
+/* タイトル領域に編集ボタン分の余白を確保（崩れ防止） */
+.kanban-card .kanban-card-title {
+  padding-right: 3.6rem;
+}
+
+/* インライン編集中の textarea */
+.kanban-card.is-editing {
+  cursor: default;
+}
+
+.card-title-edit {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  color: var(--text-color);
+  background: var(--background-color);
+  border: 1px solid var(--primary-color);
+  border-radius: 4px;
+  padding: 0.3rem 0.4rem;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  min-height: 2.2rem;
+}
+
+.card-title-edit:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.18);
+}
+
+/* ===== 「+ カード追加」ボタン ===== */
+.add-card-btn {
+  margin-top: 0.4rem;
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  background: transparent;
+  border: 1px dashed var(--kanban-col-border);
+  border-radius: 6px;
+  color: var(--gray-text-color);
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: center;
+  transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.add-card-btn:hover {
+  background: rgba(30, 58, 138, 0.06);
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+body[data-theme="dark"] .add-card-btn:hover {
+  background: rgba(74, 111, 212, 0.14);
+}
+
+.add-card-btn:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* ===== DnD ビジュアルフィードバック ===== */
+.kanban-column-cards.is-drop-target {
+  background-color: rgba(30, 58, 138, 0.06);
+  border-radius: 6px;
+}
+
+body[data-theme="dark"] .kanban-column-cards.is-drop-target {
+  background-color: rgba(74, 111, 212, 0.14);
+}
+
+.drop-indicator {
+  height: 2px;
+  background-color: var(--primary-color);
+  margin: 2px 0;
+  border-radius: 1px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+.drop-indicator.is-active {
+  opacity: 1;
+}
+
+/* 未保存マーカー */
+.dirty-marker {
+  color: #ff9800;
+  font-size: 1.2rem;
+  line-height: 1;
+  align-self: center;
+  user-select: none;
+}
+
+body[data-theme="dark"] .dirty-marker {
+  color: #ffb74d;
+}
+
+/* ===== 自動保存ステータスインジケーター（ヘッダー右側） ===== */
+.save-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--text-color-light);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  white-space: nowrap;
+  transition: opacity 0.25s ease;
+}
+
+.save-status[hidden] { display: none; }
+
+.save-status.is-saving {
+  background: rgba(255, 220, 130, 0.25);
+  border-color: rgba(255, 220, 130, 0.45);
+}
+
+.save-status.is-saved {
+  background: rgba(120, 220, 150, 0.25);
+  border-color: rgba(120, 220, 150, 0.5);
+}
+
+.save-status.is-error {
+  background: rgba(255, 130, 130, 0.28);
+  border-color: rgba(255, 130, 130, 0.55);
+}
+
+/* ===== 右下トースト（自動保存失敗など） ===== */
+.toast-area {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 1100;
+  pointer-events: none;
+}
+
+.toast {
+  padding: 0.6rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  background: var(--card-color);
+  color: var(--text-color);
+  border: 1px solid var(--secondary-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  pointer-events: auto;
+  max-width: 320px;
+}
+
+.toast.error {
+  background: #fde2e2;
+  color: #b42318;
+  border-color: #f3a8a8;
+}
+
+body[data-theme="dark"] .toast.error {
+  background: #4a1e1e;
+  color: #fca5a5;
+  border-color: #7a2e2e;
+}
+
+/* スクリーンリーダー専用テキスト */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .kanban-card:hover {
@@ -495,6 +746,13 @@ body[data-theme="dark"] .dropzone.drag-over {
 
 .kanban-card.is-done .kanban-card-title {
   text-decoration: line-through;
+}
+
+/* DnD半透明は .is-done より後に書いて opacity を上書きする
+   （ドラッグ中の完了カードでも視覚フィードバックが効くように） */
+.kanban-card.is-dragging {
+  opacity: 0.4;
+  cursor: grabbing;
 }
 
 .kanban-card-title {
@@ -715,6 +973,567 @@ body[data-density="compact"] .kanban-card-title {
 
 .card-modal-meta:empty { display: none; }
 
+/* モーダルヘッダー右の編集ボタンと閉じるボタン群 */
+.card-modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.card-modal-edit {
+  background: rgba(30, 58, 138, 0.08);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.card-modal-edit:hover {
+  background: rgba(30, 58, 138, 0.16);
+}
+
+.card-modal-edit:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+body[data-theme="dark"] .card-modal-edit {
+  background: rgba(74, 111, 212, 0.18);
+  color: #c8d4ff;
+  border-color: #c8d4ff;
+}
+
+/* モーダルフッター（削除・閉じる／保存・キャンセル） */
+.card-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--secondary-color);
+  padding: 0.75rem 1.25rem;
+  background: var(--background-color);
+  border-radius: 0 0 12px 12px;
+}
+
+.card-modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-left: auto;
+}
+
+/* `[hidden]` 属性を `display: flex` で上書きしてしまわないよう明示的にリセット。
+   閲覧モードでは編集アクション（保存・キャンセル）が、編集モードでは閲覧アクション
+   （削除・閉じる）が hidden で隠される必要がある。 */
+.card-modal-actions[hidden] { display: none; }
+
+.btn.danger {
+  background-color: #b42318;
+  color: #fff;
+}
+
+.btn.danger:hover { background-color: #8a1c12; opacity: 1; }
+.btn.danger:focus-visible { outline: 2px solid #b42318; outline-offset: 2px; }
+
+/* ===== モーダル編集フォーム ===== */
+.card-modal-edit-form {
+  padding: 0.75rem 1.25rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  overflow-y: auto;
+}
+
+.card-modal-edit-form[hidden] { display: none; }
+
+.cme-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.cme-label {
+  font-size: 0.78rem;
+  color: var(--gray-text-color);
+  font-weight: 600;
+}
+
+.cme-label code {
+  background-color: var(--background-color);
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+
+.cme-input,
+.cme-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text-color);
+  background: var(--card-color);
+  border: 1px solid var(--secondary-color);
+  border-radius: 6px;
+  padding: 0.5rem 0.65rem;
+  font-family: inherit;
+}
+
+.cme-textarea {
+  resize: vertical;
+  min-height: 6rem;
+  font-family: SFMono-Regular, Menlo, Consolas, monospace;
+  line-height: 1.5;
+}
+
+.cme-input:focus,
+.cme-textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.18);
+}
+
+.cme-subtasks {
+  list-style: none;
+  margin: 0 0 0.4rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.cme-subtask-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.cme-subtask-row input[type="checkbox"] {
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.cme-subtask-row input[type="text"] {
+  flex: 1 1 auto;
+  font: inherit;
+  font-size: 0.88rem;
+  color: var(--text-color);
+  background: var(--card-color);
+  border: 1px solid var(--secondary-color);
+  border-radius: 4px;
+  padding: 0.3rem 0.45rem;
+  min-width: 0;
+}
+
+.cme-subtask-row input[type="text"]:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.18);
+}
+
+.cme-subtask-remove {
+  flex-shrink: 0;
+  background: transparent;
+  color: var(--gray-text-color);
+  border: 1px solid var(--secondary-color);
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.cme-subtask-remove:hover {
+  background: #fde2e2;
+  color: #b42318;
+  border-color: #f3a8a8;
+}
+
+body[data-theme="dark"] .cme-subtask-remove:hover {
+  background: #4a1e1e;
+  color: #fca5a5;
+  border-color: #7a2e2e;
+}
+
+/* ===== スイムレーン表示モード（行グルーピング） =====
+   frontmatter に `lanes:` キー（YAML 配列）が宣言されている場合のみ有効化される 2D グリッド表示。
+   `lanes:` の出現順序がそのままレーン表示順になる（厳密モード／ホワイトリスト方式）。
+   左端の lane ラベル列（160px 固定）＋各列（300px）を CSS Grid で並べ、
+   全体は overflow-x: auto で横スクロールを維持する。
+   ライト/ダーク両テーマで自然に見えるよう、共通の CSS 変数（--background-color 等）を流用する。 */
+.kanban-board.has-swimlanes {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  align-items: flex-start;
+  scroll-snap-type: none;
+}
+
+/* 上段: 列ヘッダ行（左端は空セル + 各列ヘッダ）。
+   親 flex-column の cross-axis 縮約を回避するため min-width: max-content を明示し、
+   グリッド固定幅（160px + N*300px + gap）を保ってスクロールを成立させる。 */
+.kanban-board.has-swimlanes .kanban-column-headers {
+  display: grid;
+  grid-template-columns: 168px repeat(var(--mdkanban-cols, 3), 300px);
+  gap: 0.75rem;
+  min-width: max-content;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background-color: var(--background-color);
+  padding: 0 0 0.4rem;
+}
+
+.kanban-board.has-swimlanes .kanban-column-headers .kanban-column-header {
+  background-color: var(--kanban-col-bg);
+  border: 1px solid var(--kanban-col-border);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0;
+}
+
+.swimlane-corner {
+  background: transparent;
+}
+
+/* 各 lane の行ブロック */
+.swimlane {
+  padding: 0.6rem 0;
+}
+
+.swimlane + .swimlane {
+  border-top: 1px dashed var(--kanban-col-border);
+  margin-top: 0.2rem;
+  padding-top: 0.8rem;
+}
+
+.swimlane:first-of-type {
+  padding-top: 0.25rem;
+}
+
+.swimlane-header {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.45rem;
+  width: 168px;
+  padding: 0.65rem 0.75rem;
+  background-color: var(--kanban-col-bg);
+  border: 1px solid var(--kanban-col-border);
+  border-left: 4px solid var(--primary-color);
+  border-radius: 4px 10px 10px 4px;
+  color: var(--text-color);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  margin-bottom: 0.4rem;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.swimlane-header.is-draggable {
+  cursor: grab;
+}
+
+.swimlane-header.is-draggable:active {
+  cursor: grabbing;
+}
+
+/* レーンヘッダ hover で軽く浮かせる */
+.swimlane-header:hover {
+  background-color: var(--card-color);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* ドラッグ並び替えのドロップ先ハイライト */
+.swimlane.is-lane-drop-target > .swimlane-header {
+  border-color: var(--primary-color);
+  background-color: var(--secondary-color);
+  box-shadow: 0 0 0 2px var(--primary-color) inset;
+}
+
+/* 「未分類」レーンのヘッダは控えめに見せる（左ボーダーは細く灰色に） */
+.swimlane.is-default-lane > .swimlane-header {
+  background-color: transparent;
+  border-left-color: var(--gray-text-color);
+  border-left-width: 2px;
+  color: var(--gray-text-color);
+  font-weight: 500;
+}
+
+.swimlane.is-default-lane > .swimlane-header:hover {
+  background-color: var(--secondary-color);
+}
+
+.swimlane.is-default-lane > .swimlane-header .swimlane-count {
+  background-color: transparent;
+  border: 1px solid var(--kanban-col-border);
+}
+
+.swimlane-toggle {
+  display: inline-block;
+  font-size: 0.75rem;
+  line-height: 1;
+  transition: transform 0.15s ease;
+  color: var(--gray-text-color);
+}
+
+.swimlane.is-collapsed .swimlane-toggle {
+  transform: rotate(-90deg);
+}
+
+.swimlane.is-collapsed .swimlane-row {
+  display: none;
+}
+
+.swimlane-name {
+  flex: 1 1 auto;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.swimlane-count {
+  background-color: var(--secondary-color);
+  color: var(--gray-text-color);
+  border-radius: 999px;
+  padding: 0.05rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.swimlane-row {
+  display: grid;
+  grid-template-columns: 168px repeat(var(--mdkanban-cols, 3), 300px);
+  gap: 0.75rem;
+  align-items: start;
+  min-width: max-content;
+}
+
+/* スイムレーン左端列は lane ヘッダボタン専用（空セル）— ヘッダ自体が sticky で配置済み */
+.swimlane-row::before {
+  content: "";
+  display: block;
+}
+
+/* スイムレーン内の各セル：通常モードと同じカード積層スタイルを使うが、
+   列ヘッダはセル内には出さず（上段で集約）、min-height で空セルでも DnD 受けを確保。 */
+.kanban-board.has-swimlanes .kanban-column-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 56px;
+  background-color: var(--kanban-col-bg);
+  border: 1px solid var(--kanban-col-border);
+  border-radius: 8px;
+  padding: 0.5rem;
+  max-height: none;
+  overflow-y: visible;
+}
+
+/* スイムレーンモードのセル（カード領域 + 「+ カード追加」を縦に積む箱） */
+.swimlane-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+/* ===== レーンヘッダ内ボタン群（折りたたみトグル + 管理アクション） ===== */
+
+/* 折りたたみトグル（▼ + レーン名 + カウント） — レーンヘッダ内の主クリック領域 */
+.swimlane-collapse-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.swimlane-collapse-btn:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* 管理アクション群（▲▼✎🗑）。視覚ノイズを抑えるため hover/focus 時のみ完全表示。
+   レイアウトシフト回避のためスペースは常に確保（visibility 切替）。 */
+.swimlane-actions {
+  display: flex;
+  gap: 0.2rem;
+  justify-content: flex-end;
+  align-items: center;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--kanban-col-border);
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.swimlane-header:hover > .swimlane-actions,
+.swimlane-header:focus-within > .swimlane-actions {
+  visibility: visible;
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .swimlane-actions {
+    visibility: visible;
+    opacity: 1;
+  }
+}
+
+.swimlane-action-btn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border: 0;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  line-height: 1;
+  color: var(--gray-text-color);
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.swimlane-action-btn:hover:not(:disabled) {
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+}
+
+.swimlane-action-btn:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 1px;
+}
+
+.swimlane-action-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.swimlane-action-btn.is-delete:hover:not(:disabled) {
+  background-color: rgba(201, 42, 42, 0.12);
+  color: #c92a2a;
+}
+
+/* レーン名インライン編集の入力欄（折りたたみトグルと差し替え） */
+.swimlane-rename-input {
+  width: 100%;
+  padding: 0.25rem 0.4rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text-color);
+  background-color: var(--card-color);
+  border: 1px solid var(--primary-color);
+  border-radius: 4px;
+}
+
+.swimlane-rename-input:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 0;
+}
+
+/* ===== 「+ レーン追加」コントロール（F8-A） ===== */
+
+/* レーン追加ボタンとフォームのラッパ。左端 sticky でレーンラベル列に揃える。 */
+.swimlane-add-wrap {
+  width: 168px;
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  margin-top: 0.5rem;
+}
+
+.swimlane-add-btn {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  background-color: var(--secondary-color);
+  border: 1px dashed var(--kanban-col-border);
+  border-radius: 8px;
+  color: var(--gray-text-color);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+
+.swimlane-add-btn:hover {
+  border-color: var(--primary-color);
+  border-style: solid;
+  color: var(--primary-color);
+  background-color: var(--card-color);
+}
+
+.swimlane-add-btn:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* インライン入力フォーム（レーン追加） */
+.swimlane-add-form {
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.6rem;
+  background-color: var(--card-color);
+  border: 1px solid var(--kanban-col-border);
+  border-radius: 10px;
+  box-shadow: var(--box-shadow);
+}
+
+.swimlane-add-input {
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  font: inherit;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  border: 1px solid var(--kanban-col-border);
+  border-radius: 4px;
+}
+
+.swimlane-add-input:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 0;
+  border-color: var(--primary-color);
+}
+
+.swimlane-add-error {
+  min-height: 1em;
+  font-size: 0.75rem;
+  color: #c92a2a;
+}
+
+.swimlane-add-error:empty {
+  display: none;
+}
+
+.swimlane-add-form-actions {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: flex-end;
+}
+
 /* ===== seo-content（共通スタイルを上書き調整） ===== */
 .seo-content {
   margin: 1rem auto 2rem;
@@ -748,6 +1567,27 @@ body[data-density="compact"] .kanban-card-title {
   .kanban-board { padding: 1rem; gap: 0.75rem; }
   .kanban-column { flex-basis: 84vw; max-width: 320px; max-height: none; }
   .kanban-column-cards { max-height: 60vh; }
+  /* スイムレーンモードのモバイル対応: 横スクロール維持のため列幅は据え置き、
+     lane ラベルは sticky 左端で固定。スマホでも 2D 構造を崩さない。 */
+  .kanban-board.has-swimlanes {
+    padding: 0.75rem;
+  }
+  .kanban-board.has-swimlanes .kanban-column-headers,
+  .kanban-board.has-swimlanes .swimlane-row {
+    grid-template-columns: 148px repeat(var(--mdkanban-cols, 3), 260px);
+    gap: 0.5rem;
+  }
+  .swimlane-header {
+    width: 148px;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.6rem;
+  }
+  .swimlane-add-wrap {
+    width: 148px;
+  }
+  .kanban-board.has-swimlanes .kanban-column-cards {
+    max-height: none;
+  }
   .card-modal-dialog {
     width: calc(100% - 1rem);
     max-height: calc(100vh - 1rem);

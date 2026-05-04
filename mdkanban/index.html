@@ -52,8 +52,13 @@
       </div>
       <div class="kanban-toolbar" role="toolbar" aria-label="ツールバー">
         <span id="file-name-display" class="file-name-display" aria-live="polite"></span>
+        <span id="dirty-marker" class="dirty-marker" hidden aria-label="未保存の変更あり" title="未保存の変更があります">●</span>
+        <span id="save-status" class="save-status" hidden aria-live="polite"></span>
         <button type="button" class="tb-btn" id="open-file-btn" aria-label="Markdownファイルを開く">📂 ファイルを開く</button>
         <button type="button" class="tb-btn" id="sample-btn" aria-label="サンプルを表示">✨ サンプル</button>
+        <button type="button" class="tb-btn" id="save-btn" aria-label="開いたMarkdownファイルへ上書き保存" title="元のファイルへ上書き保存（Chrome系のみ）" hidden>💾 保存</button>
+        <button type="button" class="tb-btn" id="download-btn" aria-label="現在のMarkdownをダウンロード" title="ダウンロード" hidden>⬇ ダウンロード</button>
+        <button type="button" class="tb-btn" id="copy-btn" aria-label="現在のMarkdownをクリップボードへコピー" title="クリップボードへコピー" hidden>📋 コピー</button>
         <button type="button" class="tb-btn icon-btn" id="theme-toggle" aria-label="テーマ切替（ライト/ダーク）" title="テーマ切替">🌙</button>
         <button type="button" class="tb-btn icon-btn" id="density-toggle" aria-label="表示密度切替（コンパクト/詳細）" title="表示密度切替">▦</button>
         <input type="file" id="file-input" accept=".md,.markdown,text/markdown" hidden>
@@ -76,6 +81,12 @@
 
     <!-- 状態表示（成功トースト・警告・エラー） -->
     <div id="status-area" class="status-area" aria-live="polite"></div>
+
+    <!-- DnD完了通知用ライブリージョン（スクリーンリーダー専用） -->
+    <div id="dnd-live-region" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- 自動保存失敗時などの右下トースト -->
+    <div id="toast-area" class="toast-area" aria-live="polite" aria-atomic="true"></div>
 
     <!-- タグフィルタバー -->
     <div id="tag-filter-bar" class="tag-filter-bar" hidden>
@@ -132,25 +143,31 @@
     <!-- SEOコンテンツ -->
     <section class="seo-content container">
       <h2>mdkanbanについて</h2>
-      <p>mdkanbanは、Markdownファイル（<code>.md</code>）をブラウザにドラッグ&ドロップするだけでカンバンボードとして表示する無料ツールです。Obsidian Kanbanプラグインで作成したボードファイルをそのまま開けるため、Obsidianを開けない共有PCやスマートフォンでも、見慣れた列ごとのレイアウトでタスクを俯瞰できます。</p>
-      <p>すべての処理はお使いのブラウザ内で完結し、ファイルがサーバーに送信されることはありません。情報セキュリティに敏感な業務でのMarkdown閲覧にもご利用いただけます。</p>
+      <p>mdkanbanは、Markdownファイル（<code>.md</code>）をブラウザにドラッグ&ドロップするだけでカンバンボードとして表示し、カードのドラッグ&ドロップで列の並び替えや列間移動もそのまま行える無料ツールです。Obsidian Kanbanプラグインで作成したボードファイルをそのまま開け、見慣れた列ごとのレイアウトでタスクを俯瞰しながら状態を更新できます。</p>
+      <p>並び替えた結果は元のMarkdown構造を保ったまま、Chrome系ブラウザでは元ファイルへ直接保存（File System Access API）、その他のブラウザではダウンロードまたはクリップボードへのコピーで持ち出せます。すべての処理はお使いのブラウザ内で完結し、ファイルがサーバーに送信されることはありません。情報セキュリティに敏感な業務でのMarkdown閲覧・並び替えにもご利用いただけます。</p>
 
       <h3>使い方</h3>
       <ol class="howto-steps">
         <li>このページを開く（インストール・登録は不要です）</li>
         <li>Markdownファイル（<code>.md</code>）をページ内にドラッグ&ドロップする、または「ファイルを開く」ボタンから選択する</li>
         <li>自動でカンバンボードとして表示されます（<code>##</code> 見出しが列、<code>-</code> 箇条書きがカードに変換されます）</li>
-        <li>カードをクリックすると詳細を表示。タグや期限が含まれていれば自動でバッジ化されます</li>
+        <li>カードをドラッグして別の列にドロップ、または同じ列内で上下に並び替えできます。カード上の<strong>鉛筆アイコン</strong>でタイトルをインライン編集、<strong>ゴミ箱アイコン</strong>で削除、各列下部の<strong>「+ カード追加」</strong>で新規作成できます。詳細モーダルでは本文（Markdown）とサブタスクをまとめて編集できます</li>
+        <li>カードを行（プロジェクト別・担当者別など）でもグループ化したい場合は、frontmatter に <code>lanes:</code> キー（YAML 配列）でレーン名を宣言してから、カード文字列に <code>#lane/&lt;名前&gt;</code> を追記します（例：frontmatter に <code>lanes: [バックエンド, フロントエンド]</code>、カードに <code>- [ ] API設計 #lane/バックエンド</code>）。スイムレーン表示に切り替わり、レーンの追加・削除・並び替え・名前変更はレーンヘッダから直接操作でき、その結果は <code>lanes:</code> へ自動的に書き戻されます</li>
+        <li>Chrome系で File System Access API 経由でファイルを開いた場合は、編集／DnD／追加／削除のたびに <strong>800ms デバウンスで元ファイルへ自動保存</strong>されます（ヘッダーで「💾 保存中…」「✓ 保存済み」を確認できます）。その他のブラウザでは「ダウンロード」「コピー」ボタンで持ち出せ、LocalStorageにも自動保存され再訪時に復元できます</li>
         <li>テーマ（ライト／ダーク）と表示密度（コンパクト／詳細）はヘッダーから切替できます。設定はブラウザに保存されます</li>
       </ol>
 
       <h3>主な機能</h3>
       <ul>
         <li><strong>Obsidian Kanban互換</strong>: <code>kanban-plugin: basic</code> frontmatter付きファイルもそのまま読み込み可能</li>
+        <li><strong>カードのドラッグ&ドロップ</strong>: 列間移動・同列内の並び替えに対応。HTML5標準のDnD APIを使用しPC操作に最適化</li>
+        <li><strong>カードの編集・追加・削除</strong>: カード上の鉛筆/ゴミ箱アイコンと「+ カード追加」ボタンで、タイトル・本文・サブタスクを直接編集可能。すべての変更が再シリアライズされます</li>
+        <li><strong>Markdownへの書き戻し</strong>: Chrome系は<code>File System Access API</code>で元ファイルに直接上書き保存（変更から800msデバウンスで自動保存）、その他のブラウザはダウンロード／クリップボードコピー（双方ともLocalStorageへも自動反映）</li>
         <li><strong>タグ＆期限バッジ</strong>: <code>#tag</code> はバッジ表示、<code>@YYYY-MM-DD</code> は今日基準で赤（期限切れ）／黄（当日）／灰（未来）に自動色分け</li>
         <li><strong>サブタスク進捗</strong>: ネストした箇条書きを <code>2/5</code> 形式の進捗バッジで表示</li>
+        <li><strong>スイムレーン（行グルーピング）</strong>: frontmatter に <code>lanes:</code> キー（YAML 配列）でレーン名を宣言すると、行で分かれた 2D グリッド表示に切り替わります。<code>lanes:</code> の順序がそのままレーン表示順になり、カード側は <code>#lane/&lt;名前&gt;</code> でレーン所属を指定します。<code>lanes:</code> に未列挙の <code>#lane/X</code> や lane 未指定のカードは「未分類」レーンへ集約されます。レーンヘッダから追加・削除・並び替え・名前変更が可能で、行間のDnDや行の折りたたみ（状態はLocalStorageに保存）にも対応。Obsidian Kanban 公式はスイムレーン未対応のため、同じファイルを Obsidian で開いても <code>lanes:</code> は未知 frontmatter として、<code>#lane/X</code> はタグバッジとして表示されるだけでデータは壊れません</li>
         <li><strong>カード詳細モーダル</strong>: 段落・コードブロック・リンクをフルレンダリング</li>
-        <li><strong>タグフィルタ</strong>: バッジクリックで該当タグのカードのみ絞り込み</li>
+        <li><strong>タグフィルタ</strong>: バッジクリックで該当タグのカードのみ絞り込み（フィルタ中もDnDで列移動可）</li>
         <li><strong>復元機能</strong>: 最後に開いたファイル内容をブラウザに保存し、再訪問時に復元提案</li>
         <li><strong>ダークモード対応</strong>: ヘッダーのトグルから切替、設定は永続化</li>
         <li><strong>XSS対策</strong>: Markdown内の <code>&lt;script&gt;</code> や <code>javascript:</code> URLはサニタイズして無害化</li>
@@ -169,20 +186,16 @@
           <p>いいえ。すべての処理はお使いのブラウザ内で完結します。ファイル内容が外部のサーバーに送信されることはありません。社内Wikiや個人ノートのMarkdownでも安心してご利用いただけます。</p>
         </details>
         <details>
-          <summary>編集や保存はできますか？</summary>
-          <p>現バージョンは閲覧専用（ビューワー）です。カードのドラッグ&ドロップ並べ替えや、Markdownへの書き戻しといった編集機能は今後のアップデートで検討中です。</p>
+          <summary>カードの並び替えや編集はできますか？</summary>
+          <p>はい。カードをドラッグして別の列にドロップしたり、同じ列内で上下に並び替えたりできるほか、<strong>カードタイトル・本文・サブタスクの編集</strong>、<strong>カードの追加・削除</strong>にも対応しています（カード上の鉛筆/ゴミ箱アイコン、各列下の「+ カード追加」ボタン、モーダルの編集ボタン）。Chrome系ブラウザで File System Access API 経由でファイルを開いた場合は変更が <strong>800ms デバウンスで自動的に元ファイルへ書き戻され</strong>（保存中は「💾 保存中…」、完了で「✓ 保存済み」をヘッダーに表示）、その他のブラウザでは「ダウンロード」「コピー」ボタンで持ち出せます。LocalStorageにも自動保存されるため、リロード時の復元バナーから編集後の状態を呼び戻せます。</p>
         </details>
         <details>
           <summary>2つのカンバンmdの差分を比較したいときは？</summary>
-          <p>同じKIRICAB Toolsの<a href="../diff/index.html">テキスト比較ツール（diff）</a>をご利用ください。Markdownのテキストを左右に貼り付けるだけで、追加・削除箇所を色分けして確認できます。</p>
+          <p>同じKIRICAB Toolsの<a href="../diff/index.html">テキスト比較ツール（diff）</a>をご利用ください。並び替え前後のMarkdownを左右に貼り付ければ、列とカードの移動を色分けでレビューできます。</p>
         </details>
         <details>
           <summary>タグや期限の色はカスタマイズできますか？</summary>
           <p>期限バッジは今日基準で自動色分け（赤＝期限切れ／黄＝当日／灰＝未来）しており、カスタマイズには対応していません。タグ自体の配色を考えるときは<a href="../colorpallet/index.html">カラーパレット生成ツール</a>もご活用いただけます。</p>
-        </details>
-        <details>
-          <summary>スマートフォンでも使えますか？</summary>
-          <p>はい。横スクロールで列を移動でき、カード詳細はモバイル幅に最適化されたモーダルで表示されます。タッチ操作の慣性スクロールにも対応しています。</p>
         </details>
         <details>
           <summary>対応していない記法はありますか？</summary>
@@ -191,6 +204,18 @@
         <details>
           <summary>読み込めるファイルサイズの上限は？</summary>
           <p>1ファイルあたり5MBまでです。これを超えるファイルはエラー表示となります。1000カード規模のmdまでは快適に表示できるよう設計しています。</p>
+        </details>
+        <details>
+          <summary>スイムレーン（行グルーピング）はどう使いますか？</summary>
+          <p>frontmatter に <code>lanes:</code> キー（YAML 配列）でレーン名を宣言し、カード本文に <code>#lane/&lt;レーン名&gt;</code> を書くと、その行に振り分けられます。<code>lanes:</code> の出現順がそのまま表示順になります。<code>lanes:</code> に未列挙の <code>#lane/X</code> や lane 未指定のカードは末尾の「未分類」レーンへ集約されます（カード側の <code>#lane/X</code> はバッジに出ません）。レーンの追加・削除・並び替え・名前変更は画面上のレーンヘッダから操作でき、<code>lanes:</code> の値は自動的に Markdown へ書き戻されます。<code>lanes:</code> キーが無いファイルではスイムレーン機能はオフになり、<code>#lane/X</code> は通常のタグバッジとして表示されます（厳密モード）。</p>
+        </details>
+        <details>
+          <summary>レーン（行）の追加・削除・並び替えはできますか？</summary>
+          <p>はい。スイムレーン表示の末尾にある「+ レーン追加」ボタンで新規レーンを追加でき、各レーンヘッダの ▲ / ▼ ボタンまたはヘッダのドラッグで並び替え、✎ ボタンで名前変更、🗑 ボタンで削除できます（削除時は所属カードが「未分類」レーンに集約されます）。「未分類」レーンは末尾固定で名前変更・削除はできません。すべてのレーン操作は frontmatter の <code>lanes:</code> 配列に書き戻され、所属カードのタイトル中の <code>#lane/&lt;旧名&gt;</code> も新名へ一括置換されます。<code>lanes:</code> が空になった場合は <code>lanes:</code> キーごと削除され、従来モード（単一行）に自動で戻ります。</p>
+        </details>
+        <details>
+          <summary>Obsidian Kanban で同じファイルを開いたとき lane 関連はどう見えますか？</summary>
+          <p>Obsidian Kanban 公式はスイムレーン未対応のため、frontmatter の <code>lanes:</code> キーは未知 frontmatter として無視され、カード中の <code>#lane/X</code> は単なるタグバッジとして表示されるだけです。ファイル内容は破壊されないため、mdkanban 側で lane を 2D 表示に展開する「緩い互換」設計のもと、Obsidian と mdkanban の両方で同じファイルを安心して行き来できます。</p>
         </details>
       </div>
     </section>
@@ -203,9 +228,40 @@
     <div class="card-modal-dialog" role="document">
       <div class="card-modal-header">
         <h2 id="card-modal-title" class="card-modal-title"></h2>
-        <button type="button" class="card-modal-close" id="card-modal-close" aria-label="閉じる">✕</button>
+        <div class="card-modal-header-actions">
+          <button type="button" class="card-modal-edit" id="card-modal-edit-btn" aria-label="このカードを編集">✏️ 編集</button>
+          <button type="button" class="card-modal-close" id="card-modal-close" aria-label="閉じる">✕</button>
+        </div>
       </div>
       <div id="card-modal-body" class="card-modal-body"></div>
+      <!-- 編集フォーム（モーダル内・初期は非表示） -->
+      <form id="card-modal-edit-form" class="card-modal-edit-form" hidden>
+        <label class="cme-field">
+          <span class="cme-label">タイトル（タグ <code>#x</code>・期限 <code>@YYYY-MM-DD</code>・lane <code>#lane/X</code> を含む生の文字列）</span>
+          <input type="text" id="cme-title" class="cme-input" autocomplete="off">
+        </label>
+        <label class="cme-field">
+          <span class="cme-label">本文（Markdown）</span>
+          <textarea id="cme-body" class="cme-textarea" rows="6" spellcheck="false"></textarea>
+        </label>
+        <fieldset class="cme-field">
+          <legend class="cme-label">サブタスク</legend>
+          <ul id="cme-subtasks" class="cme-subtasks"></ul>
+          <button type="button" class="btn small secondary" id="cme-add-subtask">+ サブタスク追加</button>
+        </fieldset>
+      </form>
+      <div class="card-modal-footer">
+        <!-- 閲覧モードのフッター（削除・閉じる） -->
+        <div id="card-modal-view-actions" class="card-modal-actions">
+          <button type="button" class="btn danger" id="card-modal-delete-btn" aria-label="このカードを削除">🗑 削除</button>
+          <button type="button" class="btn secondary" id="card-modal-close-btn">閉じる</button>
+        </div>
+        <!-- 編集モードのフッター（保存・キャンセル） -->
+        <div id="card-modal-edit-actions" class="card-modal-actions" hidden>
+          <button type="button" class="btn" id="cme-save-btn">保存</button>
+          <button type="button" class="btn secondary" id="cme-cancel-btn">キャンセル</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -239,7 +295,7 @@
     "@type": "WebApplication",
     "name": "mdkanban",
     "url": "https://kiricab.github.io/mdkanban/",
-    "description": "Obsidian Kanban互換のMarkdownファイルをドラッグ&ドロップするだけでカンバンボード表示。ログイン不要・インストール不要・サーバー送信なしのブラウザ完結ビューワー。",
+    "description": "Obsidian Kanban互換のMarkdownファイルをドラッグ&ドロップするだけでカンバンボード表示。カードのドラッグ&ドロップで列の並び替えや列間移動、Markdownへの書き戻し（Chrome系の元ファイル上書き／ダウンロード／クリップボードコピー）にも対応。ログイン不要・インストール不要・サーバー送信なしのブラウザ完結ツール。",
     "applicationCategory": "UtilitiesApplication",
     "operatingSystem": "Any",
     "inLanguage": "ja",
@@ -271,14 +327,16 @@
     "@context": "https://schema.org",
     "@type": "FAQPage",
     "mainEntity": [
-      { "@type": "Question", "name": "どんなMarkdown形式に対応していますか？", "acceptedAnswer": { "@type": "Answer", "text": "Obsidian Kanbanプラグインの ## 見出し＝列、- [ ] タスク＝カード形式に対応します。frontmatterもパースして無視します。kanban-plugin: basic の有無は問いません。" } },
+      { "@type": "Question", "name": "どんなMarkdown形式に対応していますか？", "acceptedAnswer": { "@type": "Answer", "text": "Obsidian Kanbanプラグインの ## 見出し＝列、- [ ] タスク＝カード形式に対応します。frontmatterもパースして再シリアライズ時にそのまま貼り戻します。kanban-plugin: basic の有無は問いません。" } },
       { "@type": "Question", "name": "アップロードしたファイルはサーバーに送信されますか？", "acceptedAnswer": { "@type": "Answer", "text": "いいえ。すべての処理はお使いのブラウザ内で完結します。ファイル内容が外部のサーバーに送信されることはありません。" } },
-      { "@type": "Question", "name": "編集や保存はできますか？", "acceptedAnswer": { "@type": "Answer", "text": "現バージョンは閲覧専用です。カードの並べ替えやMarkdownへの書き戻し等の編集機能は今後のアップデートで検討中です。" } },
-      { "@type": "Question", "name": "2つのカンバンmdの差分を比較したいときは？", "acceptedAnswer": { "@type": "Answer", "text": "同じKIRICAB Toolsのテキスト比較ツール（diff）をご利用ください。Markdownを左右に貼り付けるだけで差分を確認できます。" } },
+      { "@type": "Question", "name": "カードの並び替えや編集はできますか？", "acceptedAnswer": { "@type": "Answer", "text": "カードのDnDによる列間移動・同列内並び替えに加え、カードタイトル・本文・サブタスクの編集、カードの追加・削除にも対応しています。Chrome系ブラウザで File System Access API 経由でファイルを開いた場合は変更が 800ms デバウンスで自動的に元ファイルへ書き戻されます。その他のブラウザではダウンロード／クリップボードコピーで持ち出せ、LocalStorageへも自動反映されます。" } },
+      { "@type": "Question", "name": "2つのカンバンmdの差分を比較したいときは？", "acceptedAnswer": { "@type": "Answer", "text": "同じKIRICAB Toolsのテキスト比較ツール（diff）をご利用ください。並び替え前後のMarkdownを左右に貼り付けて差分を確認できます。" } },
       { "@type": "Question", "name": "タグや期限の色はカスタマイズできますか？", "acceptedAnswer": { "@type": "Answer", "text": "期限バッジは今日基準で自動色分け（赤＝期限切れ／黄＝当日／灰＝未来）しています。タグの配色を考えるときはカラーパレット生成ツールもご活用ください。" } },
-      { "@type": "Question", "name": "スマートフォンでも使えますか？", "acceptedAnswer": { "@type": "Answer", "text": "はい。横スクロールで列を移動でき、カード詳細はモバイル最適化されたモーダルで表示します。" } },
       { "@type": "Question", "name": "対応していない記法はありますか？", "acceptedAnswer": { "@type": "Answer", "text": "担当者記法 @username や複数H1ボードなどは現バージョン非対応です。期限記法 @YYYY-MM-DD のみ特別扱いします。" } },
-      { "@type": "Question", "name": "読み込めるファイルサイズの上限は？", "acceptedAnswer": { "@type": "Answer", "text": "1ファイルあたり5MBまでです。これを超えるファイルはエラー表示となります。" } }
+      { "@type": "Question", "name": "読み込めるファイルサイズの上限は？", "acceptedAnswer": { "@type": "Answer", "text": "1ファイルあたり5MBまでです。これを超えるファイルはエラー表示となります。" } },
+      { "@type": "Question", "name": "スイムレーン（行グルーピング）はどう使いますか？", "acceptedAnswer": { "@type": "Answer", "text": "frontmatter に lanes: キー（YAML 配列）でレーン名を宣言し、カード本文に #lane/<レーン名> を書くと、その行に振り分けられます。lanes: の出現順がそのまま表示順です。lanes: に未列挙の #lane/X や lane 未指定のカードは末尾の「未分類」レーンへ集約され、レーンの追加・削除・並び替え・名前変更は画面上のレーンヘッダから操作できます。操作結果は lanes: 配列に自動で書き戻されます。lanes: キーが無いファイルではスイムレーン機能はオフで、#lane/X は通常のタグバッジとして表示されます（厳密モード）。" } },
+      { "@type": "Question", "name": "レーン（行）の追加・削除・並び替えはできますか？", "acceptedAnswer": { "@type": "Answer", "text": "はい。スイムレーン表示の末尾の「+ レーン追加」ボタンで新規レーンを追加でき、各レーンヘッダの ▲ / ▼ ボタンまたはヘッダのドラッグで並び替え、✎ ボタンで名前変更、🗑 ボタンで削除できます。削除時は所属カードが「未分類」レーンに集約され、レーン名変更時はカードタイトル中の #lane/<旧名> も #lane/<新名> へ一括置換されます。「未分類」レーンは末尾固定で名前変更・削除不可です。lanes: が空になると lanes: キーごと frontmatter から削除され、従来モード（単一行）に自動で戻ります。" } },
+      { "@type": "Question", "name": "Obsidian Kanban で同じファイルを開いたとき lane 関連はどう見えますか？", "acceptedAnswer": { "@type": "Answer", "text": "Obsidian Kanban 公式はスイムレーン未対応のため、frontmatter の lanes: キーは未知 frontmatter として無視され、カード中の #lane/X は単なるタグバッジとして表示されるだけです。ファイル内容は破壊されないため、mdkanban 側で lane を 2D 表示に展開する緩い互換設計のもと、Obsidian と mdkanban の両方で同じファイルを安心して行き来できます。" } }
     ]
   }
   </script>
@@ -293,8 +351,11 @@
       { "@type": "HowToStep", "position": 1, "name": "ページを開く", "text": "mdkanbanのページを開きます。インストールやアカウント登録は不要です。" },
       { "@type": "HowToStep", "position": 2, "name": "ファイルを読み込む", "text": "Markdownファイル（.md）をページ内にドラッグ&ドロップする、または「ファイルを開く」ボタンから選択します。" },
       { "@type": "HowToStep", "position": 3, "name": "カンバン表示を確認する", "text": "自動でカンバンボードとして表示されます。## 見出しが列、- 箇条書きがカードに変換されます。" },
-      { "@type": "HowToStep", "position": 4, "name": "カード詳細を開く", "text": "カードをクリックすると詳細モーダルが開き、本文中のリンクやコードブロックが整形表示されます。タグや期限は自動でバッジ化されます。" },
-      { "@type": "HowToStep", "position": 5, "name": "表示を切り替える", "text": "ヘッダーのトグルからテーマ（ライト／ダーク）と表示密度（コンパクト／詳細）を切替できます。設定はブラウザに保存されます。" }
+      { "@type": "HowToStep", "position": 4, "name": "カードを並び替える", "text": "カードをドラッグして別の列にドロップ、または同じ列内で上下に並び替えできます。フィルタ中も列移動は可能です。" },
+      { "@type": "HowToStep", "position": 5, "name": "スイムレーンで行グルーピングする", "text": "frontmatter に lanes: キー（YAML 配列）でレーン名を宣言し、カード文字列に #lane/<名前> を追記します（例：frontmatter に lanes: [バックエンド, フロントエンド]、カードに - [ ] API設計 #lane/バックエンド）。スイムレーン表示に切り替わり、レーンヘッダから追加・削除・並び替え・名前変更ができ、結果は lanes: 配列へ自動的に書き戻されます。" },
+      { "@type": "HowToStep", "position": 6, "name": "カードを編集・追加・削除する", "text": "カード上の鉛筆アイコンでタイトルをインライン編集、ゴミ箱アイコンで削除、各列下部の「+ カード追加」ボタンで新規作成できます。詳細モーダルの「編集」ボタンでは本文（Markdown）とサブタスクをまとめて編集できます。" },
+      { "@type": "HowToStep", "position": 7, "name": "Markdownへ書き戻す", "text": "Chrome系ブラウザで File System Access API 経由でファイルを開いた場合は、変更から800msデバウンスで元のMarkdownファイルへ自動保存されます。その他のブラウザでは「ダウンロード」または「コピー」ボタンで取り出せ、LocalStorageには自動で保存されます。" },
+      { "@type": "HowToStep", "position": 8, "name": "表示を切り替える", "text": "ヘッダーのトグルからテーマ（ライト／ダーク）と表示密度（コンパクト／詳細）を切替できます。設定はブラウザに保存されます。" }
     ]
   }
   </script>
