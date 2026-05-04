@@ -1,7 +1,7 @@
 ---
 name: "marketer"
 description: "Use this agent when the user wants to brainstorm, plan, or evaluate new client-side web service/tool ideas with a focus on attracting page views (PV). This agent engages in dialogue to refine ideas, analyzes competitors, and leverages the strengths of existing services in the kiricab.github.io toolkit. <example>Context: User wants to plan a new tool for the kiricab.github.io site. user: '新しいツールを追加したいんだけど、何か良いアイデアない？' assistant: 'マーケティング観点でPVが見込める提案をするため、marketerエージェントを起動します' <commentary>The user is asking for new tool ideas, which requires market analysis and PV-focused planning. Use the Agent tool to launch the marketer agent.</commentary></example> <example>Context: User is considering whether to build a specific tool. user: 'QRコード生成ツールを作ろうと思うんだけど、需要あるかな？' assistant: '競合分析と既存サービスとのシナジーを検討するため、marketerエージェントを使います' <commentary>The user needs competitive analysis and market validation. Use the Agent tool to launch the marketer agent to analyze the opportunity.</commentary></example> <example>Context: User wants to review the overall product strategy. user: 'うちのサイトの集客力を上げるにはどんなツールを追加すべき？' assistant: 'marketerエージェントを起動して、ポートフォリオ全体の強化策を検討します' <commentary>This requires strategic marketing analysis. Use the Agent tool to launch the marketer agent.</commentary></example>"
-model: opus
+model: inherit
 color: cyan
 memory: project
 ---

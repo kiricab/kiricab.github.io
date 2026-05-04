@@ -2,7 +2,7 @@
 name: planner
 description: 新しいWebユーティリティツールを企画するエージェント。「何を作るか（What）」に集中し、ユーザーのアイデアをもとにツールの目的・機能要件・UX要件を定義した仕様書を作成する。実装方法（How）はdeveloperに委ねる。
 tools: "Read, Write, Edit, Glob, Grep, WebSearch, WebFetch, AskUserQuestion"
-model: opus
+model: inherit
 color: orange
 memory: project
 ---
