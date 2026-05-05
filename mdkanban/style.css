@@ -1199,17 +1199,46 @@ body[data-theme="dark"] .cme-subtask-remove:hover {
 
 .swimlane-corner {
   background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 0 0 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--gray-text-color);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.swimlane-corner::before {
+  content: "レーン";
+  opacity: 0.6;
 }
 
 /* 各 lane の行ブロック */
 .swimlane {
-  padding: 0.6rem 0;
+  padding: 0.55rem 0;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+}
+
+.swimlane:hover {
+  background-color: rgba(30, 58, 138, 0.025);
+}
+
+body[data-theme="dark"] .swimlane:hover {
+  background-color: rgba(74, 111, 212, 0.06);
 }
 
 .swimlane + .swimlane {
-  border-top: 1px dashed var(--kanban-col-border);
-  margin-top: 0.2rem;
-  padding-top: 0.8rem;
+  border-top: 1px solid var(--kanban-col-border);
+  margin-top: 0.25rem;
+  padding-top: 0.75rem;
+}
+
+body[data-theme="dark"] .swimlane + .swimlane {
+  border-top-color: rgba(255, 255, 255, 0.06);
 }
 
 .swimlane:first-of-type {
@@ -1220,9 +1249,9 @@ body[data-theme="dark"] .cme-subtask-remove:hover {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 0.45rem;
+  gap: 0.4rem;
   width: 168px;
-  padding: 0.65rem 0.75rem;
+  padding: 0.6rem 0.7rem 0.5rem;
   background-color: var(--kanban-col-bg);
   border: 1px solid var(--kanban-col-border);
   border-left: 4px solid var(--primary-color);
@@ -1235,7 +1264,7 @@ body[data-theme="dark"] .cme-subtask-remove:hover {
   left: 0;
   z-index: 4;
   margin-bottom: 0.4rem;
-  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .swimlane-header.is-draggable {
@@ -1246,10 +1275,43 @@ body[data-theme="dark"] .cme-subtask-remove:hover {
   cursor: grabbing;
 }
 
+/* draggable レーンヘッダの drag affordance: トグルボタン左にグリップアイコンを CSS で挿入。
+   常時 0.4 程度で薄く表示し、hover で 0.85 に強調。タッチ環境では 0.5 で固定。 */
+.swimlane-header.is-draggable .swimlane-collapse-btn::before {
+  content: "⋮⋮";
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  letter-spacing: -2px;
+  color: var(--gray-text-color);
+  opacity: 0.45;
+  transition: opacity 0.15s ease, color 0.15s ease;
+  font-weight: 700;
+  line-height: 1;
+  margin-right: -0.1rem;
+}
+
+.swimlane-header.is-draggable:hover .swimlane-collapse-btn::before,
+.swimlane-header.is-draggable:focus-within .swimlane-collapse-btn::before {
+  opacity: 0.9;
+  color: var(--primary-color);
+}
+
+@media (hover: none) {
+  .swimlane-header.is-draggable .swimlane-collapse-btn::before {
+    opacity: 0.55;
+  }
+}
+
 /* レーンヘッダ hover で軽く浮かせる */
 .swimlane-header:hover {
   background-color: var(--card-color);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  border-color: var(--primary-color);
+}
+
+body[data-theme="dark"] .swimlane-header:hover {
+  background-color: var(--card-color);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* ドラッグ並び替えのドロップ先ハイライト */
@@ -1259,17 +1321,21 @@ body[data-theme="dark"] .cme-subtask-remove:hover {
   box-shadow: 0 0 0 2px var(--primary-color) inset;
 }
 
-/* 「未分類」レーンのヘッダは控えめに見せる（左ボーダーは細く灰色に） */
+/* 「未分類」レーンのヘッダは控えめに見せる（左ボーダーはダッシュ風で「自動集約レーン」を示唆） */
 .swimlane.is-default-lane > .swimlane-header {
   background-color: transparent;
   border-left-color: var(--gray-text-color);
   border-left-width: 2px;
+  border-left-style: dashed;
   color: var(--gray-text-color);
   font-weight: 500;
 }
 
 .swimlane.is-default-lane > .swimlane-header:hover {
-  background-color: var(--secondary-color);
+  background-color: var(--card-color);
+  border-left-color: var(--gray-text-color);
+  border-color: var(--kanban-col-border);
+  box-shadow: none;
 }
 
 .swimlane.is-default-lane > .swimlane-header .swimlane-count {
@@ -1330,13 +1396,26 @@ body[data-theme="dark"] .cme-subtask-remove:hover {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  min-height: 56px;
+  min-height: 64px;
   background-color: var(--kanban-col-bg);
   border: 1px solid var(--kanban-col-border);
   border-radius: 8px;
   padding: 0.5rem;
   max-height: none;
   overflow-y: visible;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+/* 空セルは内側に淡い「ここにカード追加」の視覚的余白を確保し、
+   ドラッグの drop target として認識しやすくする */
+.kanban-board.has-swimlanes .kanban-column-cards:empty {
+  background-color: transparent;
+  border-style: dashed;
+  border-color: var(--kanban-col-border);
+}
+
+.kanban-board.has-swimlanes .kanban-column-cards.is-drop-target {
+  border-style: solid;
 }
 
 /* スイムレーンモードのセル（カード領域 + 「+ カード追加」を縦に積む箱） */
@@ -1371,36 +1450,36 @@ body[data-theme="dark"] .cme-subtask-remove:hover {
   outline-offset: 2px;
 }
 
-/* 管理アクション群（▲▼✎🗑）。視覚ノイズを抑えるため hover/focus 時のみ完全表示。
-   レイアウトシフト回避のためスペースは常に確保（visibility 切替）。 */
+/* 管理アクション群（▲▼✎🗑）。常時 opacity 0.5 で控えめに見せ、hover/focus 時に完全表示。
+   常時可視にすることで「並び替え／編集／削除ができる」という機能の存在を一目で伝える。 */
 .swimlane-actions {
   display: flex;
-  gap: 0.2rem;
-  justify-content: flex-end;
+  gap: 0.15rem;
+  justify-content: space-between;
   align-items: center;
-  padding-top: 0.35rem;
-  border-top: 1px solid var(--kanban-col-border);
-  visibility: hidden;
-  opacity: 0;
-  transition: opacity 0.12s ease;
+  padding-top: 0.3rem;
+  margin-top: 0.1rem;
+  border-top: 1px solid transparent;
+  opacity: 0.55;
+  transition: opacity 0.15s ease, border-top-color 0.15s ease;
 }
 
 .swimlane-header:hover > .swimlane-actions,
 .swimlane-header:focus-within > .swimlane-actions {
-  visibility: visible;
   opacity: 1;
+  border-top-color: var(--kanban-col-border);
 }
 
 @media (hover: none) {
   .swimlane-actions {
-    visibility: visible;
     opacity: 1;
+    border-top-color: var(--kanban-col-border);
   }
 }
 
 .swimlane-action-btn {
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -1465,13 +1544,14 @@ body[data-theme="dark"] .cme-subtask-remove:hover {
 
 .swimlane-add-btn {
   width: 100%;
-  padding: 0.65rem 0.75rem;
-  background-color: var(--secondary-color);
+  padding: 0.6rem 0.7rem;
+  background-color: transparent;
   border: 1px dashed var(--kanban-col-border);
-  border-radius: 8px;
+  border-left: 4px dashed var(--kanban-col-border);
+  border-radius: 4px 8px 8px 4px;
   color: var(--gray-text-color);
   font-family: inherit;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
@@ -1479,7 +1559,9 @@ body[data-theme="dark"] .cme-subtask-remove:hover {
 
 .swimlane-add-btn:hover {
   border-color: var(--primary-color);
+  border-left-color: var(--primary-color);
   border-style: solid;
+  border-left-style: solid;
   color: var(--primary-color);
   background-color: var(--card-color);
 }
