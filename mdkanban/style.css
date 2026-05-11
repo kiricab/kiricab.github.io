@@ -1139,6 +1139,18 @@ body[data-density="compact"] .kanban-card-title {
 
 .kanban-card-meta:empty { display: none; }
 
+/* F12: カード表面の最終更新日時（詳細密度時のみ表示） */
+.kanban-card-timestamp {
+  margin-top: 0.4rem;
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--gray-text-color);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  letter-spacing: 0.01em;
+}
+body[data-density="compact"] .kanban-card-timestamp { display: none; }
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -1309,6 +1321,25 @@ body[data-density="compact"] .kanban-card-title {
   margin-right: 0.4rem;
 }
 
+/* モーダル内サブタスクセクション（marked 経由ではなく JS で直接組み立てる） */
+.card-modal-subtasks {
+  margin-top: 0.75rem;
+}
+.card-modal-subtasks > p {
+  margin: 0 0 0.25rem;
+}
+.card-modal-subtasks ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 0.25rem;
+}
+.card-modal-subtasks li {
+  margin: 0.15rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .card-modal-meta {
   display: flex;
   flex-wrap: wrap;
@@ -1318,6 +1349,22 @@ body[data-density="compact"] .kanban-card-title {
 }
 
 .card-modal-meta:empty { display: none; }
+
+/* F12: モーダル末尾の作成日時・最終更新日時表示 */
+.card-modal-timestamps {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--secondary-color);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 12px;
+  color: var(--gray-text-color);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+}
+.card-modal-timestamps .sep { opacity: 0.5; }
+.card-modal-timestamps time { font-variant-numeric: tabular-nums; }
 
 /* モーダルヘッダー右の編集ボタンと閉じるボタン群 */
 .card-modal-header-actions {

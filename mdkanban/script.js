@@ -22,6 +22,52 @@
   // デフォルトレーン（lane 未指定カードが集まる行）の表示名
   const DEFAULT_LANE_DISPLAY_NAME = '未分類';
 
+  // F12: カードの作成日時 / 最終更新日時を HTML コメントで md に保存する形式。
+  //   `<!-- Created: YYYY-MM-DD HH:mm:ss -->` / `<!-- Updated: ... -->`
+  //   秒は後方互換のため省略可（読み込み時）。書き出しは常に秒付き。
+  const CARD_META_RE = /^<!--\s*(Created|Updated):\s*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(?::\d{2})?)\s*-->$/;
+
+  /** 現在時刻をローカル `YYYY-MM-DD HH:mm:ss` 文字列で返す。 */
+  function nowLocalTimestamp() {
+    const d = new Date();
+    const p = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ` +
+           `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  }
+
+  /**
+   * カードの updatedAt を現在時刻に更新する。
+   * createdAt が null のカード（既存 md にメタコメントが無く、本ツール導入前から存在していたカード）は
+   * **触らずに null のまま残す**。これにより「作成時刻は不明だが更新は記録できる」状態を
+   * 正直に表現し、UI 上は `作成: —` のままになる。新規作成カードは addNewCard 側で
+   * createdAt = updatedAt = 現在時刻が初期化されるため、この関数は updatedAt のみ更新すればよい。
+   */
+  function bumpCardTimestamps(card) {
+    if (!card) return;
+    card.updatedAt = nowLocalTimestamp();
+  }
+
+  /** モーダル表示用 `YYYY-MM-DD HH:mm` 文字列（秒を切り詰め）。null → '—'。 */
+  function formatTimestampLong(s) {
+    if (!s) return '—';
+    const m = s.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})(?::\d{2})?$/);
+    return m ? `${m[1]} ${m[2]}` : s;
+  }
+
+  /** カード表面用の短縮表示 `M/D HH:mm`。null → '—'。 */
+  function formatTimestampShort(s) {
+    if (!s) return '—';
+    const m = s.match(/^\d{4}-(\d{2})-(\d{2})\s+(\d{2}:\d{2})/);
+    return m ? `${parseInt(m[1], 10)}/${parseInt(m[2], 10)} ${m[3]}` : s;
+  }
+
+  /** `<time datetime="...">` 属性用の ISO 風文字列。値が無ければ ''。 */
+  function timestampToIsoAttr(s) {
+    if (!s) return '';
+    const m = s.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}(?::\d{2})?)$/);
+    return m ? `${m[1]}T${m[2]}` : '';
+  }
+
   const SAMPLE_MD = `---
 kanban-plugin: basic
 lanes:
@@ -460,6 +506,10 @@ lanes:
       card.checked = checked;
       card.subtasks = [];
       card.bodyParts = [];
+      // F12: カードのタイムスタンプ。既存ファイルから読み込んだ「メタコメント無し」カードは
+      //      両方 null のまま保持し、表示は '—'。初回編集時に bumpCardTimestamps で両方が埋まる。
+      card.createdAt = null;
+      card.updatedAt = null;
       return card;
     }
 
@@ -548,6 +598,19 @@ lanes:
         }
         const lineIndent = indentWidth(rawLine);
         if (lineIndent > currentCardBaseIndent || lineIndent >= 2) {
+          // F12: メタコメント `<!-- Created: ... -->` / `<!-- Updated: ... -->` はカードのプロパティへ振り分け、
+          // bodyParts には積まない（インデント有無を問わない）。
+          const metaMatch = trimmed.match(CARD_META_RE);
+          if (metaMatch) {
+            // 蓄積中の bodyPart を一度確定（メタの前後で段落が分かれる挙動を保つ）
+            if (currentCardBodyLines.length) {
+              currentCard.bodyParts.push(currentCardBodyLines.join('\n'));
+              currentCardBodyLines = [];
+            }
+            if (metaMatch[1] === 'Created') currentCard.createdAt = metaMatch[2];
+            else currentCard.updatedAt = metaMatch[2];
+            continue;
+          }
           // インデントを正規化して詰める（先頭の親インデント分を取り除く）
           const stripWidth = currentCardBaseIndent + 2;
           let stripped = rawLine;
@@ -746,6 +809,15 @@ lanes:
             out.push('\n');
           }
         });
+
+        // F12: カードのタイムスタンプ。サブタスク・bodyParts の後に最下部固定で出力する。
+        // 値が null のカード（既存ファイル由来で未編集）は行を出さない（読み込み時の '—' 表示と整合）。
+        if (card.createdAt) {
+          out.push(`  <!-- Created: ${card.createdAt} -->\n`);
+        }
+        if (card.updatedAt) {
+          out.push(`  <!-- Updated: ${card.updatedAt} -->\n`);
+        }
       });
       // 列末尾の空行
       if (colIdx < board.columns.length - 1) {
@@ -952,6 +1024,14 @@ lanes:
     metaEl.className = 'kanban-card-meta';
     metaEl.innerHTML = buildBadgeHtml(card);
     cardEl.appendChild(metaEl);
+
+    // F12: カード表面の最終更新日時。詳細密度（body[data-density="detailed"]）のときのみ
+    //       CSS で表示される。null カードは「—」で出す。
+    const tsEl = document.createElement('div');
+    tsEl.className = 'kanban-card-timestamp';
+    const iso = timestampToIsoAttr(card.updatedAt);
+    tsEl.innerHTML = `更新 <time${iso ? ` datetime="${iso}"` : ''}>${escapeHtml(formatTimestampShort(card.updatedAt))}</time>`;
+    cardEl.appendChild(tsEl);
 
     metaEl.querySelectorAll('.badge.tag').forEach(btn => {
       btn.addEventListener('click', (ev) => {
@@ -1653,7 +1733,17 @@ lanes:
     const col = state.board.columns[colIdx];
     if (!col) return;
     const target = isColumnAutoChecked(col.name);
-    col.cards.forEach(c => { c.checked = target; });
+    col.cards.forEach(c => {
+      // F12: 自動チェック切替で実際に checked が変化したカードのみタイムスタンプを更新する。
+      //       無変化のカードまで触らないことで、空ファイルロード後の自動同期等での
+      //       不要な dirty 化を避ける（toggleAutoCheckColumn は明示的ユーザー操作）。
+      if (c.checked !== target) {
+        c.checked = target;
+        bumpCardTimestamps(c);
+      } else {
+        c.checked = target;
+      }
+    });
   }
 
   /** state.collapsedColumns を LocalStorage に保存。クォータ超過は握りつぶす。 */
@@ -2375,19 +2465,43 @@ lanes:
   }
 
   // -------- カード詳細モーダル --------
+  /**
+   * モーダル本文用の Markdown 文字列を組み立てる。
+   * サブタスクは含めない（DOMPurify が `<input type="checkbox">` から `type` 属性を剥がして
+   * テキスト入力として描画されてしまう問題を回避するため、renderModalView 側で
+   * card.subtasks から直接 DOM を組み立てる）。
+   */
   function buildCardMarkdownForModal(card) {
     let md = '';
-    // 表示タイトル（メタ無し）はモーダルヘッダーで表示するので本文には含めない
     if (card.bodyParts.length > 0) {
       md += card.bodyParts.join('\n\n') + '\n\n';
     }
-    if (card.subtasks.length > 0) {
-      md += '\n**サブタスク**\n\n';
-      for (const s of card.subtasks) {
-        md += `- [${s.checked ? 'x' : ' '}] ${s.title}\n`;
-      }
-    }
     return md;
+  }
+
+  /** card.subtasks からモーダル用のサブタスク section 要素を生成して返す。0件なら null。 */
+  function buildSubtasksSection(card) {
+    if (!card.subtasks || card.subtasks.length === 0) return null;
+    const section = document.createElement('div');
+    section.className = 'card-modal-subtasks';
+    const heading = document.createElement('p');
+    const strong = document.createElement('strong');
+    strong.textContent = 'サブタスク';
+    heading.appendChild(strong);
+    section.appendChild(heading);
+    const ul = document.createElement('ul');
+    card.subtasks.forEach(s => {
+      const li = document.createElement('li');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = !!s.checked;
+      cb.disabled = true;
+      li.appendChild(cb);
+      li.appendChild(document.createTextNode(' ' + s.title));
+      ul.appendChild(li);
+    });
+    section.appendChild(ul);
+    return section;
   }
 
   function openCardModal(card) {
@@ -2420,9 +2534,11 @@ lanes:
       bodyHtml = '<p style="color:var(--gray-text-color)">（このカードには詳細情報がありません）</p>';
     }
     els.cardModalBody.innerHTML = bodyHtml;
-    els.cardModalBody.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-      cb.disabled = true;
-    });
+    // サブタスクは DOMPurify による input type 剥奪を避けるため、ここで直接 DOM を組み立てて追加する。
+    const subtasksSection = buildSubtasksSection(card);
+    if (subtasksSection) {
+      els.cardModalBody.appendChild(subtasksSection);
+    }
     const meta = document.createElement('div');
     meta.className = 'card-modal-meta';
     meta.innerHTML = buildBadgeHtml(card);
@@ -2434,6 +2550,18 @@ lanes:
       });
     });
     els.cardModalBody.insertBefore(meta, els.cardModalBody.firstChild);
+
+    // F12: 作成日時・最終更新日時のメタ行をモーダル末尾に追加。
+    //       既存ファイル由来のメタ無しカードは両方 '—' を表示する。
+    const timestampsEl = document.createElement('div');
+    timestampsEl.className = 'card-modal-timestamps';
+    const createdIso = timestampToIsoAttr(card.createdAt);
+    const updatedIso = timestampToIsoAttr(card.updatedAt);
+    timestampsEl.innerHTML =
+      `<span>作成: <time${createdIso ? ` datetime="${createdIso}"` : ''}>${escapeHtml(formatTimestampLong(card.createdAt))}</time></span>` +
+      `<span class="sep" aria-hidden="true">·</span>` +
+      `<span>更新: <time${updatedIso ? ` datetime="${updatedIso}"` : ''}>${escapeHtml(formatTimestampLong(card.updatedAt))}</time></span>`;
+    els.cardModalBody.appendChild(timestampsEl);
   }
 
   /**
@@ -2636,6 +2764,10 @@ lanes:
 
     // F2 同期: モーダル編集確定時も所属カラムの自動チェック状態で強制再評価（カラム移動は起きないが防御的）
     syncCardCheckedToColumn(loc.card, loc.col.name);
+
+    // F12: タイトル・本文・サブタスクの編集はカードの最終更新日時を更新する。
+    //       既存ファイル由来のメタ無しカードでは createdAt も同時に現在時刻で埋まる。
+    bumpCardTimestamps(loc.card);
 
     state.editing = null;
     reserializeAndPersist();
@@ -3058,6 +3190,10 @@ lanes:
     // 対象カラム → true、対象外 → false（card.checked===null も同期型仕様で true/false に確定）。
     syncCardCheckedToColumn(card, toCol.name);
 
+    // F12: 列移動・レーン移動・同列内並び替えはいずれも「カードの状態が変わった」とみなして
+    //       最終更新日時を更新する。既存メタ無しカードはここで createdAt も埋まる。
+    bumpCardTimestamps(card);
+
     // 同 lane に居なくなった lane が空になっても board.lanes は維持する（折りたたみ状態保持等のため）。
     // ただしデフォルトレーン（''）が完全に消えたケースは useSwimlanes 維持のままで問題ない。
 
@@ -3238,11 +3374,16 @@ lanes:
 
     // 通常確定: メタ情報を再抽出して反映。
     // 厳密モード: lanes: ホワイトリスト未列挙の `#lane/X` は自動追記しない（reparseCardMetaFromTitle で正規化）。
-    if (newTitle !== loc.card.title) {
+    const titleChanged = newTitle !== loc.card.title;
+    if (titleChanged) {
       reparseCardMetaFromTitle(loc.card, newTitle, loc.card.checked);
     }
     // F2 同期: 編集確定時も所属カラムの自動チェック状態で checked を強制上書き（防御的再評価）
     syncCardCheckedToColumn(loc.card, loc.col.name);
+    // F12: タイトル変更時のみ更新日時を更新（変更が無いときの blur 確定では触らない）。
+    if (titleChanged) {
+      bumpCardTimestamps(loc.card);
+    }
     state.editing = null;
     reserializeAndPersist();
     markDirty();
@@ -3278,6 +3419,9 @@ lanes:
     // F2: 追加先カラムが自動チェック対象なら初期 checked=true
     const targetColName = state.board.columns[colIdx] ? state.board.columns[colIdx].name : '';
     const initialChecked = isColumnAutoChecked(targetColName);
+    // F12: 新規カードは作成日時 = 更新日時 = 現在時刻。タイトル空でキャンセル破棄された場合は
+    //      state.board に残らないため、メタコメントの書き出しも発生しない。
+    const nowTs = nowLocalTimestamp();
     const newCard = {
       id: `c-${cardIdCounter}-new`,
       title: '',
@@ -3287,7 +3431,9 @@ lanes:
       lane: (laneName === null || laneName === undefined) ? '' : laneName,
       dueDate: null,
       subtasks: [],
-      bodyParts: []
+      bodyParts: [],
+      createdAt: nowTs,
+      updatedAt: nowTs
     };
     state.board.columns[colIdx].cards.push(newCard);
     // 新規 lane が発生する可能性は無い（既存 lane へ追加）が、useSwimlanes 維持。
