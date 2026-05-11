@@ -436,13 +436,32 @@ body[data-theme="dark"] .dropzone.drag-over {
 .kanban-column-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.4rem;
   padding: 0.25rem 0.25rem 0.5rem;
   font-weight: 600;
   color: var(--text-color);
   border-bottom: 1px solid var(--kanban-col-border);
   margin-bottom: 0.5rem;
+  /* F3 ハンドル UX のため／F1〜F6 アクションメニューの absolute 基準点 */
+  position: relative;
+}
+
+.kanban-column-header.is-column-draggable {
+  cursor: grab;
+}
+.kanban-column-header.is-column-draggable:active {
+  cursor: grabbing;
+}
+
+/* F3 DnD: ドラッグ元の半透明と、ドロップターゲットのハイライト */
+.kanban-column-header.is-column-drop-target {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
+  background-color: var(--secondary-color);
+  border-radius: 6px;
+}
+.kanban-column-header.is-dragging-column {
+  opacity: 0.5;
 }
 
 .kanban-column-title {
@@ -450,6 +469,333 @@ body[data-theme="dark"] .dropzone.drag-over {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1 1 auto;
+  min-width: 0;
+  cursor: text;
+}
+
+/* F1: 折りたたみトグル ▼/▶ */
+.kanban-column-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--gray-text-color);
+  font-size: 0.75rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.kanban-column-toggle:hover {
+  background: var(--secondary-color);
+  color: var(--primary-color);
+}
+.kanban-column-toggle:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 1px;
+}
+
+/* F2: 自動チェック ON マーカー（メニュー外に常時表示する小バッジ） */
+.kanban-column-auto-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  color: var(--primary-color);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+/* ===== カラム操作メニュー（◀▶✎☑🗑）— hover/focus-within でフローティング表示 =====
+   横並びカラムでは右側にフロートさせると右隣カラムのヘッダに被って pointer-events を奪うため、
+   下方向（top: 100%）にフロートさせる。カードエリアに重なるのは hover/focus 中のみで、
+   pointer-events: none 状態時はカード操作を妨げない。レーン側 .swimlane-actions は縦並びなので別管理。 */
+.kanban-column-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 0.1rem;
+  align-items: center;
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  padding: 0.2rem;
+  background-color: var(--card-color);
+  border: 1px solid var(--kanban-col-border);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 7;
+  white-space: nowrap;
+}
+
+body[data-theme="dark"] .kanban-column-actions {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.kanban-column-header:hover > .kanban-column-actions,
+.kanban-column-header:focus-within > .kanban-column-actions {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+@media (hover: none) {
+  .kanban-column-actions {
+    /* タッチデバイスでは常時表示。下方向フロートだとカードに被るので相対配置に切替 */
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+    position: static;
+    box-shadow: none;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    margin-left: 0.2rem;
+  }
+}
+
+.kanban-column-action-btn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border: 0;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  line-height: 1;
+  color: var(--gray-text-color);
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+.kanban-column-action-btn:hover:not(:disabled) {
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+}
+.kanban-column-action-btn:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 1px;
+}
+.kanban-column-action-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+.kanban-column-action-btn.is-delete:hover:not(:disabled) {
+  background-color: rgba(201, 42, 42, 0.12);
+  color: #c92a2a;
+}
+.kanban-column-action-btn.is-auto.is-active {
+  color: var(--primary-color);
+  background-color: var(--secondary-color);
+}
+
+/* F6 リネーム時のインライン入力欄 */
+.kanban-column-header.is-renaming .kanban-column-toggle,
+.kanban-column-header.is-renaming .kanban-column-count,
+.kanban-column-header.is-renaming .kanban-column-auto-mark {
+  /* 名前入力に幅を譲るため折りたたみトグルとカウントは隠す */
+  display: none;
+}
+.column-rename-input {
+  width: 100%;
+  flex: 1 1 auto;
+  padding: 0.25rem 0.4rem;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-color);
+  background-color: var(--card-color);
+  border: 1px solid var(--primary-color);
+  border-radius: 4px;
+}
+.column-rename-input:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 0;
+}
+
+/* ===== F1: 折りたたみカラム — カード領域のみ非表示。列幅・ヘッダ向きは展開時と同じ ===== */
+/* 列幅は変えない（通常モード: flex 0 0 300px のまま／スイムレーンモード: --mdkanban-col-expanded-width のまま）。
+   JS 側で .kanban-column-cards と「+ カード追加」を描画スキップしているため、追加 CSS は不要。 */
+
+/* ===== F4: 「+ カラム追加」ボタン ===== */
+.column-add-wrap {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+.kanban-board:not(.has-swimlanes) > .column-add-wrap {
+  flex: 0 0 200px;
+  align-self: flex-start;
+  margin-top: 0;
+}
+.kanban-board.has-swimlanes .kanban-column-headers > .column-add-wrap {
+  /* 列ヘッダ行末尾。grid ではなく flex でも grid セルとして扱えるように単独配置。 */
+  align-self: stretch;
+  min-width: 160px;
+}
+.column-add-btn {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  background: transparent;
+  border: 1px dashed var(--kanban-col-border);
+  border-radius: 8px;
+  color: var(--gray-text-color);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+  white-space: nowrap;
+}
+.column-add-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background-color: var(--card-color);
+}
+.column-add-btn:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+.column-add-form {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 4px);
+  z-index: 7;
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.6rem;
+  background-color: var(--card-color);
+  border: 1px solid var(--kanban-col-border);
+  border-radius: 10px;
+  box-shadow: var(--box-shadow);
+}
+.column-add-input {
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  font: inherit;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  border: 1px solid var(--kanban-col-border);
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+.column-add-input:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 0;
+  border-color: var(--primary-color);
+}
+.column-add-error {
+  min-height: 1em;
+  font-size: 0.75rem;
+  color: #c92a2a;
+}
+.column-add-error:empty {
+  display: none;
+}
+.column-add-form-actions {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: flex-end;
+}
+
+/* ===== F5: カラム削除確認モーダル（移動先選択 UI） ===== */
+.column-delete-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.column-delete-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+}
+.column-delete-modal-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  background-color: var(--card-color);
+  border: 1px solid var(--kanban-col-border);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  padding: 1.25rem 1.5rem 1rem;
+  color: var(--text-color);
+  box-sizing: border-box;
+}
+.column-delete-modal-title {
+  margin: 0 0 0.6rem;
+  font-size: 1.1rem;
+}
+.column-delete-modal-desc {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: var(--text-color);
+  line-height: 1.5;
+}
+.column-delete-modal-radios {
+  border: 1px solid var(--kanban-col-border);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem 0.4rem;
+  margin: 0 0 1rem;
+}
+.column-delete-modal-radios > legend {
+  padding: 0 0.4rem;
+  font-size: 0.8rem;
+  color: var(--gray-text-color);
+}
+.column-delete-modal-radio {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.35rem 0.2rem;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.column-delete-modal-radio:hover {
+  background-color: var(--secondary-color);
+}
+.column-delete-modal-radio-label {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+.column-delete-modal-radio-note {
+  font-size: 0.75rem;
+  color: var(--gray-text-color);
+  flex-basis: 100%;
+  margin-left: 1.6rem;
+}
+.column-delete-modal-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.column-delete-modal-actions .btn.danger {
+  background-color: #c92a2a;
+  border-color: #c92a2a;
+  color: #fff;
+}
+.column-delete-modal-actions .btn.danger:hover {
+  background-color: #b02323;
+  border-color: #b02323;
 }
 
 .kanban-column-count {
@@ -1071,7 +1417,8 @@ body[data-theme="dark"] .card-modal-edit {
 }
 
 .cme-input,
-.cme-textarea {
+.cme-textarea,
+.cme-select {
   width: 100%;
   box-sizing: border-box;
   font: inherit;
@@ -1092,10 +1439,29 @@ body[data-theme="dark"] .card-modal-edit {
 }
 
 .cme-input:focus,
-.cme-textarea:focus {
+.cme-textarea:focus,
+.cme-select:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.18);
+}
+
+/* レーン／カラム／期限を横一列にまとめる行（モバイルでは折り返し） */
+.cme-field-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+.cme-field-row .cme-field {
+  min-width: 0;
+}
+.cme-field-row .cme-field[hidden] {
+  display: none;
+}
+@media (max-width: 600px) {
+  .cme-field-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .cme-subtasks {
@@ -1160,11 +1526,12 @@ body[data-theme="dark"] .cme-subtask-remove:hover {
   border-color: #7a2e2e;
 }
 
-/* ===== スイムレーン表示モード（行グルーピング） =====
+/* ===== スイムレーン表示モード（行グルーピング・サイドレール方式） =====
    frontmatter に `lanes:` キー（YAML 配列）が宣言されている場合のみ有効化される 2D グリッド表示。
    `lanes:` の出現順序がそのままレーン表示順になる（厳密モード／ホワイトリスト方式）。
-   左端の lane ラベル列（160px 固定）＋各列（300px）を CSS Grid で並べ、
+   左端の lane ラベル列（48px 幅・サイドレール）＋各列（300px）を CSS Grid で並べ、
    全体は overflow-x: auto で横スクロールを維持する。
+   レーン名はサイドレール内で transform: rotate(-90deg)（下から上に読む方向）で縦表示する。
    ライト/ダーク両テーマで自然に見えるよう、共通の CSS 変数（--background-color 等）を流用する。 */
 .kanban-board.has-swimlanes {
   display: flex;
@@ -1172,14 +1539,24 @@ body[data-theme="dark"] .cme-subtask-remove:hover {
   gap: 0;
   align-items: flex-start;
   scroll-snap-type: none;
+  /* サイドレール幅をローカル変数化して各箇所から参照する */
+  --mdkanban-rail-width: 48px;
+  /* 「+ カラム追加」ボタン用トラック幅（モバイルではメディアクエリで 160px に上書き） */
+  --mdkanban-add-col-track: 200px;
+  /* 展開中の列トラック幅（モバイルではメディアクエリで 260px に上書き）。
+     JS 側で --mdkanban-col-tracks を組み立てる際に var() で参照されるため、
+     ビューポート幅変化時に再描画なしでも自動で追従する。 */
+  --mdkanban-col-expanded-width: 300px;
 }
 
 /* 上段: 列ヘッダ行（左端は空セル + 各列ヘッダ）。
    親 flex-column の cross-axis 縮約を回避するため min-width: max-content を明示し、
-   グリッド固定幅（160px + N*300px + gap）を保ってスクロールを成立させる。 */
+   グリッド固定幅（48px + N*300px + gap）を保ってスクロールを成立させる。 */
 .kanban-board.has-swimlanes .kanban-column-headers {
   display: grid;
-  grid-template-columns: 168px repeat(var(--mdkanban-cols, 3), 300px);
+  /* JS 側で --mdkanban-col-tracks を全列ぶんの幅文字列（折りたたみ 48px / 展開 300px or 260px）に都度設定する。
+     末尾には「+ カラム追加」ボタン用のトラック（--mdkanban-add-col-track）を置く。 */
+  grid-template-columns: var(--mdkanban-rail-width) var(--mdkanban-col-tracks, repeat(var(--mdkanban-cols, 3), 300px)) var(--mdkanban-add-col-track, 200px);
   gap: 0.75rem;
   min-width: max-content;
   position: sticky;
@@ -1197,27 +1574,23 @@ body[data-theme="dark"] .cme-subtask-remove:hover {
   margin-bottom: 0;
 }
 
+/* コーナーセル: 48px の空セル。役割は「カード列ヘッダ行の左端にレール幅と同じ余白を確保する」のみ */
 .swimlane-corner {
   background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 0 0 0 0.75rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--gray-text-color);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   user-select: none;
 }
 
-.swimlane-corner::before {
-  content: "レーン";
-  opacity: 0.6;
-}
-
-/* 各 lane の行ブロック */
+/* 各 lane の行ブロック
+   サイドレール（header）とカードセル群（row）を 1 段の CSS Grid で並べる。
+   左端 var(--mdkanban-rail-width) を header に、残り N 列（300px）を row に割り当て、
+   row 自身も内部グリッドで N 個のセルを並べる。 */
 .swimlane {
+  display: grid;
+  grid-template-columns: var(--mdkanban-rail-width) var(--mdkanban-col-tracks, repeat(var(--mdkanban-cols, 3), 300px));
+  column-gap: 0.75rem;
+  row-gap: 0;
+  align-items: stretch;
+  min-width: max-content;
   padding: 0.55rem 0;
   border-radius: 6px;
   transition: background-color 0.15s ease;
@@ -1245,27 +1618,38 @@ body[data-theme="dark"] .swimlane + .swimlane {
   padding-top: 0.25rem;
 }
 
+/* レーンヘッダ: 48px 幅の縦長サイドレール。内部は上から
+   [グリップ ⋮⋮ + トグル ▼ → 回転レーン名 → カウントバッジ] の縦積みレイアウト。
+   管理ボタン群（▲▼✎🗑）は :hover/:focus-within 時にレール右隣へフローティングするため、
+   絶対配置の基準点として position: relative を付与する。 */
 .swimlane-header {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 0.4rem;
-  width: 168px;
-  padding: 0.6rem 0.7rem 0.5rem;
+  width: var(--mdkanban-rail-width);
+  min-height: 220px;
+  padding: 0.4rem 0 0.45rem;
   background-color: var(--kanban-col-bg);
   border: 1px solid var(--kanban-col-border);
   border-left: 4px solid var(--primary-color);
   border-radius: 4px 10px 10px 4px;
   color: var(--text-color);
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
   position: sticky;
   left: 0;
   z-index: 4;
   margin-bottom: 0.4rem;
-  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease, width 0.15s ease;
 }
+
+/* 設計メモ: .swimlane-header は position: sticky のままでも、
+   sticky 要素は absolutely positioned descendants の containing block を提供する。
+   そのため .swimlane-actions（position: absolute; left: 100% でレール右隣にフロート）と
+   .swimlane-name（position: absolute で 48px 幅をはみ出さないよう absolute 配置）は
+   このヘッダ自身を起点に正しく配置される。 */
 
 .swimlane-header.is-draggable {
   cursor: grab;
@@ -1273,33 +1657,6 @@ body[data-theme="dark"] .swimlane + .swimlane {
 
 .swimlane-header.is-draggable:active {
   cursor: grabbing;
-}
-
-/* draggable レーンヘッダの drag affordance: トグルボタン左にグリップアイコンを CSS で挿入。
-   常時 0.4 程度で薄く表示し、hover で 0.85 に強調。タッチ環境では 0.5 で固定。 */
-.swimlane-header.is-draggable .swimlane-collapse-btn::before {
-  content: "⋮⋮";
-  flex-shrink: 0;
-  font-size: 0.65rem;
-  letter-spacing: -2px;
-  color: var(--gray-text-color);
-  opacity: 0.45;
-  transition: opacity 0.15s ease, color 0.15s ease;
-  font-weight: 700;
-  line-height: 1;
-  margin-right: -0.1rem;
-}
-
-.swimlane-header.is-draggable:hover .swimlane-collapse-btn::before,
-.swimlane-header.is-draggable:focus-within .swimlane-collapse-btn::before {
-  opacity: 0.9;
-  color: var(--primary-color);
-}
-
-@media (hover: none) {
-  .swimlane-header.is-draggable .swimlane-collapse-btn::before {
-    opacity: 0.55;
-  }
 }
 
 /* レーンヘッダ hover で軽く浮かせる */
@@ -1343,12 +1700,74 @@ body[data-theme="dark"] .swimlane-header:hover {
   border: 1px solid var(--kanban-col-border);
 }
 
+/* 折りたたみトグルボタン: レール内で縦積みする主クリック領域。
+   - 上端: グリップ（::before "⋮⋮"）と トグル ▼
+   - 中央: 回転レーン名（rotate(-90deg)・absolute 配置で 48px 幅をはみ出さない）
+   - 下端: カウントバッジ
+   absolute 配置の swimlane-name の基準点として position: relative を付与する。 */
+.swimlane-collapse-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 1 1 auto;
+  gap: 0.3rem;
+  width: 100%;
+  padding: 0.1rem 0;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  min-height: 200px;
+}
+
+.swimlane-collapse-btn:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* draggable レーンヘッダの drag affordance: トグルボタン上端にグリップアイコンを CSS で挿入。
+   常時 0.45 程度で薄く表示し、hover で 0.9 に強調。タッチ環境では 0.55 で固定。 */
+.swimlane-header.is-draggable .swimlane-collapse-btn::before {
+  content: "⋮⋮";
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  letter-spacing: -2px;
+  color: var(--gray-text-color);
+  opacity: 0.45;
+  transition: opacity 0.15s ease, color 0.15s ease;
+  font-weight: 700;
+  line-height: 1;
+  display: block;
+  text-align: center;
+}
+
+.swimlane-header.is-draggable:hover .swimlane-collapse-btn::before,
+.swimlane-header.is-draggable:focus-within .swimlane-collapse-btn::before {
+  opacity: 0.9;
+  color: var(--primary-color);
+}
+
+@media (hover: none) {
+  .swimlane-header.is-draggable .swimlane-collapse-btn::before {
+    opacity: 0.55;
+  }
+}
+
+/* 折りたたみトグル ▼ — レール上端、グリップ直下に配置 */
 .swimlane-toggle {
-  display: inline-block;
-  font-size: 0.75rem;
+  display: block;
+  font-size: 0.7rem;
   line-height: 1;
   transition: transform 0.15s ease;
   color: var(--gray-text-color);
+  text-align: center;
+  flex-shrink: 0;
 }
 
 .swimlane.is-collapsed .swimlane-toggle {
@@ -1359,35 +1778,56 @@ body[data-theme="dark"] .swimlane-header:hover {
   display: none;
 }
 
+/* 回転レーン名: 横書きのまま transform: rotate(-90deg) で左に90度回転（下から上に読む方向）。
+   レール幅 48px を box が物理的にはみ出さないよう、collapse-btn 内に position: absolute で配置し、
+   親（48px 幅）のレイアウトに影響を与えない。
+   回転前: width 140px × height 1.2em の box → 回転後: 視覚的に 1.2em 幅 × 140px 高さ。
+   140px は toggle ▼（上端 ~26px）と count バッジ（下端 ~22px）に重ならない安全マージンを確保した値。 */
 .swimlane-name {
-  flex: 1 1 auto;
-  text-align: left;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 140px;
+  height: 1.2em;
+  margin: 0;
+  padding: 0;
+  line-height: 1.2;
+  text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  transform-origin: center center;
+  font-size: 0.85rem;
+  font-weight: inherit;
+  pointer-events: none;
 }
 
+/* カウントバッジ: 円形でレール下端に配置（flex 列の末尾に margin-top: auto で寄せる） */
 .swimlane-count {
   background-color: var(--secondary-color);
   color: var(--gray-text-color);
   border-radius: 999px;
-  padding: 0.05rem 0.5rem;
-  font-size: 0.72rem;
+  width: 26px;
+  height: 22px;
+  padding: 0;
+  font-size: 0.7rem;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  flex-shrink: 0;
+  line-height: 1;
+  margin-top: auto;
 }
 
 .swimlane-row {
+  grid-column: 2 / -1;
   display: grid;
-  grid-template-columns: 168px repeat(var(--mdkanban-cols, 3), 300px);
+  grid-template-columns: var(--mdkanban-col-tracks, repeat(var(--mdkanban-cols, 3), 300px));
   gap: 0.75rem;
   align-items: start;
-  min-width: max-content;
-}
-
-/* スイムレーン左端列は lane ヘッダボタン専用（空セル）— ヘッダ自体が sticky で配置済み */
-.swimlane-row::before {
-  content: "";
-  display: block;
 }
 
 /* スイムレーン内の各セル：通常モードと同じカード積層スタイルを使うが、
@@ -1426,54 +1866,48 @@ body[data-theme="dark"] .swimlane-header:hover {
   min-width: 0;
 }
 
-/* ===== レーンヘッダ内ボタン群（折りたたみトグル + 管理アクション） ===== */
-
-/* 折りたたみトグル（▼ + レーン名 + カウント） — レーンヘッダ内の主クリック領域 */
-.swimlane-collapse-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  width: 100%;
-  padding: 0;
-  margin: 0;
-  background: transparent;
-  border: 0;
-  border-radius: 4px;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.swimlane-collapse-btn:focus-visible {
-  outline: 2px solid var(--primary-color);
-  outline-offset: 2px;
-}
-
-/* 管理アクション群（▲▼✎🗑）。常時 opacity 0.5 で控えめに見せ、hover/focus 時に完全表示。
-   常時可視にすることで「並び替え／編集／削除ができる」という機能の存在を一目で伝える。 */
+/* ===== レーンヘッダ管理アクション（▲▼✎🗑）— フローティング表示 =====
+   通常時は非表示。レーンヘッダ :hover / :focus-within でレール右隣にフェードイン。
+   sticky な .swimlane-header の内側に position: absolute で配置することで、
+   レール本体と一緒に横スクロール時も追従させる。 */
 .swimlane-actions {
   display: flex;
+  flex-direction: row;
   gap: 0.15rem;
-  justify-content: space-between;
   align-items: center;
-  padding-top: 0.3rem;
-  margin-top: 0.1rem;
-  border-top: 1px solid transparent;
-  opacity: 0.55;
-  transition: opacity 0.15s ease, border-top-color 0.15s ease;
+  position: absolute;
+  left: calc(100% + 4px);
+  top: 0;
+  padding: 0.25rem;
+  background-color: var(--card-color);
+  border: 1px solid var(--kanban-col-border);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 6;
+  white-space: nowrap;
+}
+
+body[data-theme="dark"] .swimlane-actions {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .swimlane-header:hover > .swimlane-actions,
 .swimlane-header:focus-within > .swimlane-actions {
   opacity: 1;
-  border-top-color: var(--kanban-col-border);
+  pointer-events: auto;
+  transform: translateX(0);
 }
 
+/* タッチ環境では hover が発火しないため常時表示。レール右隣に固定で出す。 */
 @media (hover: none) {
   .swimlane-actions {
     opacity: 1;
-    border-top-color: var(--kanban-col-border);
+    pointer-events: auto;
+    transform: translateX(0);
   }
 }
 
@@ -1514,16 +1948,52 @@ body[data-theme="dark"] .swimlane-header:hover {
   color: #c92a2a;
 }
 
-/* レーン名インライン編集の入力欄（折りたたみトグルと差し替え） */
+/* ===== レーン名インライン編集 =====
+   `.swimlane-header.is-renaming` の間だけ、48px のサイドレールを 168px に一時拡張し、
+   入力欄を横書きで表示する。確定/キャンセル後は renderBoard() による再描画で is-renaming は自然に外れる。 */
+.swimlane-header.is-renaming {
+  width: 168px;
+  min-height: 0;
+  padding: 0.5rem 0.6rem;
+}
+
+.swimlane-header.is-renaming .swimlane-collapse-btn {
+  position: static;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.4rem;
+  min-height: 0;
+}
+
+/* 編集中はグリップ（⋮⋮）・折りたたみトグル（▼）・カウントバッジを隠し、
+   入力欄が拡張領域（~168px）を最大限使えるようにする。
+   入力欄はトグルボタンを置き換える形（JS 側で nameSpan→input に replaceWith）。 */
+.swimlane-header.is-renaming.is-draggable .swimlane-collapse-btn::before {
+  display: none;
+}
+
+.swimlane-header.is-renaming .swimlane-toggle,
+.swimlane-header.is-renaming .swimlane-count {
+  display: none;
+}
+
 .swimlane-rename-input {
   width: 100%;
+  flex: 1 1 auto;
   padding: 0.25rem 0.4rem;
   font: inherit;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-color);
   background-color: var(--card-color);
   border: 1px solid var(--primary-color);
   border-radius: 4px;
+  /* 編集中の入力欄は横書きに（親 is-renaming 下でのみ表示されるため rotate は不要） */
+  transform: none;
+  height: auto;
+  text-align: left;
+  white-space: normal;
 }
 
 .swimlane-rename-input:focus {
@@ -1531,20 +2001,25 @@ body[data-theme="dark"] .swimlane-header:hover {
   outline-offset: 0;
 }
 
-/* ===== 「+ レーン追加」コントロール（F8-A） ===== */
+/* ===== 「+ レーン追加」コントロール（F8-A） — サイドレール幅48pxに収まる縦長スタイル ===== */
 
-/* レーン追加ボタンとフォームのラッパ。左端 sticky でレーンラベル列に揃える。 */
+/* レーン追加ボタンとフォームのラッパ。左端 sticky でサイドレール列に揃える。
+   ラッパ自体も 48px 幅。フォーム表示時はラッパに position: relative をかけ、
+   フォーム本体は absolute でレール右側にポップさせる。 */
 .swimlane-add-wrap {
-  width: 168px;
+  width: var(--mdkanban-rail-width, 48px);
   position: sticky;
   left: 0;
   z-index: 3;
   margin-top: 0.5rem;
 }
 
+/* レール幅48pxに収まるよう、ボタンは縦長表記（テキストを rotate(-90deg)）。
+   省略を避けるため文言は「+ レーン追加」のままだが、レール幅に合わせて高さ稼ぎでテキスト回転で対応。 */
 .swimlane-add-btn {
   width: 100%;
-  padding: 0.6rem 0.7rem;
+  height: 140px;
+  padding: 0.4rem 0;
   background-color: transparent;
   border: 1px dashed var(--kanban-col-border);
   border-left: 4px dashed var(--kanban-col-border);
@@ -1555,6 +2030,29 @@ body[data-theme="dark"] .swimlane-header:hover {
   font-weight: 600;
   cursor: pointer;
   transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+/* レール幅48pxに収まらないボタンテキストは ::before で 90度回転して縦表示し、
+   元の textContent（DOM 上は "+ レーン追加" のまま）は font-size: 0 で視覚的に隠す。
+   aria-label / textContent はスクリーンリーダー向けに DOM に残す。 */
+.swimlane-add-btn {
+  font-size: 0;
+  line-height: 0;
+  white-space: nowrap;
+}
+
+.swimlane-add-btn::before {
+  content: "+ レーン追加";
+  display: inline-block;
+  font-size: 0.85rem;
+  line-height: 1;
+  transform: rotate(-90deg);
+  transform-origin: center center;
+  color: inherit;
 }
 
 .swimlane-add-btn:hover {
@@ -1571,9 +2069,9 @@ body[data-theme="dark"] .swimlane-header:hover {
   outline-offset: 2px;
 }
 
-/* インライン入力フォーム（レーン追加） */
+/* インライン入力フォーム（レーン追加） — レール幅48pxに収まらないためフローティング表示 */
 .swimlane-add-form {
-  width: 220px;
+  width: 240px;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
@@ -1582,6 +2080,10 @@ body[data-theme="dark"] .swimlane-header:hover {
   border: 1px solid var(--kanban-col-border);
   border-radius: 10px;
   box-shadow: var(--box-shadow);
+  position: absolute;
+  left: calc(100% + 6px);
+  top: 0;
+  z-index: 7;
 }
 
 .swimlane-add-input {
@@ -1649,23 +2151,23 @@ body[data-theme="dark"] .swimlane-header:hover {
   .kanban-board { padding: 1rem; gap: 0.75rem; }
   .kanban-column { flex-basis: 84vw; max-width: 320px; max-height: none; }
   .kanban-column-cards { max-height: 60vh; }
-  /* スイムレーンモードのモバイル対応: 横スクロール維持のため列幅は据え置き、
-     lane ラベルは sticky 左端で固定。スマホでも 2D 構造を崩さない。 */
+  /* スイムレーンモードのモバイル対応: 横スクロール維持のため列幅は微調整（260px）。
+     サイドレール幅は 48px のまま据え置き — レール幅を狭くすることでカード領域を最大化する設計が
+     PC・モバイル共通で成立する。
+     列幅は --mdkanban-col-mobile を介して JS 側 --mdkanban-col-tracks の合成値に反映される。 */
   .kanban-board.has-swimlanes {
     padding: 0.75rem;
+    --mdkanban-add-col-track: 160px;
+    --mdkanban-col-expanded-width: 260px;
   }
-  .kanban-board.has-swimlanes .kanban-column-headers,
-  .kanban-board.has-swimlanes .swimlane-row {
-    grid-template-columns: 148px repeat(var(--mdkanban-cols, 3), 260px);
+  .kanban-board.has-swimlanes .kanban-column-headers {
     gap: 0.5rem;
   }
-  .swimlane-header {
-    width: 148px;
-    font-size: 0.85rem;
-    padding: 0.5rem 0.6rem;
+  .kanban-board.has-swimlanes .swimlane {
+    column-gap: 0.5rem;
   }
-  .swimlane-add-wrap {
-    width: 148px;
+  .kanban-board.has-swimlanes .swimlane-row {
+    gap: 0.5rem;
   }
   .kanban-board.has-swimlanes .kanban-column-cards {
     max-height: none;

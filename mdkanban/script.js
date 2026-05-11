@@ -12,7 +12,9 @@
     fileName: 'mdkanban.lastFileName',
     theme: 'mdkanban.theme',
     density: 'mdkanban.density',
-    collapsedLanes: 'mdkanban.collapsedLanes'
+    collapsedLanes: 'mdkanban.collapsedLanes',
+    // F1: 折りたたみ中のカラム名（ファイル横断・全ボード共通の永続化）
+    collapsedColumns: 'mdkanban.collapsedColumns'
   };
 
   // スイムレーン用の lane 名・タグ抽出に使う共通 character class（既存タグの記法と揃える）。
@@ -90,6 +92,10 @@ lanes:
     cardModalEditActions: $('card-modal-edit-actions'),
     cmeTitle: $('cme-title'),
     cmeBody: $('cme-body'),
+    cmeLane: $('cme-lane'),
+    cmeColumn: $('cme-column'),
+    cmeDue: $('cme-due'),
+    cmeFieldLane: $('cme-field-lane'),
     cmeSubtasks: $('cme-subtasks'),
     cmeAddSubtask: $('cme-add-subtask'),
     cmeSaveBtn: $('cme-save-btn'),
@@ -114,6 +120,7 @@ lanes:
     dirty: false,        // DnD後の未保存フラグ
     serializedMarkdown: null, // 最後にシリアライズしたMarkdown（保存系で使い回し）
     collapsedLanes: new Set(),  // 折りたたみ中のlane名（LocalStorage と同期）
+    collapsedColumns: new Set(), // F1: 折りたたみ中のカラム名（LocalStorage と同期・ファイル横断）
     // インライン編集状態:
     //   { cardId, mode: 'inline', isNew: boolean, originalTitle: string }
     // モーダル編集状態:
@@ -183,6 +190,8 @@ lanes:
         frontmatter: {},
         lanes: null,
         hasLanesKey: false,
+        autoCheckColumns: null,
+        hasAutoCheckColumnsKey: false,
         otherKeysRaw: '',
         body: md,
         frontmatterRaw: ''
@@ -195,53 +204,86 @@ lanes:
     let hasLanesKey = false;
     let lanesArr = null;
     let inLanesBlock = false;
+    // F2: auto-check-columns: の解釈状態（lanes: と対称）
+    let hasAutoCheckColumnsKey = false;
+    let autoCheckArr = null;
+    let inAutoCheckBlock = false;
+
+    /** YAML スカラー文字列のクォート（', "）を剥がす */
+    function unquote(val) {
+      if ((val.startsWith('"') && val.endsWith('"')) ||
+          (val.startsWith("'") && val.endsWith("'"))) {
+        return val.slice(1, -1);
+      }
+      return val;
+    }
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
+
       // lanes ブロック解釈中: 直下のインデント `- 名前` 行を集める。
       if (inLanesBlock) {
         const itemMatch = line.match(/^\s+-\s+(.*)$/);
         if (itemMatch) {
-          let val = itemMatch[1].trim();
-          if ((val.startsWith('"') && val.endsWith('"')) ||
-              (val.startsWith("'") && val.endsWith("'"))) {
-            val = val.slice(1, -1);
-          }
-          if (val !== '' && !lanesArr.includes(val)) {
-            lanesArr.push(val);
-          }
+          const val = unquote(itemMatch[1].trim());
+          if (val !== '' && !lanesArr.includes(val)) lanesArr.push(val);
           continue;
         }
-        // 空行や別キーへの遭遇でブロック終了。空行は捨てて他キー側でも保持しない。
         inLanesBlock = false;
         if (line.trim() === '') continue;
-        // フォールスルー: 通常行として処理する
+        // フォールスルー
+      }
+      // auto-check-columns ブロック解釈中
+      if (inAutoCheckBlock) {
+        const itemMatch = line.match(/^\s+-\s+(.*)$/);
+        if (itemMatch) {
+          const val = unquote(itemMatch[1].trim());
+          if (val !== '' && !autoCheckArr.includes(val)) autoCheckArr.push(val);
+          continue;
+        }
+        inAutoCheckBlock = false;
+        if (line.trim() === '') continue;
+        // フォールスルー
       }
 
-      // lanes: で始まる行（値なし or `[..]` フロー形式）
+      // lanes: で始まる行
       const lanesHeader = line.match(/^lanes\s*:\s*(.*)$/);
       if (lanesHeader) {
         hasLanesKey = true;
         lanesArr = lanesArr || [];
         const inlineVal = lanesHeader[1].trim();
         if (inlineVal === '' || inlineVal === '[]') {
-          // ブロックスタイル開始 もしくは空配列
           inLanesBlock = (inlineVal === '');
         } else {
-          // フロー形式 `[a, b, "c"]` を緩くパース（書き出し側はブロック形式に統一）
           const flow = inlineVal.match(/^\[(.*)\]$/);
           if (flow) {
             flow[1].split(',').forEach(part => {
-              let v = part.trim();
-              if ((v.startsWith('"') && v.endsWith('"')) ||
-                  (v.startsWith("'") && v.endsWith("'"))) {
-                v = v.slice(1, -1);
-              }
+              const v = unquote(part.trim());
               if (v !== '' && !lanesArr.includes(v)) lanesArr.push(v);
             });
           }
-          // それ以外（スカラーが直書き）は無視。
           inLanesBlock = false;
+        }
+        continue;
+      }
+
+      // auto-check-columns: で始まる行（lanes: と同じ書式・受け付けも緩く）
+      const autoCheckHeader = line.match(/^auto-check-columns\s*:\s*(.*)$/);
+      if (autoCheckHeader) {
+        hasAutoCheckColumnsKey = true;
+        autoCheckArr = autoCheckArr || [];
+        const inlineVal = autoCheckHeader[1].trim();
+        if (inlineVal === '' || inlineVal === '[]') {
+          inAutoCheckBlock = (inlineVal === '');
+        } else {
+          const flow = inlineVal.match(/^\[(.*)\]$/);
+          if (flow) {
+            flow[1].split(',').forEach(part => {
+              const v = unquote(part.trim());
+              if (v !== '' && !autoCheckArr.includes(v)) autoCheckArr.push(v);
+            });
+          }
+          inAutoCheckBlock = false;
         }
         continue;
       }
@@ -249,20 +291,14 @@ lanes:
       // 通常のスカラーキー
       const kv = line.match(/^([A-Za-z0-9_\-]+)\s*:\s*(.*)$/);
       if (kv) {
-        let val = kv[2].trim();
-        if ((val.startsWith('"') && val.endsWith('"')) ||
-            (val.startsWith("'") && val.endsWith("'"))) {
-          val = val.slice(1, -1);
-        }
+        const val = unquote(kv[2].trim());
         fm[kv[1]] = val;
         otherLines.push(line);
         continue;
       }
-      // 空行・コメント等は他キー領域に保持（順序維持のため）
       otherLines.push(line);
     }
 
-    // 末尾の連続空行はまとめて除去（再シリアライズで余計な空行が残らないようにする）
     while (otherLines.length && otherLines[otherLines.length - 1].trim() === '') {
       otherLines.pop();
     }
@@ -271,6 +307,8 @@ lanes:
       frontmatter: fm,
       lanes: hasLanesKey ? lanesArr : null,
       hasLanesKey,
+      autoCheckColumns: hasAutoCheckColumnsKey ? autoCheckArr : null,
+      hasAutoCheckColumnsKey,
       otherKeysRaw: otherLines.join('\n'),
       body: md.slice(m[0].length),
       frontmatterRaw: m[0]
@@ -372,6 +410,8 @@ lanes:
     const { frontmatter, body, frontmatterRaw, hasLanesKey, otherKeysRaw } = fmInfo;
     // lanes: キーが有るときのみホワイトリストとして使う。空配列もホワイトリスト＝0件として扱う。
     const lanesWhitelist = hasLanesKey ? (fmInfo.lanes || []) : null;
+    // F2: auto-check-columns: 配列。キーが無ければ null（=機能オフ）。
+    const autoCheckColumnsRaw = fmInfo.hasAutoCheckColumnsKey ? (fmInfo.autoCheckColumns || []) : null;
     const lines = body.replace(/\r\n/g, '\n').split('\n');
 
     const result = {
@@ -384,6 +424,12 @@ lanes:
       // 厳密モード判定用の情報を保持。再シリアライズ／編集 UI で参照する。
       hasLanesKey: !!hasLanesKey,
       lanesWhitelist: lanesWhitelist ? [...lanesWhitelist] : null,
+      // F2: 自動チェック対象カラム名の配列。キー未指定なら空配列（機能オフ相当）。
+      // ロード時に「現在の columns に存在しないカラム名」は後段で自動掃除する（F2-A-6）。
+      autoCheckColumns: autoCheckColumnsRaw ? [...autoCheckColumnsRaw] : [],
+      // 元ファイルにキーが「あった」かどうかのフラグ。シリアライズ時の出力可否は配列が空かで決まるが、
+      // 既存ファイルが空配列で保存しているケース（出力しない仕様）と区別する目的では使わず、
+      // F2-A-5 「全 OFF で配列が空になればキーごと削除」を満たすため、シリアライズは配列長で判定する。
       otherFrontmatterRaw: otherKeysRaw || ''
     };
 
@@ -567,6 +613,23 @@ lanes:
       result.useSwimlanes = false;
     }
 
+    // F2-A-6: 現在の columns に存在しないカラム名は黙って除去（孤児エントリの自動掃除）
+    if (result.autoCheckColumns && result.autoCheckColumns.length > 0) {
+      const validColNames = new Set(result.columns.map(c => c.name));
+      result.autoCheckColumns = result.autoCheckColumns.filter(n => validColNames.has(n));
+    }
+
+    // F2: 自動チェック対象カラムに所属する全カードの checked を強制 true に同期する（同期型）。
+    //     対象外カラムには触らず、ロード時の checked（- [x]/- [ ]/null）をそのまま尊重する。
+    if (result.autoCheckColumns && result.autoCheckColumns.length > 0) {
+      const autoSet = new Set(result.autoCheckColumns);
+      result.columns.forEach(col => {
+        if (autoSet.has(col.name)) {
+          col.cards.forEach(c => { c.checked = true; });
+        }
+      });
+    }
+
     assignIds(result);
     return result;
   }
@@ -614,8 +677,12 @@ lanes:
     const otherRaw = (board.otherFrontmatterRaw || '').replace(/\s+$/, ''); // 末尾空白除去
     const realLanes = (board.lanes || []).filter(l => l.name !== '');
     const hasLanes = !!board.hasLanesKey && realLanes.length > 0;
+    // F2: auto-check-columns: は配列が非空のときのみ出力（空ならキーごと省略 = F2-A-5）
+    // 出現順は board.autoCheckColumns の並び順をそのまま尊重する（=トグル ON した順）。
+    const autoCheckCols = Array.isArray(board.autoCheckColumns) ? board.autoCheckColumns.slice() : [];
+    const hasAutoCheck = autoCheckCols.length > 0;
     const otherLines = otherRaw ? otherRaw.split('\n') : [];
-    if (otherLines.length > 0 || hasLanes) {
+    if (otherLines.length > 0 || hasLanes || hasAutoCheck) {
       out.push('---\n');
       if (otherLines.length > 0) {
         out.push(otherLines.join('\n'));
@@ -625,6 +692,12 @@ lanes:
         out.push('lanes:\n');
         for (const lane of realLanes) {
           out.push(`  - ${yamlScalarValue(lane.name)}\n`);
+        }
+      }
+      if (hasAutoCheck) {
+        out.push('auto-check-columns:\n');
+        for (const name of autoCheckCols) {
+          out.push(`  - ${yamlScalarValue(name)}\n`);
         }
       }
       out.push('---\n\n');
@@ -763,36 +836,42 @@ lanes:
 
     els.kanbanBoard.classList.remove('has-swimlanes');
     els.kanbanBoard.style.removeProperty('--mdkanban-cols');
+    els.kanbanBoard.style.removeProperty('--mdkanban-col-tracks');
+    els.kanbanBoard.style.removeProperty('--mdkanban-add-col-track');
     board.columns.forEach((col, colIdx) => {
         const colEl = document.createElement('div');
         colEl.className = 'kanban-column';
         colEl.setAttribute('role', 'listitem');
         colEl.dataset.colIndex = String(colIdx);
+        if (isColumnCollapsed(col.name)) {
+          colEl.classList.add('is-collapsed');
+        }
 
-        const header = document.createElement('div');
-        header.className = 'kanban-column-header';
-        const colCount = col.cards.filter(c => matchesFilter(c)).length;
-        header.innerHTML = `<span class="kanban-column-title">${escapeHtml(col.name)}</span><span class="kanban-column-count">${colCount}</span>`;
+        // F1〜F6 対応の共通ヘッダ DOM
+        const header = buildColumnHeaderElement(col, colIdx);
         colEl.appendChild(header);
 
-        const cardsWrap = document.createElement('div');
-        cardsWrap.className = 'kanban-column-cards';
-        cardsWrap.dataset.colIndex = String(colIdx);
+        // 折りたたみ中はカード領域・追加ボタンを描画しない（F1-8）
+        if (!isColumnCollapsed(col.name)) {
+          const cardsWrap = document.createElement('div');
+          cardsWrap.className = 'kanban-column-cards';
+          cardsWrap.dataset.colIndex = String(colIdx);
 
-        col.cards.forEach((card, cardIdx) => {
-          if (!matchesFilter(card)) return;
-          const cardEl = createCardElement(card, colIdx, cardIdx);
-          cardsWrap.appendChild(cardEl);
-        });
+          col.cards.forEach((card, cardIdx) => {
+            if (!matchesFilter(card)) return;
+            const cardEl = createCardElement(card, colIdx, cardIdx);
+            cardsWrap.appendChild(cardEl);
+          });
 
-        // DnD: 列のカード領域をドロップ受け付け対象に
-        attachColumnDnDHandlers(cardsWrap);
+          attachColumnDnDHandlers(cardsWrap);
+          colEl.appendChild(cardsWrap);
+          colEl.appendChild(createAddCardButton(colIdx, null));
+        }
 
-      colEl.appendChild(cardsWrap);
-      // 列末尾に「+ カード追加」ボタン
-      colEl.appendChild(createAddCardButton(colIdx, null));
-      els.kanbanBoard.appendChild(colEl);
+        els.kanbanBoard.appendChild(colEl);
     });
+    // F4: 「+ カラム追加」ボタン
+    els.kanbanBoard.appendChild(renderAddColumnControl());
     // 通常モードでも「+ レーン追加」エントリポイントを末尾に配置（F8-A-2）。
     // クリック時に lanes: キーが新規生成され、スイムレーンモードへ切り替わる。
     els.kanbanBoard.appendChild(renderAddLaneControl());
@@ -917,7 +996,16 @@ lanes:
    *   - 末尾に「+ レーン追加」コントロール（F8-A）を配置
    */
   function renderSwimlaneBoard(board) {
-    // 上段: 列ヘッダ行（lane ラベル列ぶんの空セル + 各列ヘッダ）
+    // F1: 折りたたみ状態でも列幅は変えない仕様。全カラムで CSS 変数 --mdkanban-col-expanded-width を参照する
+    // （CSS 側で 300px ↔ 260px をメディアクエリで切替）。これにより JS の再描画なしでも
+    // ビューポートサイズ変化に追従する。
+    const colTracks = board.columns
+      .map(() => 'var(--mdkanban-col-expanded-width, 300px)')
+      .join(' ');
+    els.kanbanBoard.style.setProperty('--mdkanban-col-tracks', colTracks);
+    // 「+ カラム追加」ボタン用トラック幅は CSS 側で定義するためインライン指定はしない
+
+    // 上段: 列ヘッダ行（lane ラベル列ぶんの空セル + 各列ヘッダ + 末尾「+ カラム追加」）
     const headerRow = document.createElement('div');
     headerRow.className = 'kanban-column-headers';
     headerRow.setAttribute('role', 'presentation');
@@ -926,13 +1014,11 @@ lanes:
     corner.setAttribute('aria-hidden', 'true');
     headerRow.appendChild(corner);
     board.columns.forEach((col, colIdx) => {
-      const header = document.createElement('div');
-      header.className = 'kanban-column-header';
-      header.dataset.colIndex = String(colIdx);
-      const colCount = col.cards.filter(c => matchesFilter(c)).length;
-      header.innerHTML = `<span class="kanban-column-title">${escapeHtml(col.name)}</span><span class="kanban-column-count">${colCount}</span>`;
+      const header = buildColumnHeaderElement(col, colIdx);
       headerRow.appendChild(header);
     });
+    // F4: 列ヘッダ行末尾に「+ カラム追加」ボタン（スイムレーンモード）
+    headerRow.appendChild(renderAddColumnControl());
     els.kanbanBoard.appendChild(headerRow);
 
     // 各 lane の行を描画。「未分類」レーンは該当カード0件なら省略。
@@ -1075,28 +1161,36 @@ lanes:
     }
     swimlaneEl.appendChild(headerEl);
 
+    // F1: 列トラック幅は親 .kanban-board の CSS カスタムプロパティ --mdkanban-col-tracks に
+    // renderSwimlaneBoard が設定した値を継承する。インラインで書くとメディアクエリが効かなくなるため避ける。
+
     // 行（lane × 列ぶんのセル）
     const row = document.createElement('div');
     row.className = 'swimlane-row';
+
     board.columns.forEach((col, colIdx) => {
       const cellWrap = document.createElement('div');
       cellWrap.className = 'swimlane-cell';
+      if (isColumnCollapsed(col.name)) cellWrap.classList.add('is-collapsed');
 
-      const cardsWrap = document.createElement('div');
-      cardsWrap.className = 'kanban-column-cards';
-      cardsWrap.dataset.colIndex = String(colIdx);
-      cardsWrap.dataset.lane = laneName;
+      // 折りたたみ中はカード領域も「+ カード追加」も描画しない（DnD 受け付け不可・F1-6 / F1-8）
+      if (!isColumnCollapsed(col.name)) {
+        const cardsWrap = document.createElement('div');
+        cardsWrap.className = 'kanban-column-cards';
+        cardsWrap.dataset.colIndex = String(colIdx);
+        cardsWrap.dataset.lane = laneName;
 
-      col.cards.forEach((card, cardIdx) => {
-        if (card.lane !== laneName) return;
-        if (!matchesFilter(card)) return;
-        const cardEl = createCardElement(card, colIdx, cardIdx);
-        cardsWrap.appendChild(cardEl);
-      });
+        col.cards.forEach((card, cardIdx) => {
+          if (card.lane !== laneName) return;
+          if (!matchesFilter(card)) return;
+          const cardEl = createCardElement(card, colIdx, cardIdx);
+          cardsWrap.appendChild(cardEl);
+        });
 
-      attachColumnDnDHandlers(cardsWrap);
-      cellWrap.appendChild(cardsWrap);
-      cellWrap.appendChild(createAddCardButton(colIdx, laneName));
+        attachColumnDnDHandlers(cardsWrap);
+        cellWrap.appendChild(cardsWrap);
+        cellWrap.appendChild(createAddCardButton(colIdx, laneName));
+      }
       row.appendChild(cellWrap);
     });
     swimlaneEl.appendChild(row);
@@ -1279,11 +1373,14 @@ lanes:
     if (!swimlaneEl) return;
     const nameSpan = swimlaneEl.querySelector('.swimlane-name');
     const collapseBtn = swimlaneEl.querySelector('.swimlane-collapse-btn');
-    if (!nameSpan || !collapseBtn) return;
+    const headerEl = swimlaneEl.querySelector('.swimlane-header');
+    if (!nameSpan || !collapseBtn || !headerEl) return;
 
     // 既存テキストを input に置き換え。collapse ボタンのクリックを抑止するため、
-    // 編集中は collapseBtn を無効化する。
+    // 編集中は collapseBtn を無効化する。サイドレール（48px幅）を一時的に拡張するため
+    // is-renaming クラスをヘッダに付与し、CSS 側でレール幅を広げて横書き入力欄を表示する。
     collapseBtn.disabled = true;
+    headerEl.classList.add('is-renaming');
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'swimlane-rename-input';
@@ -1527,6 +1624,737 @@ lanes:
     } catch (e) { /* クォータ超過は握りつぶす */ }
   }
 
+  // ========================================================================
+  // カラム管理 UI（F1〜F6） — レーン側 (F8-A〜F8-D) と対称構造
+  // ========================================================================
+
+  /** F2: カラム名 colName が自動チェック対象なら true */
+  function isColumnAutoChecked(colName) {
+    if (!state.board || !Array.isArray(state.board.autoCheckColumns)) return false;
+    return state.board.autoCheckColumns.includes(colName);
+  }
+
+  /**
+   * F2 同期型: 単一カードに対し、所属カラム colName の自動チェック状態を強制反映する。
+   * 対象カラム → checked=true、対象外カラム → checked=false。
+   * card.checked===null（チェックボックス無し書式）も同期型仕様の自然な帰結として true/false で上書きする。
+   */
+  function syncCardCheckedToColumn(card, colName) {
+    if (!card) return;
+    card.checked = isColumnAutoChecked(colName);
+  }
+
+  /**
+   * F2: 指定カラム配下の全カードの checked を、自動チェック ON/OFF 状態にあわせて一括同期する。
+   * F2-A の ON/OFF 切替・F1〜F5 の操作後の防御的再同期にも使う。
+   */
+  function syncColumnAutoCheck(colIdx) {
+    if (!state.board) return;
+    const col = state.board.columns[colIdx];
+    if (!col) return;
+    const target = isColumnAutoChecked(col.name);
+    col.cards.forEach(c => { c.checked = target; });
+  }
+
+  /** state.collapsedColumns を LocalStorage に保存。クォータ超過は握りつぶす。 */
+  function persistCollapsedColumns() {
+    try {
+      localStorage.setItem(
+        STORAGE_KEYS.collapsedColumns,
+        JSON.stringify([...state.collapsedColumns])
+      );
+    } catch (e) { /* noop */ }
+  }
+
+  /** F1: カラム折りたたみのトグル。CSS の状態クラスは renderBoard で再付与するため、ここでは Set 操作のみ。 */
+  function toggleColumnCollapsed(colName) {
+    if (state.collapsedColumns.has(colName)) {
+      state.collapsedColumns.delete(colName);
+    } else {
+      state.collapsedColumns.add(colName);
+    }
+    persistCollapsedColumns();
+    renderBoard();
+  }
+
+  /** F1: 任意カラム名が現在折りたたみ中か */
+  function isColumnCollapsed(colName) {
+    return state.collapsedColumns.has(colName);
+  }
+
+  /** カラム名のバリデーション（空・改行・タブ禁止）。レーン名と異なりスペース・記号は許容（F4-3）。 */
+  function isValidColumnName(name) {
+    if (typeof name !== 'string') return false;
+    const trimmed = name.trim();
+    if (trimmed === '') return false;
+    if (/[\r\n\t]/.test(name)) return false;
+    return true;
+  }
+
+  /** F3: ◀ / ▶ ボタンでカラムを左右に並び替える。delta=-1（左）/ +1（右）。 */
+  function moveColumn(colName, delta) {
+    if (!state.board) return;
+    const idx = state.board.columns.findIndex(c => c.name === colName);
+    if (idx === -1) return;
+    const next = idx + delta;
+    if (next < 0 || next >= state.board.columns.length) return;
+    const [moved] = state.board.columns.splice(idx, 1);
+    state.board.columns.splice(next, 0, moved);
+    reserializeAndPersist();
+    markDirty();
+    renderBoard();
+    announceDnd(`カラム「${colName}」を ${delta < 0 ? '左' : '右'} に移動しました`);
+    triggerAutoSave();
+  }
+
+  /** F3: DnD によるカラム並び替え（fromName を toName の位置に挿入）。 */
+  function reorderColumnByDnD(fromName, toName) {
+    if (!state.board) return;
+    const cols = state.board.columns;
+    const fromIdx = cols.findIndex(c => c.name === fromName);
+    const toIdx = cols.findIndex(c => c.name === toName);
+    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
+    const [moved] = cols.splice(fromIdx, 1);
+    cols.splice(toIdx, 0, moved);
+    const newIdx = state.board.columns.findIndex(c => c.name === fromName);
+    reserializeAndPersist();
+    markDirty();
+    renderBoard();
+    announceDnd(`カラム「${fromName}」を ${newIdx + 1} 番目に移動しました`);
+    triggerAutoSave();
+  }
+
+  /** F4: 末尾にカラムを追加する。重複・空・改行はバリデーション側で弾く想定。 */
+  function addColumn(name) {
+    if (!state.board) return;
+    if (state.board.columns.some(c => c.name === name)) return;
+    state.board.columns.push({ name, cards: [], id: `col-new-${Date.now()}` });
+    reserializeAndPersist();
+    markDirty();
+    renderBoard();
+    announceDnd(`カラム「${name}」を追加しました`);
+    triggerAutoSave();
+  }
+
+  /** F6: カラムリネーム本体。auto-check-columns / state.collapsedColumns も追従する。 */
+  function renameColumn(oldName, newName) {
+    if (!state.board) return;
+    if (oldName === newName) return;
+    const col = state.board.columns.find(c => c.name === oldName);
+    if (!col) return;
+    if (state.board.columns.some(c => c.name === newName)) return;
+
+    col.name = newName;
+
+    // F2-A-7 / F6-7: auto-check-columns 配列内も追従
+    if (Array.isArray(state.board.autoCheckColumns)) {
+      state.board.autoCheckColumns = state.board.autoCheckColumns.map(n => n === oldName ? newName : n);
+    }
+    // F6-8: 折りたたみ Set 内も追従
+    if (state.collapsedColumns.has(oldName)) {
+      state.collapsedColumns.delete(oldName);
+      state.collapsedColumns.add(newName);
+      persistCollapsedColumns();
+    }
+
+    reserializeAndPersist();
+    markDirty();
+    renderBoard();
+    announceDnd(`カラム「${oldName}」を「${newName}」に名前変更しました`);
+    triggerAutoSave();
+  }
+
+  /**
+   * F5: カラム削除。所属カードがあれば移動先カラムに集約してから除去する。
+   * destinationName が null の場合は呼び出し元（モーダル）が決定済み（カード0件のみ）。
+   */
+  function deleteColumn(targetName, destinationName) {
+    if (!state.board) return;
+    const board = state.board;
+    if (board.columns.length <= 1) return; // 最後のカラムは削除不可（F5-4）
+    const targetIdx = board.columns.findIndex(c => c.name === targetName);
+    if (targetIdx === -1) return;
+    const targetCol = board.columns[targetIdx];
+    let movedCount = 0;
+
+    if (destinationName && targetCol.cards.length > 0) {
+      const destCol = board.columns.find(c => c.name === destinationName);
+      if (!destCol) return;
+      // 所属カード全件を移動先末尾に push（card.lane は変更しない＝レーンを保ったまま）
+      const cards = targetCol.cards.splice(0, targetCol.cards.length);
+      cards.forEach(c => {
+        destCol.cards.push(c);
+        // F2 同期: 移動先が自動チェック対象なら true、対象外なら false に強制
+        c.checked = isColumnAutoChecked(destCol.name);
+      });
+      movedCount = cards.length;
+    }
+
+    // 削除対象カラムを除去
+    board.columns.splice(targetIdx, 1);
+
+    // F2-A-8 / F5-9: auto-check-columns から除去。空になればキーごと省略（serializeBoard が判定）
+    if (Array.isArray(board.autoCheckColumns)) {
+      board.autoCheckColumns = board.autoCheckColumns.filter(n => n !== targetName);
+    }
+
+    // F5-5(5): 折りたたみ Set からも除去
+    if (state.collapsedColumns.has(targetName)) {
+      state.collapsedColumns.delete(targetName);
+      persistCollapsedColumns();
+    }
+
+    reserializeAndPersist();
+    markDirty();
+    renderBoard();
+    if (destinationName && movedCount > 0) {
+      announceDnd(`カラム「${targetName}」を削除しました（${movedCount} 件のカードを「${destinationName}」に移動）`);
+    } else {
+      announceDnd(`カラム「${targetName}」を削除しました`);
+    }
+    triggerAutoSave();
+  }
+
+  /**
+   * F2-A: 自動チェック対象カラムのトグル。配列に追加または除去し、所属カードの checked を一括同期。
+   */
+  function toggleAutoCheckColumn(colName) {
+    if (!state.board) return;
+    const board = state.board;
+    if (!Array.isArray(board.autoCheckColumns)) {
+      board.autoCheckColumns = [];
+    }
+    const idx = board.autoCheckColumns.indexOf(colName);
+    if (idx >= 0) {
+      board.autoCheckColumns.splice(idx, 1);
+    } else {
+      board.autoCheckColumns.push(colName);
+    }
+    // 所属カードの checked を新しい状態にあわせて一括上書き（同期型）
+    const colIdx = board.columns.findIndex(c => c.name === colName);
+    if (colIdx >= 0) syncColumnAutoCheck(colIdx);
+    reserializeAndPersist();
+    markDirty();
+    renderBoard();
+    announceDnd(`カラム「${colName}」の自動チェックを ${idx >= 0 ? 'OFF' : 'ON'} にしました`);
+    triggerAutoSave();
+  }
+
+  /** F4: インライン入力フォーム。カラムヘッダ行の末尾に表示する。 */
+  function showAddColumnForm(wrap, btn) {
+    btn.hidden = true;
+    const form = document.createElement('div');
+    form.className = 'column-add-form';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'column-add-input';
+    input.maxLength = 64;
+    input.placeholder = 'カラム名（例: In Progress）';
+    input.setAttribute('aria-label', '追加するカラム名');
+    const ok = document.createElement('button');
+    ok.type = 'button';
+    ok.className = 'btn small';
+    ok.textContent = '追加';
+    const cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.className = 'btn small secondary';
+    cancel.textContent = 'キャンセル';
+    const errMsg = document.createElement('span');
+    errMsg.className = 'column-add-error';
+    errMsg.setAttribute('aria-live', 'polite');
+
+    const actionsRow = document.createElement('div');
+    actionsRow.className = 'column-add-form-actions';
+    actionsRow.appendChild(ok);
+    actionsRow.appendChild(cancel);
+
+    form.appendChild(input);
+    form.appendChild(errMsg);
+    form.appendChild(actionsRow);
+    wrap.appendChild(form);
+    setTimeout(() => input.focus(), 0);
+
+    function close() {
+      form.remove();
+      btn.hidden = false;
+    }
+    function commit() {
+      const name = input.value.replace(/[\r\n\t]+/g, ' ').trim();
+      if (!isValidColumnName(name)) {
+        errMsg.textContent = 'カラム名を入力してください';
+        return;
+      }
+      if (!state.board) return;
+      if (state.board.columns.some(c => c.name === name)) {
+        errMsg.textContent = 'すでに存在するカラム名です';
+        return;
+      }
+      addColumn(name);
+      // renderBoard 後に DOM ごと差し替わるので close() は不要
+    }
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' && !ev.isComposing) {
+        ev.preventDefault();
+        commit();
+      } else if (ev.key === 'Escape') {
+        ev.preventDefault();
+        close();
+      }
+    });
+    ok.addEventListener('click', commit);
+    cancel.addEventListener('click', close);
+  }
+
+  /** 「+ カラム追加」ボタン＋フォームを内包するラッパ DOM を返す。 */
+  function renderAddColumnControl() {
+    const wrap = document.createElement('div');
+    wrap.className = 'column-add-wrap';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'column-add-btn';
+    btn.textContent = '+ カラム追加';
+    btn.setAttribute('aria-label', 'カラムを追加');
+    btn.addEventListener('click', () => showAddColumnForm(wrap, btn));
+    wrap.appendChild(btn);
+    return wrap;
+  }
+
+  /** F6: カラム名インライン編集。折りたたみ中なら編集中だけ一時展開する（AC46）。 */
+  function startColumnRename(oldName) {
+    if (!state.board) return;
+    const headerEl = document.querySelector(`.kanban-column-header[data-col-name="${cssEscape(oldName)}"]`);
+    if (!headerEl) return;
+
+    // 折りたたみ中なら一時的に展開
+    const wasCollapsed = state.collapsedColumns.has(oldName);
+    if (wasCollapsed) {
+      state.collapsedColumns.delete(oldName);
+      // ここでは LocalStorage は触らない（キャンセル時に元に戻すため）
+      renderBoard();
+      // 描画後の DOM を再取得
+      const headerEl2 = document.querySelector(`.kanban-column-header[data-col-name="${cssEscape(oldName)}"]`);
+      if (headerEl2) {
+        startColumnRenameInternal(oldName, headerEl2, wasCollapsed);
+      }
+      return;
+    }
+    startColumnRenameInternal(oldName, headerEl, wasCollapsed);
+  }
+
+  function startColumnRenameInternal(oldName, headerEl, wasCollapsed) {
+    const titleEl = headerEl.querySelector('.kanban-column-title');
+    if (!titleEl) return;
+    headerEl.classList.add('is-renaming');
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'column-rename-input';
+    input.value = oldName;
+    input.maxLength = 64;
+    input.setAttribute('aria-label', `${oldName} カラムの新しい名前`);
+    titleEl.replaceWith(input);
+    setTimeout(() => { input.focus(); input.select(); }, 0);
+
+    let finished = false;
+    function commit(toFinalize) {
+      if (finished) return;
+      const newName = input.value.replace(/[\r\n\t]+/g, ' ').trim();
+      if (!toFinalize) {
+        // キャンセル: 折りたたみ状態を元に戻して再描画
+        finished = true;
+        if (wasCollapsed) {
+          state.collapsedColumns.add(oldName);
+          persistCollapsedColumns();
+        }
+        renderBoard();
+        return;
+      }
+      if (newName === oldName) {
+        finished = true;
+        if (wasCollapsed) {
+          state.collapsedColumns.add(oldName);
+          persistCollapsedColumns();
+        }
+        renderBoard();
+        return;
+      }
+      if (!isValidColumnName(newName)) {
+        showToast('カラム名は空にできません', 'error');
+        return;
+      }
+      if (state.board.columns.some(c => c.name === newName)) {
+        showToast('すでに存在するカラム名です', 'error');
+        return;
+      }
+      finished = true;
+      // 折りたたみ Set: 旧名で復元する代わりに、renameColumn 内で新名へ移行する
+      // wasCollapsed なら、リネーム後の新名で再 add する
+      if (wasCollapsed) {
+        state.collapsedColumns.add(oldName); // renameColumn が拾って oldName→newName に移行する
+        persistCollapsedColumns();
+      }
+      renameColumn(oldName, newName);
+    }
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' && !ev.isComposing) {
+        ev.preventDefault();
+        commit(true);
+      } else if (ev.key === 'Escape') {
+        ev.preventDefault();
+        commit(false);
+      }
+    });
+    input.addEventListener('blur', () => commit(true));
+  }
+
+  /**
+   * F5: カラム削除リクエスト。所属カード0件なら confirm のみ、1件以上なら専用モーダルを開く。
+   */
+  function requestDeleteColumn(targetName) {
+    if (!state.board) return;
+    if (state.board.columns.length <= 1) return; // F5-4 ガード
+    const targetCol = state.board.columns.find(c => c.name === targetName);
+    if (!targetCol) return;
+    const cardCount = targetCol.cards.length;
+    if (cardCount === 0) {
+      const ok = window.confirm(`カラム「${targetName}」を削除します。よろしいですか？`);
+      if (!ok) return;
+      deleteColumn(targetName, null);
+      return;
+    }
+    openDeleteColumnModal(targetName, cardCount);
+  }
+
+  /** F5: 移動先選択モーダルを表示。フォーカストラップ・Esc・背景クリック対応。 */
+  function openDeleteColumnModal(targetName, cardCount) {
+    if (!state.board) return;
+    const otherCols = state.board.columns.filter(c => c.name !== targetName);
+    if (otherCols.length === 0) return; // 念のため
+
+    const lastFocus = document.activeElement;
+
+    // 背景＋ダイアログ
+    const overlay = document.createElement('div');
+    overlay.className = 'column-delete-modal';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-labelledby', 'column-delete-modal-title');
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'column-delete-modal-backdrop';
+    overlay.appendChild(backdrop);
+
+    const dialog = document.createElement('div');
+    dialog.className = 'column-delete-modal-dialog';
+
+    const titleEl = document.createElement('h2');
+    titleEl.id = 'column-delete-modal-title';
+    titleEl.className = 'column-delete-modal-title';
+    titleEl.textContent = `カラム「${targetName}」を削除`;
+    dialog.appendChild(titleEl);
+
+    const desc = document.createElement('p');
+    desc.className = 'column-delete-modal-desc';
+    desc.textContent = `所属する ${cardCount} 件のカードを別のカラムに移動してから削除します。移動先を選択してください。`;
+    dialog.appendChild(desc);
+
+    // 移動先選択 UI（ラジオ）
+    const fieldset = document.createElement('fieldset');
+    fieldset.className = 'column-delete-modal-radios';
+    const legend = document.createElement('legend');
+    legend.textContent = '移動先カラム';
+    fieldset.appendChild(legend);
+
+    const targetIdx = state.board.columns.findIndex(c => c.name === targetName);
+    // デフォルト選択: 直前のカラム（先頭なら直後）
+    let defaultIdx;
+    if (targetIdx > 0) {
+      defaultIdx = targetIdx - 1;
+    } else {
+      defaultIdx = targetIdx + 1;
+    }
+    const defaultName = state.board.columns[defaultIdx] ? state.board.columns[defaultIdx].name : otherCols[0].name;
+
+    otherCols.forEach((col) => {
+      const label = document.createElement('label');
+      label.className = 'column-delete-modal-radio';
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = 'column-delete-destination';
+      radio.value = col.name;
+      if (col.name === defaultName) radio.checked = true;
+      label.appendChild(radio);
+      const span = document.createElement('span');
+      span.className = 'column-delete-modal-radio-label';
+      span.textContent = col.name;
+      label.appendChild(span);
+      if (isColumnAutoChecked(col.name)) {
+        const note = document.createElement('span');
+        note.className = 'column-delete-modal-radio-note';
+        note.textContent = '※ 自動チェック対象です（移動するカードは [x] になります）';
+        label.appendChild(note);
+      }
+      fieldset.appendChild(label);
+    });
+    dialog.appendChild(fieldset);
+
+    // フッター
+    const footer = document.createElement('div');
+    footer.className = 'column-delete-modal-actions';
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn secondary';
+    cancelBtn.textContent = 'キャンセル';
+    const confirmBtn = document.createElement('button');
+    confirmBtn.type = 'button';
+    confirmBtn.className = 'btn danger';
+    confirmBtn.textContent = '削除して移動';
+    footer.appendChild(cancelBtn);
+    footer.appendChild(confirmBtn);
+    dialog.appendChild(footer);
+
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+
+    function close() {
+      document.removeEventListener('keydown', onKey);
+      if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+    }
+    function confirmDelete() {
+      const checked = dialog.querySelector('input[name="column-delete-destination"]:checked');
+      if (!checked) return;
+      const dest = checked.value;
+      close();
+      deleteColumn(targetName, dest);
+    }
+    function onKey(ev) {
+      if (ev.key === 'Escape') {
+        ev.preventDefault();
+        close();
+      } else if (ev.key === 'Enter') {
+        // ラジオ上の Enter ではフォーム submit が発生しないので、独自ハンドリング
+        if (dialog.contains(document.activeElement) && document.activeElement !== cancelBtn) {
+          ev.preventDefault();
+          confirmDelete();
+        }
+      } else if (ev.key === 'Tab') {
+        // 簡易フォーカストラップ: 末尾→先頭、先頭→末尾でループ
+        const focusables = dialog.querySelectorAll('input, button');
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (ev.shiftKey && document.activeElement === first) {
+          ev.preventDefault();
+          last.focus();
+        } else if (!ev.shiftKey && document.activeElement === last) {
+          ev.preventDefault();
+          first.focus();
+        }
+      }
+    }
+    backdrop.addEventListener('click', close);
+    cancelBtn.addEventListener('click', close);
+    confirmBtn.addEventListener('click', confirmDelete);
+    document.addEventListener('keydown', onKey);
+
+    // 初期フォーカス: チェック済みラジオへ
+    setTimeout(() => {
+      const checked = dialog.querySelector('input[name="column-delete-destination"]:checked');
+      if (checked) checked.focus();
+      else if (cancelBtn) cancelBtn.focus();
+    }, 0);
+  }
+
+  // F3: カラムヘッダ DnD 並び替え用 state（カード DnD・レーン DnD と独立）
+  let columnDragging = null; // { name, fromIdx }
+
+  /** カラムヘッダの DnD イベントを attach する。 */
+  function attachColumnHeaderDnDHandlers(headerEl, colName, colIdx) {
+    headerEl.addEventListener('dragstart', (ev) => {
+      // カード／レーンの DnD と区別: 何かしら別の dragging が走っている場合は無視
+      if (state.dragging || laneDragging) return;
+      columnDragging = { name: colName, fromIdx: colIdx };
+      headerEl.classList.add('is-dragging-column');
+      try {
+        ev.dataTransfer.effectAllowed = 'move';
+        ev.dataTransfer.setData('text/plain', `column:${colName}`);
+      } catch (e) { /* noop */ }
+      ev.stopPropagation();
+    });
+    headerEl.addEventListener('dragend', () => {
+      headerEl.classList.remove('is-dragging-column');
+      document.querySelectorAll('.kanban-column-header.is-column-drop-target').forEach(n => n.classList.remove('is-column-drop-target'));
+      columnDragging = null;
+    });
+    headerEl.addEventListener('dragover', (ev) => {
+      if (!columnDragging) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      try { ev.dataTransfer.dropEffect = 'move'; } catch (e) { /* noop */ }
+      document.querySelectorAll('.kanban-column-header.is-column-drop-target').forEach(n => n.classList.remove('is-column-drop-target'));
+      headerEl.classList.add('is-column-drop-target');
+    });
+    headerEl.addEventListener('drop', (ev) => {
+      if (!columnDragging) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      const fromName = columnDragging.name;
+      const toName = headerEl.dataset.colName;
+      if (!toName || fromName === toName) return;
+      reorderColumnByDnD(fromName, toName);
+    });
+  }
+
+  /**
+   * カラムヘッダ DOM を生成する。通常モード／スイムレーンモードで共通利用。
+   * - 通常モード: 折りたたみ時はヘッダごと .is-collapsed クラスで縦書き化
+   * - スイムレーンモード: 列ヘッダ行の `.kanban-column-header` のみが描画される（カード列はセル側）
+   *
+   * @param {object} col board.columns[i]
+   * @param {number} colIdx 配列インデックス
+   * @returns {HTMLElement}
+   */
+  function buildColumnHeaderElement(col, colIdx) {
+    const colName = col.name;
+    const collapsed = isColumnCollapsed(colName);
+    const auto = isColumnAutoChecked(colName);
+    const visibleCount = col.cards.filter(c => matchesFilter(c)).length;
+    const totalCols = state.board.columns.length;
+
+    const headerEl = document.createElement('div');
+    headerEl.className = 'kanban-column-header';
+    headerEl.dataset.colIndex = String(colIdx);
+    headerEl.dataset.colName = colName;
+    if (collapsed) headerEl.classList.add('is-collapsed');
+    if (auto) headerEl.classList.add('is-auto-check');
+    // 並び替え用 DnD: カラム数 ≥2 の場合のみ
+    if (totalCols >= 2) {
+      headerEl.setAttribute('draggable', 'true');
+      headerEl.classList.add('is-column-draggable');
+      attachColumnHeaderDnDHandlers(headerEl, colName, colIdx);
+    }
+
+    // 折りたたみトグル
+    const toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button';
+    toggleBtn.className = 'kanban-column-toggle';
+    toggleBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    toggleBtn.setAttribute('aria-label', `${colName} 列の折りたたみを切替`);
+    toggleBtn.textContent = collapsed ? '▶' : '▼';
+    toggleBtn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      toggleColumnCollapsed(colName);
+    });
+    toggleBtn.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' || ev.key === ' ') {
+        ev.preventDefault();
+        toggleColumnCollapsed(colName);
+      }
+    });
+    headerEl.appendChild(toggleBtn);
+
+    // タイトル span
+    const titleEl = document.createElement('span');
+    titleEl.className = 'kanban-column-title';
+    titleEl.textContent = colName;
+    titleEl.setAttribute('title', colName);
+    titleEl.addEventListener('dblclick', (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      startColumnRename(colName);
+    });
+    headerEl.appendChild(titleEl);
+
+    // 自動チェック ON マーカー（メニュー外でも一目で見える表示）
+    if (auto) {
+      const autoMark = document.createElement('span');
+      autoMark.className = 'kanban-column-auto-mark';
+      autoMark.setAttribute('aria-hidden', 'true');
+      autoMark.textContent = '☑';
+      autoMark.title = '自動チェック対象カラム';
+      headerEl.appendChild(autoMark);
+    }
+
+    // カード件数バッジ
+    const countEl = document.createElement('span');
+    countEl.className = 'kanban-column-count';
+    countEl.textContent = String(visibleCount);
+    headerEl.appendChild(countEl);
+
+    // 操作メニュー（◀ ▶ ✎ ☑ 🗑） — レーンの .swimlane-actions と対称
+    const actions = document.createElement('div');
+    actions.className = 'kanban-column-actions';
+
+    const leftBtn = document.createElement('button');
+    leftBtn.type = 'button';
+    leftBtn.className = 'kanban-column-action-btn is-left';
+    leftBtn.setAttribute('aria-label', `${colName} 列を左に移動`);
+    leftBtn.title = '左に移動';
+    leftBtn.textContent = '◀';
+    leftBtn.disabled = (colIdx <= 0);
+    leftBtn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      moveColumn(colName, -1);
+    });
+
+    const rightBtn = document.createElement('button');
+    rightBtn.type = 'button';
+    rightBtn.className = 'kanban-column-action-btn is-right';
+    rightBtn.setAttribute('aria-label', `${colName} 列を右に移動`);
+    rightBtn.title = '右に移動';
+    rightBtn.textContent = '▶';
+    rightBtn.disabled = (colIdx >= totalCols - 1);
+    rightBtn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      moveColumn(colName, +1);
+    });
+
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'kanban-column-action-btn is-edit';
+    editBtn.setAttribute('aria-label', `${colName} 列の名前を変更`);
+    editBtn.title = '名前を変更';
+    editBtn.textContent = '✎';
+    editBtn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      startColumnRename(colName);
+    });
+
+    const autoBtn = document.createElement('button');
+    autoBtn.type = 'button';
+    autoBtn.className = 'kanban-column-action-btn is-auto';
+    autoBtn.setAttribute('aria-label', `${colName} 列の自動チェックを切替`);
+    autoBtn.setAttribute('aria-pressed', auto ? 'true' : 'false');
+    autoBtn.title = auto ? '自動チェック ON（クリックで OFF）' : '自動チェック OFF（クリックで ON）';
+    autoBtn.textContent = '☑';
+    if (auto) autoBtn.classList.add('is-active');
+    autoBtn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      toggleAutoCheckColumn(colName);
+    });
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'kanban-column-action-btn is-delete';
+    delBtn.setAttribute('aria-label', `${colName} 列を削除`);
+    delBtn.title = totalCols <= 1 ? 'カラムは1つ以上必要です' : '削除';
+    delBtn.textContent = '🗑';
+    delBtn.disabled = (totalCols <= 1);
+    delBtn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      requestDeleteColumn(colName);
+    });
+
+    actions.appendChild(leftBtn);
+    actions.appendChild(rightBtn);
+    actions.appendChild(editBtn);
+    actions.appendChild(autoBtn);
+    actions.appendChild(delBtn);
+    headerEl.appendChild(actions);
+
+    return headerEl;
+  }
+
   function matchesFilter(card) {
     if (!state.activeTagFilter) return true;
     return card.tags.includes(state.activeTagFilter);
@@ -1621,27 +2449,107 @@ lanes:
     if (els.cardModalEditBtn) els.cardModalEditBtn.hidden = !!editMode;
   }
 
-  /** モーダル編集モードへ入る。card のタイトル／本文／サブタスクを編集フォームに流し込む。 */
+  /** モーダル編集モードへ入る。card のタイトル／本文／サブタスクを編集フォームに流し込む。
+   *  タイトル文字列からは `#lane/X` と `@YYYY-MM-DD` を取り除き、専用セレクト／入力に分離する。
+   *  カラム選択肢は board.columns 全件、レーン選択肢は board.lanes（スイムレーンモード時のみ）。 */
   function enterModalEditMode() {
     const card = state.currentModalCard;
     if (!card) return;
     state.editing = { cardId: card.id, mode: 'modal' };
     // 背面カードの DnD を抑止（F9-8 / AC49）
     setCardDraggable(card.id, false);
-    if (els.cmeTitle) els.cmeTitle.value = card.title || '';
+    const swimlaneMode = !!(state.board && state.board.hasLanesKey);
+    // タイトルは「#lane/X」「@YYYY-MM-DD」を除いた本文＋#tag のみで提示
+    if (els.cmeTitle) els.cmeTitle.value = buildTitleForEdit(card, swimlaneMode);
     if (els.cmeBody) els.cmeBody.value = (card.bodyParts && card.bodyParts.length)
       ? card.bodyParts.join('\n\n')
       : '';
+    populateModalLaneSelect(card, swimlaneMode);
+    populateModalColumnSelect(card);
+    if (els.cmeDue) els.cmeDue.value = card.dueDate || '';
     rebuildSubtaskEditList(card.subtasks || []);
     setModalEditMode(true);
     setTimeout(() => { if (els.cmeTitle) els.cmeTitle.focus(); }, 0);
   }
 
-  /** モーダル編集モードを破棄して閲覧モードへ戻す（変更は反映しない）。 */
+  /** タイトル原文から `#lane/X` と `@YYYY-MM-DD` を除いた編集用文字列を返す。
+   *  swimlaneMode=false の場合は `#lane/X` を通常タグ扱いとして残す。 */
+  function buildTitleForEdit(card, swimlaneMode) {
+    let s = card.title || '';
+    if (swimlaneMode) {
+      s = s.replace(new RegExp(`(?:^|\\s)#lane\\/[${LANE_NAME_CHARS}]+(?:\\/[${LANE_NAME_CHARS}]+)*`, 'g'), ' ');
+    }
+    s = s.replace(/(?:^|\s)@\d{4}-\d{2}-\d{2}\b/g, ' ');
+    return s.replace(/\s+/g, ' ').trim();
+  }
+
+  /** モーダル「レーン」セレクトを再構築。スイムレーンモードでない場合はフィールドごと隠す。 */
+  function populateModalLaneSelect(card, swimlaneMode) {
+    if (!els.cmeLane || !els.cmeFieldLane) return;
+    if (!swimlaneMode) {
+      els.cmeFieldLane.hidden = true;
+      els.cmeLane.innerHTML = '';
+      return;
+    }
+    els.cmeFieldLane.hidden = false;
+    els.cmeLane.innerHTML = '';
+    const lanes = (state.board && state.board.lanes) ? state.board.lanes : [];
+    lanes.forEach(l => {
+      const opt = document.createElement('option');
+      opt.value = l.name;
+      opt.textContent = l.name === '' ? DEFAULT_LANE_DISPLAY_NAME : l.name;
+      els.cmeLane.appendChild(opt);
+    });
+    els.cmeLane.value = card.lane || '';
+  }
+
+  /** モーダル「カラム」セレクトを再構築。値は colIdx（数値文字列）。 */
+  function populateModalColumnSelect(card) {
+    if (!els.cmeColumn) return;
+    els.cmeColumn.innerHTML = '';
+    const cols = (state.board && state.board.columns) ? state.board.columns : [];
+    cols.forEach((c, idx) => {
+      const opt = document.createElement('option');
+      opt.value = String(idx);
+      opt.textContent = c.name;
+      els.cmeColumn.appendChild(opt);
+    });
+    const loc = findCardLocation(card.id);
+    if (loc) els.cmeColumn.value = String(loc.colIdx);
+  }
+
+  /** ユーザー入力のタイトル本体／レーン／期限から保存用の生タイトル文字列を組み立てる。
+   *  ユーザーがタイトル欄に手で `#lane/X` や `@YYYY-MM-DD` を残しても二重にならないよう先に除去する。 */
+  function buildTitleForSave(rawInputTitle, lane, due, swimlaneMode) {
+    let s = (rawInputTitle || '').replace(/[\r\n]+/g, ' ');
+    s = s.replace(/(?:^|\s)@\d{4}-\d{2}-\d{2}\b/g, ' ');
+    if (swimlaneMode) {
+      s = s.replace(new RegExp(`(?:^|\\s)#lane\\/[${LANE_NAME_CHARS}]+(?:\\/[${LANE_NAME_CHARS}]+)*`, 'g'), ' ');
+    }
+    s = s.replace(/\s+/g, ' ').trim();
+    if (swimlaneMode && lane) {
+      s = s ? `${s} #lane/${lane}` : `#lane/${lane}`;
+    }
+    if (due && /^\d{4}-\d{2}-\d{2}$/.test(due)) {
+      s = s ? `${s} @${due}` : `@${due}`;
+    }
+    return s;
+  }
+
+  /** モーダル編集モードを破棄して閲覧モードへ戻す（変更は反映しない）。
+   *  新規カード（isNew）の場合は board からカードを除去し、モーダルごと閉じる（中身が無いため閲覧モードに戻しても空）。 */
   function cancelModalEditMode() {
     const cardId = state.editing && state.editing.cardId;
+    const isNew = !!(state.editing && state.editing.isNew);
     state.editing = null;
     if (cardId) setCardDraggable(cardId, true);
+    if (isNew) {
+      const loc = findCardLocation(cardId);
+      if (loc) loc.col.cards.splice(loc.cardIdx, 1);
+      closeCardModal();
+      renderBoard();
+      return;
+    }
     setModalEditMode(false);
   }
 
@@ -1660,14 +2568,46 @@ lanes:
     if (!state.editing || state.editing.mode !== 'modal') return;
     const card = state.currentModalCard;
     if (!card) return;
-    const loc = findCardLocation(card.id);
+    let loc = findCardLocation(card.id);
     if (!loc) {
       cancelModalEditMode();
       return;
     }
-    const newTitle = (els.cmeTitle ? els.cmeTitle.value : card.title)
+    const swimlaneMode = !!(state.board && state.board.hasLanesKey);
+    const titleInput = (els.cmeTitle ? els.cmeTitle.value : card.title)
       .replace(/[\r\n]+/g, ' ')
       .trim();
+    // 新規カードかつタイトル空 → 破棄（インライン編集と同じ挙動）。永続化はせずモーダルを閉じる。
+    if (state.editing.isNew && titleInput === '') {
+      loc.col.cards.splice(loc.cardIdx, 1);
+      state.editing = null;
+      closeCardModal();
+      renderBoard();
+      return;
+    }
+    // 専用フィールドからレーン／カラム／期限を取得し、保存用の生タイトル文字列に合成する。
+    const selectedLane = (swimlaneMode && els.cmeLane) ? (els.cmeLane.value || '') : '';
+    const selectedDue = (els.cmeDue && els.cmeDue.value) ? els.cmeDue.value : '';
+    const selectedColIdxRaw = els.cmeColumn ? parseInt(els.cmeColumn.value, 10) : NaN;
+    const selectedColIdx = (Number.isFinite(selectedColIdxRaw)
+      && selectedColIdxRaw >= 0
+      && selectedColIdxRaw < state.board.columns.length)
+        ? selectedColIdxRaw
+        : loc.colIdx;
+    const newTitle = buildTitleForSave(titleInput, selectedLane, selectedDue, swimlaneMode);
+
+    // カラム変更があれば board 上で移動（末尾に挿入）。loc を再取得する。
+    if (selectedColIdx !== loc.colIdx) {
+      const fromCol = state.board.columns[loc.colIdx];
+      const [moved] = fromCol.cards.splice(loc.cardIdx, 1);
+      state.board.columns[selectedColIdx].cards.push(moved);
+      loc = findCardLocation(card.id);
+      if (!loc) {
+        cancelModalEditMode();
+        return;
+      }
+    }
+
     // タイトルが空でも編集確定は受け入れる（既存カードを誤って消さないため）。
     // 厳密モード: タイトルに `#lane/新規` が含まれていても lanes: ホワイトリストに自動追記しない。
     // reparseCardMetaFromTitle 側で未列挙 lane は '' に正規化される（カードは「未分類」へ集約される）。
@@ -1693,6 +2633,9 @@ lanes:
       newSubtasks.push({ title, checked: !!(cb && cb.checked) });
     });
     loc.card.subtasks = newSubtasks;
+
+    // F2 同期: モーダル編集確定時も所属カラムの自動チェック状態で強制再評価（カラム移動は起きないが防御的）
+    syncCardCheckedToColumn(loc.card, loc.col.name);
 
     state.editing = null;
     reserializeAndPersist();
@@ -1743,8 +2686,10 @@ lanes:
   function closeCardModal() {
     // 編集モードのままモーダル外クリック等で閉じた場合は変更を破棄し、
     // 背面カードの draggable を必ず復元する（F9-8 / AC49）
+    let pendingNewCardId = null;
     if (state.editing && state.editing.mode === 'modal') {
       setCardDraggable(state.editing.cardId, true);
+      if (state.editing.isNew) pendingNewCardId = state.editing.cardId;
       state.editing = null;
     }
     els.cardModal.hidden = true;
@@ -1752,6 +2697,14 @@ lanes:
     setModalEditMode(false);
     state.currentModalCard = null;
     document.removeEventListener('keydown', handleModalKeydown);
+    // 新規カードを未保存のまま閉じた場合は board から取り除いて再描画
+    if (pendingNewCardId) {
+      const loc = findCardLocation(pendingNewCardId);
+      if (loc) {
+        loc.col.cards.splice(loc.cardIdx, 1);
+        renderBoard();
+      }
+    }
     if (state.lastFocusBeforeModal && typeof state.lastFocusBeforeModal.focus === 'function') {
       state.lastFocusBeforeModal.focus();
     }
@@ -2101,6 +3054,10 @@ lanes:
     insertAt = Math.max(0, Math.min(insertAt, toCol.cards.length));
     toCol.cards.splice(insertAt, 0, card);
 
+    // F2 同期: 移動先カラムの自動チェック設定にあわせて card.checked を強制上書き。
+    // 対象カラム → true、対象外 → false（card.checked===null も同期型仕様で true/false に確定）。
+    syncCardCheckedToColumn(card, toCol.name);
+
     // 同 lane に居なくなった lane が空になっても board.lanes は維持する（折りたたみ状態保持等のため）。
     // ただしデフォルトレーン（''）が完全に消えたケースは useSwimlanes 維持のままで問題ない。
 
@@ -2284,6 +3241,8 @@ lanes:
     if (newTitle !== loc.card.title) {
       reparseCardMetaFromTitle(loc.card, newTitle, loc.card.checked);
     }
+    // F2 同期: 編集確定時も所属カラムの自動チェック状態で checked を強制上書き（防御的再評価）
+    syncCardCheckedToColumn(loc.card, loc.col.name);
     state.editing = null;
     reserializeAndPersist();
     markDirty();
@@ -2306,20 +3265,24 @@ lanes:
 
   /**
    * 新規カードを colIdx 列（lane 指定があればそのレーン）の末尾に追加し、
-   * 即座にインライン編集モードに入る。空タイトルで blur されると破棄される。
+   * 即座にカード編集モーダルを開く。タイトル空のまま保存／キャンセル／モーダル閉じで破棄される。
    */
   function addNewCard(colIdx, laneName) {
     if (!state.board || !state.board.columns[colIdx]) return;
     // 編集中の他カードがあれば先に確定
     if (state.editing) {
-      commitInlineEdit(true);
+      if (state.editing.mode === 'inline') commitInlineEdit(true);
+      else if (state.editing.mode === 'modal') commitModalEditMode();
     }
     cardIdCounter += 1;
+    // F2: 追加先カラムが自動チェック対象なら初期 checked=true
+    const targetColName = state.board.columns[colIdx] ? state.board.columns[colIdx].name : '';
+    const initialChecked = isColumnAutoChecked(targetColName);
     const newCard = {
       id: `c-${cardIdCounter}-new`,
       title: '',
       displayTitle: '',
-      checked: false,    // 既定は未完了チェックボックス（- [ ] ...）
+      checked: initialChecked,
       tags: [],
       lane: (laneName === null || laneName === undefined) ? '' : laneName,
       dueDate: null,
@@ -2329,8 +3292,13 @@ lanes:
     state.board.columns[colIdx].cards.push(newCard);
     // 新規 lane が発生する可能性は無い（既存 lane へ追加）が、useSwimlanes 維持。
     renderBoard();
-    // 描画後にその cardId へインライン編集モードを発動
-    startInlineEdit(newCard.id, true);
+    // 新規作成モーダルを開き、即座に編集モードへ。
+    // 保存／キャンセル／モーダル閉じで「タイトル空なら破棄」になるよう state.editing.isNew をマークする。
+    openCardModal(newCard);
+    enterModalEditMode();
+    if (state.editing && state.editing.mode === 'modal') {
+      state.editing.isNew = true;
+    }
   }
 
   /** カード削除のリクエスト（確認ダイアログを経て削除を実行）。 */
@@ -2746,6 +3714,14 @@ lanes:
         const arr = JSON.parse(collapsedRaw);
         if (Array.isArray(arr)) {
           state.collapsedLanes = new Set(arr.filter(v => typeof v === 'string'));
+        }
+      }
+      // F1: カラムの折りたたみ状態を復元
+      const collapsedColsRaw = localStorage.getItem(STORAGE_KEYS.collapsedColumns);
+      if (collapsedColsRaw) {
+        const arr = JSON.parse(collapsedColsRaw);
+        if (Array.isArray(arr)) {
+          state.collapsedColumns = new Set(arr.filter(v => typeof v === 'string'));
         }
       }
     } catch (e) { /* noop（不正JSON等は無視して空のまま） */ }

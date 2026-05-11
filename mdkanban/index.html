@@ -153,6 +153,7 @@
         <li>自動でカンバンボードとして表示されます（<code>##</code> 見出しが列、<code>-</code> 箇条書きがカードに変換されます）</li>
         <li>カードをドラッグして別の列にドロップ、または同じ列内で上下に並び替えできます。カード上の<strong>鉛筆アイコン</strong>でタイトルをインライン編集、<strong>ゴミ箱アイコン</strong>で削除、各列下部の<strong>「+ カード追加」</strong>で新規作成できます。詳細モーダルでは本文（Markdown）とサブタスクをまとめて編集できます</li>
         <li>カードを行（プロジェクト別・担当者別など）でもグループ化したい場合は、frontmatter に <code>lanes:</code> キー（YAML 配列）でレーン名を宣言してから、カード文字列に <code>#lane/&lt;名前&gt;</code> を追記します（例：frontmatter に <code>lanes: [バックエンド, フロントエンド]</code>、カードに <code>- [ ] API設計 #lane/バックエンド</code>）。スイムレーン表示に切り替わり、レーンの追加・削除・並び替え・名前変更はレーンヘッダから直接操作でき、その結果は <code>lanes:</code> へ自動的に書き戻されます</li>
+        <li><strong>カラム（列）の操作</strong>: カラムヘッダにマウスオーバーすると右側に操作メニューが表示され、<code>◀ ▶</code> で並び替え、<code>✎</code> で名前変更（ダブルクリックでも編集モード）、<code>☑</code> で <strong>自動チェック</strong>（そのカラムにあるカードを自動的に <code>- [x]</code> 化）、<code>🗑</code> で削除（所属カードがあれば移動先カラムを選択）が行えます。カラムヘッダ左の <code>▼</code> ボタンでカラムを縦書き 48px 幅に折りたたむこともでき、状態はブラウザに保存されます。ボード末尾の「+ カラム追加」で新規カラムを追加できます</li>
         <li>Chrome系で File System Access API 経由でファイルを開いた場合は、編集／DnD／追加／削除のたびに <strong>800ms デバウンスで元ファイルへ自動保存</strong>されます（ヘッダーで「💾 保存中…」「✓ 保存済み」を確認できます）。その他のブラウザでは「ダウンロード」「コピー」ボタンで持ち出せ、LocalStorageにも自動保存され再訪時に復元できます</li>
         <li>テーマ（ライト／ダーク）と表示密度（コンパクト／詳細）はヘッダーから切替できます。設定はブラウザに保存されます</li>
       </ol>
@@ -165,6 +166,8 @@
         <li><strong>Markdownへの書き戻し</strong>: Chrome系は<code>File System Access API</code>で元ファイルに直接上書き保存（変更から800msデバウンスで自動保存）、その他のブラウザはダウンロード／クリップボードコピー（双方ともLocalStorageへも自動反映）</li>
         <li><strong>タグ＆期限バッジ</strong>: <code>#tag</code> はバッジ表示、<code>@YYYY-MM-DD</code> は今日基準で赤（期限切れ）／黄（当日）／灰（未来）に自動色分け</li>
         <li><strong>サブタスク進捗</strong>: ネストした箇条書きを <code>2/5</code> 形式の進捗バッジで表示</li>
+        <li><strong>カラム（列）の追加・削除・並び替え・名前変更・折りたたみ</strong>: カラムヘッダの操作メニューから直接操作可能。並び替えは <code>◀ ▶</code> ボタンとヘッダ DnD の両方に対応。折りたたみ中のカラムは縦書き 48px 幅のレールになり、隣のカラムが詰めて表示されます（状態は LocalStorage に保存・ファイル横断）</li>
+        <li><strong>カラム自動チェック設定</strong>: <code>auto-check-columns:</code> frontmatter キー（YAML 配列）で指定したカラム（例：Done・リリース済み）に所属するカードは、移動・編集・追加のたびに自動的に <code>- [x]</code> 化されます。Done レーンに入れた瞬間に取り消し線で見える運用が、ワンクリックで実現できます</li>
         <li><strong>スイムレーン（行グルーピング）</strong>: frontmatter に <code>lanes:</code> キー（YAML 配列）でレーン名を宣言すると、行で分かれた 2D グリッド表示に切り替わります。<code>lanes:</code> の順序がそのままレーン表示順になり、カード側は <code>#lane/&lt;名前&gt;</code> でレーン所属を指定します。<code>lanes:</code> に未列挙の <code>#lane/X</code> や lane 未指定のカードは「未分類」レーンへ集約されます。レーンヘッダから追加・削除・並び替え・名前変更が可能で、行間のDnDや行の折りたたみ（状態はLocalStorageに保存）にも対応。Obsidian Kanban 公式はスイムレーン未対応のため、同じファイルを Obsidian で開いても <code>lanes:</code> は未知 frontmatter として、<code>#lane/X</code> はタグバッジとして表示されるだけでデータは壊れません</li>
         <li><strong>カード詳細モーダル</strong>: 段落・コードブロック・リンクをフルレンダリング</li>
         <li><strong>タグフィルタ</strong>: バッジクリックで該当タグのカードのみ絞り込み（フィルタ中もDnDで列移動可）</li>
@@ -214,6 +217,14 @@
           <p>はい。スイムレーン表示の末尾にある「+ レーン追加」ボタンで新規レーンを追加でき、各レーンヘッダの ▲ / ▼ ボタンまたはヘッダのドラッグで並び替え、✎ ボタンで名前変更、🗑 ボタンで削除できます（削除時は所属カードが「未分類」レーンに集約されます）。「未分類」レーンは末尾固定で名前変更・削除はできません。すべてのレーン操作は frontmatter の <code>lanes:</code> 配列に書き戻され、所属カードのタイトル中の <code>#lane/&lt;旧名&gt;</code> も新名へ一括置換されます。<code>lanes:</code> が空になった場合は <code>lanes:</code> キーごと削除され、従来モード（単一行）に自動で戻ります。</p>
         </details>
         <details>
+          <summary>カラム（列）の追加・削除・並び替え・名前変更はできますか？</summary>
+          <p>はい。カラムヘッダにマウスオーバーすると右側に操作メニューがフロート表示され、<code>◀ ▶</code> で並び替え、<code>✎</code> で名前変更（カラム名のダブルクリックでも編集モード）、<code>☑</code> で自動チェック対象に切り替え、<code>🗑</code> で削除できます。削除時に所属カードがあれば、移動先カラムを選ぶ専用モーダルが表示され、全カードが選択先カラムへ集約されます。最後の1カラムは削除できません。ボード／列ヘッダ行の右端にある「+ カラム追加」ボタンで新規カラムを追加でき、<code>▼</code> トグルで縦書き 48px 幅に折りたたみ／展開できます（折りたたみ状態は LocalStorage に保存され、ブラウザを再起動しても維持されます。スイムレーンモードでは全レーン横断で同期します）。すべての変更は Markdown の H2 行に物理的に書き戻されます（Git 管理下で diff が大きく出る点はご留意ください）。</p>
+        </details>
+        <details>
+          <summary>カラム自動チェックはどう使いますか？（Done に入れたら自動で取り消し線にしたい）</summary>
+          <p>カラムヘッダの <code>☑</code> ボタンを押すか、frontmatter に <code>auto-check-columns: [Done, リリース済み]</code> のように記述すると、対象カラムに所属するカードはすべて <code>- [x]</code>（チェック済み）として強制同期されます。カードを別のカラムから対象カラムへ移動した瞬間に取り消し線がつき、対象外のカラムへ戻すと自動で <code>- [ ]</code> に戻ります。「+ カード追加」で対象カラムに新規追加したカードも初期 <code>- [x]</code> になります。<strong>同期型仕様</strong>のため、対象カラムにあるカードは必ず <code>- [x]</code> に統一され、<code>card.checked === null</code>（チェックボックス無し <code>- テキスト</code> 形式）のカードも対象カラムでは <code>- [x] テキスト</code> 形式に書き換わります。トグル OFF・カラム削除・カラム名変更時は <code>auto-check-columns:</code> 配列が自動的に追従更新され、空になればキーごと frontmatter から削除されます。</p>
+        </details>
+        <details>
           <summary>Obsidian Kanban で同じファイルを開いたとき lane 関連はどう見えますか？</summary>
           <p>Obsidian Kanban 公式はスイムレーン未対応のため、frontmatter の <code>lanes:</code> キーは未知 frontmatter として無視され、カード中の <code>#lane/X</code> は単なるタグバッジとして表示されるだけです。ファイル内容は破壊されないため、mdkanban 側で lane を 2D 表示に展開する「緩い互換」設計のもと、Obsidian と mdkanban の両方で同じファイルを安心して行き来できます。</p>
         </details>
@@ -237,9 +248,23 @@
       <!-- 編集フォーム（モーダル内・初期は非表示） -->
       <form id="card-modal-edit-form" class="card-modal-edit-form" hidden>
         <label class="cme-field">
-          <span class="cme-label">タイトル（タグ <code>#x</code>・期限 <code>@YYYY-MM-DD</code>・lane <code>#lane/X</code> を含む生の文字列）</span>
+          <span class="cme-label">タイトル（タグ <code>#x</code> を含めて記述可。レーン／カラム／期限は下の専用欄で指定）</span>
           <input type="text" id="cme-title" class="cme-input" autocomplete="off">
         </label>
+        <div class="cme-field-row">
+          <label class="cme-field cme-field-lane" id="cme-field-lane">
+            <span class="cme-label">レーン</span>
+            <select id="cme-lane" class="cme-select"></select>
+          </label>
+          <label class="cme-field">
+            <span class="cme-label">カラム</span>
+            <select id="cme-column" class="cme-select"></select>
+          </label>
+          <label class="cme-field">
+            <span class="cme-label">期限（Due）</span>
+            <input type="date" id="cme-due" class="cme-input">
+          </label>
+        </div>
         <label class="cme-field">
           <span class="cme-label">本文（Markdown）</span>
           <textarea id="cme-body" class="cme-textarea" rows="6" spellcheck="false"></textarea>
@@ -336,6 +361,8 @@
       { "@type": "Question", "name": "読み込めるファイルサイズの上限は？", "acceptedAnswer": { "@type": "Answer", "text": "1ファイルあたり5MBまでです。これを超えるファイルはエラー表示となります。" } },
       { "@type": "Question", "name": "スイムレーン（行グルーピング）はどう使いますか？", "acceptedAnswer": { "@type": "Answer", "text": "frontmatter に lanes: キー（YAML 配列）でレーン名を宣言し、カード本文に #lane/<レーン名> を書くと、その行に振り分けられます。lanes: の出現順がそのまま表示順です。lanes: に未列挙の #lane/X や lane 未指定のカードは末尾の「未分類」レーンへ集約され、レーンの追加・削除・並び替え・名前変更は画面上のレーンヘッダから操作できます。操作結果は lanes: 配列に自動で書き戻されます。lanes: キーが無いファイルではスイムレーン機能はオフで、#lane/X は通常のタグバッジとして表示されます（厳密モード）。" } },
       { "@type": "Question", "name": "レーン（行）の追加・削除・並び替えはできますか？", "acceptedAnswer": { "@type": "Answer", "text": "はい。スイムレーン表示の末尾の「+ レーン追加」ボタンで新規レーンを追加でき、各レーンヘッダの ▲ / ▼ ボタンまたはヘッダのドラッグで並び替え、✎ ボタンで名前変更、🗑 ボタンで削除できます。削除時は所属カードが「未分類」レーンに集約され、レーン名変更時はカードタイトル中の #lane/<旧名> も #lane/<新名> へ一括置換されます。「未分類」レーンは末尾固定で名前変更・削除不可です。lanes: が空になると lanes: キーごと frontmatter から削除され、従来モード（単一行）に自動で戻ります。" } },
+      { "@type": "Question", "name": "カラム（列）の追加・削除・並び替え・名前変更はできますか？", "acceptedAnswer": { "@type": "Answer", "text": "はい。カラムヘッダにマウスオーバーすると右側に操作メニューが表示され、◀ ▶ で並び替え、✎ で名前変更（カラム名のダブルクリックでも編集モード）、☑ で自動チェック対象に切替、🗑 で削除できます。削除時に所属カードがあれば移動先カラムを選ぶモーダルが表示され全カードが集約されます。最後の1カラムは削除不可です。ボード／列ヘッダ行右端の「+ カラム追加」で新規カラムを追加でき、▼ トグルで縦書き 48px 幅に折りたたみ／展開できます（折りたたみ状態は LocalStorage に保存）。すべての変更は Markdown の H2 行に物理的に書き戻されます。" } },
+      { "@type": "Question", "name": "カラム自動チェックはどう使いますか？", "acceptedAnswer": { "@type": "Answer", "text": "カラムヘッダの ☑ ボタンを押すか、frontmatter に auto-check-columns: [Done, リリース済み] のように記述すると、対象カラムに所属するカードはすべて - [x] として強制同期されます。カードを別カラムから対象カラムへ移動した瞬間に取り消し線がつき、対象外カラムへ戻すと自動で - [ ] に戻ります。新規追加カードも対象カラムでは初期チェック済みになります。同期型仕様のため、card.checked が null（チェックボックス無し書式）のカードも対象カラムでは - [x] に統一されます。トグル OFF・カラム削除・カラム名変更時は auto-check-columns: 配列も自動追従し、空になればキーごと frontmatter から削除されます。" } },
       { "@type": "Question", "name": "Obsidian Kanban で同じファイルを開いたとき lane 関連はどう見えますか？", "acceptedAnswer": { "@type": "Answer", "text": "Obsidian Kanban 公式はスイムレーン未対応のため、frontmatter の lanes: キーは未知 frontmatter として無視され、カード中の #lane/X は単なるタグバッジとして表示されるだけです。ファイル内容は破壊されないため、mdkanban 側で lane を 2D 表示に展開する緩い互換設計のもと、Obsidian と mdkanban の両方で同じファイルを安心して行き来できます。" } }
     ]
   }
