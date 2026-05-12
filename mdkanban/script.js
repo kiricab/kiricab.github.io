@@ -14,8 +14,15 @@
     density: 'mdkanban.density',
     collapsedLanes: 'mdkanban.collapsedLanes',
     // F1: 折りたたみ中のカラム名（ファイル横断・全ボード共通の永続化）
-    collapsedColumns: 'mdkanban.collapsedColumns'
+    collapsedColumns: 'mdkanban.collapsedColumns',
+    // F13: チェック済みカードを updatedAt から N 日経過したら自動非表示。
+    //   number; 既定 7。0（および非正値）で機能 OFF。永続。
+    hideCheckedAfterDays: 'mdkanban.hideCheckedAfterDays'
   };
+
+  // F13: チェック済みカード自動非表示の既定値・許容範囲
+  const HIDE_CHECKED_DEFAULT_DAYS = 7;
+  const HIDE_CHECKED_MAX_DAYS = 365;
 
   // スイムレーン用の lane 名・タグ抽出に使う共通 character class（既存タグの記法と揃える）。
   const LANE_NAME_CHARS = 'A-Za-z0-9_\\-぀-ヿ㐀-鿿';
@@ -45,6 +52,36 @@
   function bumpCardTimestamps(card) {
     if (!card) return;
     card.updatedAt = nowLocalTimestamp();
+  }
+
+  /**
+   * F13: チェック済みカード自動非表示の判定（純粋関数）。
+   * - thresholdDays が 0 以下 → 機能 OFF → 常に false
+   * - card.checked !== true → false
+   * - updatedAt が null（メタ未設定のレガシーカード）→ 「十分古い」と見なし true
+   * - それ以外は (now - updatedAt) >= thresholdDays で判定
+   *
+   * 注: 「カードを実際に DOM から消すか」は呼び出し側で
+   *      state.showHiddenGlobal / state.revealedHiddenColumns との AND を取って決める。
+   */
+  function isCardCheckedHidden(card, thresholdDays) {
+    if (!thresholdDays || thresholdDays <= 0) return false;
+    if (!card || card.checked !== true) return false;
+    if (!card.updatedAt) return true;
+    const t = Date.parse(card.updatedAt.replace(' ', 'T'));
+    if (Number.isNaN(t)) return true;
+    return (Date.now() - t) >= thresholdDays * 86400000;
+  }
+
+  /**
+   * F13: 描画時にカードを「DOM 上で非表示にする」かを総合判定。
+   * - 一時 reveal（global / per-column）が立っていれば常に表示
+   * - そうでなければ isCardCheckedHidden の結果
+   */
+  function shouldHideCardByCheck(card, colName) {
+    if (state.showHiddenGlobal) return false;
+    if (colName && state.revealedHiddenColumns.has(colName)) return false;
+    return isCardCheckedHidden(card, state.hideCheckedAfterDays);
   }
 
   /** モーダル表示用 `YYYY-MM-DD HH:mm` 文字列（秒を切り詰め）。null → '—'。 */
@@ -109,6 +146,11 @@ lanes:
     sampleBtn: $('sample-btn'),
     themeToggle: $('theme-toggle'),
     densityToggle: $('density-toggle'),
+    // F13: 完了済みカード表示設定
+    hideCheckedToggle: $('hide-checked-toggle'),
+    hideCheckedPopover: $('hide-checked-popover'),
+    hcDaysInput: $('hc-days-input'),
+    hcRevealAll: $('hc-reveal-all'),
     fileNameDisplay: $('file-name-display'),
     restoreBanner: $('restore-banner'),
     restoreYesBtn: $('restore-yes-btn'),
@@ -167,6 +209,11 @@ lanes:
     serializedMarkdown: null, // 最後にシリアライズしたMarkdown（保存系で使い回し）
     collapsedLanes: new Set(),  // 折りたたみ中のlane名（LocalStorage と同期）
     collapsedColumns: new Set(), // F1: 折りたたみ中のカラム名（LocalStorage と同期・ファイル横断）
+    // F13: チェック済みカード自動非表示
+    hideCheckedAfterDays: HIDE_CHECKED_DEFAULT_DAYS, // 永続。0 以下で機能 OFF。
+    showHiddenGlobal: false,        // 一時。ツールバーの「今だけ全て表示」。リロードでリセット。
+    revealedHiddenColumns: new Set(), // 一時。カラム名単位の per-column reveal。リロードでリセット。
+    hideCheckedPopoverOpen: false,  // ポップオーバー開閉状態
     // インライン編集状態:
     //   { cardId, mode: 'inline', isNew: boolean, originalTitle: string }
     // モーダル編集状態:
@@ -872,19 +919,22 @@ lanes:
     // タイトル
     els.boardTitle.textContent = board.title || '';
 
-    // 統計
+    // 統計（F13: hidden カードは「見えている数」から除外し、カラム件数バッジと整合させる）
     let totalCards = 0;
     let visibleCards = 0;
     for (const col of board.columns) {
       totalCards += col.cards.length;
+      const colRevealed = state.showHiddenGlobal || state.revealedHiddenColumns.has(col.name);
       for (const c of col.cards) {
-        if (matchesFilter(c)) visibleCards++;
+        if (!matchesFilter(c)) continue;
+        if (!colRevealed && isCardCheckedHidden(c, state.hideCheckedAfterDays)) continue;
+        visibleCards++;
       }
     }
     if (state.activeTagFilter) {
       els.boardStats.textContent = `${board.columns.length}列・${visibleCards}枚を表示中（全${totalCards}枚中・タグ #${state.activeTagFilter} でフィルタ）`;
     } else {
-      els.boardStats.textContent = `${board.columns.length}列・${totalCards}枚を表示中`;
+      els.boardStats.textContent = `${board.columns.length}列・${visibleCards}枚を表示中`;
     }
 
     // 警告は初回パース時だけ出す（フィルタ等の再描画時には重複させない）
@@ -929,14 +979,27 @@ lanes:
           cardsWrap.className = 'kanban-column-cards';
           cardsWrap.dataset.colIndex = String(colIdx);
 
+          // F13: タグフィルタ通過カードのうち「checked 自動非表示の本来対象」を数える
+          let wouldHideCount = 0;
           col.cards.forEach((card, cardIdx) => {
             if (!matchesFilter(card)) return;
+            const wouldHide = isCardCheckedHidden(card, state.hideCheckedAfterDays);
+            if (wouldHide) wouldHideCount++;
+            // 実描画は reveal 状態と AND を取る
+            if (wouldHide && shouldHideCardByCheck(card, col.name)) return;
             const cardEl = createCardElement(card, colIdx, cardIdx);
+            if (wouldHide) cardEl.classList.add('is-revealed-hidden');
             cardsWrap.appendChild(cardEl);
           });
 
           attachColumnDnDHandlers(cardsWrap);
           colEl.appendChild(cardsWrap);
+          // F13: hidden 候補が存在するときだけチップを出す。
+          //   showHiddenGlobal 中はすべて点線枠で見えているのでチップは出さない（redundant）。
+          if (wouldHideCount > 0 && !state.showHiddenGlobal) {
+            const revealed = state.revealedHiddenColumns.has(col.name);
+            colEl.appendChild(createHiddenChip(col.name, wouldHideCount, revealed));
+          }
           colEl.appendChild(createAddCardButton(colIdx, null));
         }
 
@@ -1260,15 +1323,27 @@ lanes:
         cardsWrap.dataset.colIndex = String(colIdx);
         cardsWrap.dataset.lane = laneName;
 
+        // F13: スイムレーンモードでも同様に hidden 候補を数えてチップを出す。
+        //   reveal 状態はカラム単位なので、レーンを跨いで同じ列の全 hidden 候補をカウントする必要がある。
+        //   ただし「このセル（lane×col）内で何件か」だけ示すのが直感的なので、セルローカルで数える。
+        let wouldHideCount = 0;
         col.cards.forEach((card, cardIdx) => {
           if (card.lane !== laneName) return;
           if (!matchesFilter(card)) return;
+          const wouldHide = isCardCheckedHidden(card, state.hideCheckedAfterDays);
+          if (wouldHide) wouldHideCount++;
+          if (wouldHide && shouldHideCardByCheck(card, col.name)) return;
           const cardEl = createCardElement(card, colIdx, cardIdx);
+          if (wouldHide) cardEl.classList.add('is-revealed-hidden');
           cardsWrap.appendChild(cardEl);
         });
 
         attachColumnDnDHandlers(cardsWrap);
         cellWrap.appendChild(cardsWrap);
+        if (wouldHideCount > 0 && !state.showHiddenGlobal) {
+          const revealed = state.revealedHiddenColumns.has(col.name);
+          cellWrap.appendChild(createHiddenChip(col.name, wouldHideCount, revealed));
+        }
         cellWrap.appendChild(createAddCardButton(colIdx, laneName));
       }
       row.appendChild(cellWrap);
@@ -1312,6 +1387,51 @@ lanes:
     btn.addEventListener('click', (ev) => {
       ev.stopPropagation();
       addNewCard(colIdx, laneName);
+    });
+    return btn;
+  }
+
+  /**
+   * F13: 「✓ 完了済み N件」チップ。クリックでそのカラムの per-column reveal をトグル。
+   *   - revealed=false: 控えめな低コントラスト表示
+   *   - revealed=true: 「展開中」アイコン＋ラベル変化（折りたたみ操作になる）
+   *   - showHiddenGlobal が ON のときはチップはクリックされても per-column 状態を切替えず、
+   *     代わりに「ツールバーの全表示が ON です」を示すツールチップを出す（無効化はしない）。
+   */
+  function createHiddenChip(colName, count, revealed) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'kanban-column-hidden-chip';
+    if (revealed) btn.classList.add('is-revealed');
+    btn.setAttribute('aria-expanded', revealed ? 'true' : 'false');
+    btn.setAttribute('aria-label',
+      revealed
+        ? `完了済みカード ${count} 件を再び隠す`
+        : `完了済みカード ${count} 件を表示`);
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'kanban-column-hidden-chip-icon';
+    iconSpan.setAttribute('aria-hidden', 'true');
+    iconSpan.textContent = revealed ? '▲' : '✓';
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'kanban-column-hidden-chip-label';
+    labelSpan.textContent = revealed
+      ? `完了済み ${count} 件を隠す`
+      : `完了済み ${count} 件`;
+    btn.appendChild(iconSpan);
+    btn.appendChild(labelSpan);
+    btn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      if (state.showHiddenGlobal) {
+        // 全表示中は per-column 切替を抑止し、ヒントだけ出す
+        btn.title = 'ツールバーの「今だけ全て表示」が ON です';
+        return;
+      }
+      if (state.revealedHiddenColumns.has(colName)) {
+        state.revealedHiddenColumns.delete(colName);
+      } else {
+        state.revealedHiddenColumns.add(colName);
+      }
+      renderBoard();
     });
     return btn;
   }
@@ -2308,7 +2428,15 @@ lanes:
     const colName = col.name;
     const collapsed = isColumnCollapsed(colName);
     const auto = isColumnAutoChecked(colName);
-    const visibleCount = col.cards.filter(c => matchesFilter(c)).length;
+    // F13: チップに hidden カードは別途まとめて表示するため、件数バッジからは除外する。
+    //   ただし global reveal / per-column reveal 中は「いま画面に出ている数」と整合させるため
+    //   hidden を加算する（= マッチカード全件）。
+    const revealedHere = state.showHiddenGlobal || state.revealedHiddenColumns.has(colName);
+    const visibleCount = col.cards.filter(c => {
+      if (!matchesFilter(c)) return false;
+      if (revealedHere) return true;
+      return !isCardCheckedHidden(c, state.hideCheckedAfterDays);
+    }).length;
     const totalCols = state.board.columns.length;
 
     const headerEl = document.createElement('div');
@@ -3799,6 +3927,138 @@ lanes:
     try { localStorage.setItem(STORAGE_KEYS.density, density); } catch (e) { /* noop */ }
   }
 
+  // ========================================================================
+  // F13: チェック済みカードの自動非表示 — ポップオーバー & トグル
+  // ========================================================================
+
+  /** 設定を正規化（0..365 の整数。NaN は既定値）。永続化はしない。 */
+  function normalizeHideCheckedDays(v) {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return HIDE_CHECKED_DEFAULT_DAYS;
+    const i = Math.round(n);
+    if (i < 0) return 0;
+    if (i > HIDE_CHECKED_MAX_DAYS) return HIDE_CHECKED_MAX_DAYS;
+    return i;
+  }
+
+  function persistHideCheckedDays() {
+    try {
+      localStorage.setItem(STORAGE_KEYS.hideCheckedAfterDays, String(state.hideCheckedAfterDays));
+    } catch (e) { /* noop */ }
+  }
+
+  /** トグルボタンの title 属性を現在状態に合わせて更新する。 */
+  function updateHideCheckedToggleLabel() {
+    if (!els.hideCheckedToggle) return;
+    const days = state.hideCheckedAfterDays;
+    let t;
+    if (days <= 0) {
+      t = '完了済みカードを常に表示中（クリックで設定）';
+    } else if (state.showHiddenGlobal) {
+      t = `完了済みカードを今だけ全表示中（通常は${days}日経過で非表示。クリックで設定）`;
+    } else {
+      t = `完了済みカードを${days}日経過で自動非表示（クリックで設定）`;
+    }
+    els.hideCheckedToggle.title = t;
+  }
+
+  function openHideCheckedPopover() {
+    if (!els.hideCheckedPopover) return;
+    els.hideCheckedPopover.hidden = false;
+    state.hideCheckedPopoverOpen = true;
+    els.hideCheckedToggle.setAttribute('aria-expanded', 'true');
+    if (els.hcDaysInput) {
+      els.hcDaysInput.value = String(state.hideCheckedAfterDays);
+      // 視覚障害支援: 開いた直後に input にフォーカスを送り、Esc で閉じられる導線を確保
+      setTimeout(() => { try { els.hcDaysInput.focus({ preventScroll: true }); } catch (e) {} }, 0);
+    }
+    if (els.hcRevealAll) els.hcRevealAll.checked = !!state.showHiddenGlobal;
+  }
+
+  function closeHideCheckedPopover() {
+    if (!els.hideCheckedPopover) return;
+    els.hideCheckedPopover.hidden = true;
+    state.hideCheckedPopoverOpen = false;
+    if (els.hideCheckedToggle) {
+      els.hideCheckedToggle.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  function toggleHideCheckedPopover() {
+    if (state.hideCheckedPopoverOpen) {
+      closeHideCheckedPopover();
+    } else {
+      openHideCheckedPopover();
+    }
+  }
+
+  function setupHideCheckedControls() {
+    if (!els.hideCheckedToggle || !els.hideCheckedPopover) return;
+    updateHideCheckedToggleLabel();
+    els.hideCheckedToggle.setAttribute('aria-expanded', 'false');
+    els.hideCheckedToggle.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      toggleHideCheckedPopover();
+    });
+
+    // ポップオーバー内クリックは外側判定から除外
+    els.hideCheckedPopover.addEventListener('click', (ev) => ev.stopPropagation());
+
+    // 外側クリック / Esc / 別ボタンクリックで閉じる
+    document.addEventListener('click', (ev) => {
+      if (!state.hideCheckedPopoverOpen) return;
+      if (ev.target === els.hideCheckedToggle) return;
+      if (els.hideCheckedPopover.contains(ev.target)) return;
+      closeHideCheckedPopover();
+    });
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape' && state.hideCheckedPopoverOpen) {
+        ev.stopPropagation();
+        closeHideCheckedPopover();
+        if (els.hideCheckedToggle) els.hideCheckedToggle.focus();
+      }
+    });
+
+    // 日数入力の変更を即時反映（debounce 200ms）
+    let daysDebounce = null;
+    if (els.hcDaysInput) {
+      els.hcDaysInput.addEventListener('input', () => {
+        if (daysDebounce) clearTimeout(daysDebounce);
+        daysDebounce = setTimeout(() => {
+          const next = normalizeHideCheckedDays(els.hcDaysInput.value);
+          if (next !== state.hideCheckedAfterDays) {
+            state.hideCheckedAfterDays = next;
+            persistHideCheckedDays();
+            updateHideCheckedToggleLabel();
+            if (state.board) renderBoard();
+          }
+          // 入力欄の値を正規化結果で上書き（負数や文字を弾く）
+          if (String(next) !== els.hcDaysInput.value) {
+            els.hcDaysInput.value = String(next);
+          }
+        }, 200);
+      });
+    }
+
+    // 今だけ全表示トグル
+    if (els.hcRevealAll) {
+      els.hcRevealAll.addEventListener('change', () => {
+        state.showHiddenGlobal = !!els.hcRevealAll.checked;
+        updateHideCheckedToggleLabel();
+        if (state.board) renderBoard();
+      });
+    }
+
+    // F13: 開きっぱなしの画面でも閾値を跨いだら自然に消えるよう、1 分ごとに再描画する。
+    //   render コストはボード規模に依存するが、もともと描画毎回フルレンダリングする作りなので問題ない。
+    setInterval(() => {
+      if (!state.board) return;
+      if (state.hideCheckedAfterDays <= 0) return;
+      if (state.showHiddenGlobal) return; // 全表示中は再描画不要
+      renderBoard();
+    }, 60_000);
+  }
+
   function toggleTheme() {
     const cur = els.body.getAttribute('data-theme') || 'light';
     applyTheme(cur === 'dark' ? 'light' : 'dark');
@@ -3870,9 +4130,15 @@ lanes:
           state.collapsedColumns = new Set(arr.filter(v => typeof v === 'string'));
         }
       }
+      // F13: チェック済みカード自動非表示の閾値を復元（不正値は既定 7 日に戻す）
+      const hideDaysRaw = localStorage.getItem(STORAGE_KEYS.hideCheckedAfterDays);
+      if (hideDaysRaw !== null) {
+        state.hideCheckedAfterDays = normalizeHideCheckedDays(hideDaysRaw);
+      }
     } catch (e) { /* noop（不正JSON等は無視して空のまま） */ }
     applyTheme(savedTheme);
     applyDensity(savedDensity);
+    setupHideCheckedControls();
 
     // ファイルを開くハンドラ: FSA対応ブラウザは showOpenFilePicker 経由、それ以外は input[type=file]
     function openFileEntry() {

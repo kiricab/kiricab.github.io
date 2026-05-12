@@ -61,6 +61,27 @@
         <button type="button" class="tb-btn" id="copy-btn" aria-label="現在のMarkdownをクリップボードへコピー" title="クリップボードへコピー" hidden>📋 コピー</button>
         <button type="button" class="tb-btn icon-btn" id="theme-toggle" aria-label="テーマ切替（ライト/ダーク）" title="テーマ切替">🌙</button>
         <button type="button" class="tb-btn icon-btn" id="density-toggle" aria-label="表示密度切替（コンパクト/詳細）" title="表示密度切替">▦</button>
+        <!-- F13: 完了済みカード表示設定（既定で 7 日経過した checked カードを自動非表示） -->
+        <div class="hide-checked-wrap">
+          <button type="button" class="tb-btn icon-btn" id="hide-checked-toggle"
+                  aria-label="完了済みカードの表示設定" aria-haspopup="dialog" aria-expanded="false"
+                  title="完了済みカードの表示設定">👁</button>
+          <div id="hide-checked-popover" class="hide-checked-popover" role="dialog"
+               aria-label="完了済みカードの表示設定" hidden>
+            <h3 class="hide-checked-popover-title">完了済みカードの自動非表示</h3>
+            <p class="hide-checked-popover-desc">チェックして指定日数が経過したカードを自動で隠します。</p>
+            <label class="hide-checked-field">
+              <span>日数</span>
+              <input type="number" id="hc-days-input" min="0" max="365" step="1" inputmode="numeric">
+              <span class="hide-checked-field-unit">日（0 で常に表示）</span>
+            </label>
+            <label class="hide-checked-field is-toggle">
+              <input type="checkbox" id="hc-reveal-all">
+              <span>今だけ全て表示</span>
+            </label>
+            <p class="hide-checked-popover-hint">※「今だけ全て表示」はリロードでリセットされます。</p>
+          </div>
+        </div>
         <input type="file" id="file-input" accept=".md,.markdown,text/markdown" hidden>
       </div>
     </div>

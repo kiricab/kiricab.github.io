@@ -2282,6 +2282,142 @@ body[data-theme="dark"] .swimlane-actions {
   }
 }
 
+/* ===== F13: チェック済みカードの自動非表示 UI ===== */
+
+/* ツールバーのアンカー要素。ポップオーバーを直下に絶対配置するための位置基準。 */
+.hide-checked-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+/* カラム末尾の控えめなチップ。普段は低コントラスト、ホバー/フォーカスで前景化。 */
+.kanban-column-hidden-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  margin: 0.35rem 0 0;
+  padding: 0.35rem 0.5rem;
+  background: transparent;
+  border: 1px dashed var(--kanban-col-border, #dee2e6);
+  border-radius: 6px;
+  color: var(--gray-text-color, #6c757d);
+  font-size: 0.78rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.kanban-column-hidden-chip:hover,
+.kanban-column-hidden-chip:focus-visible {
+  background: var(--kanban-col-bg, #f1f3f5);
+  color: var(--text-color, #212529);
+  border-color: var(--kanban-col-border, #adb5bd);
+}
+
+.kanban-column-hidden-chip:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.kanban-column-hidden-chip-icon {
+  font-size: 0.85em;
+  line-height: 1;
+}
+
+.kanban-column-hidden-chip.is-revealed {
+  border-style: solid;
+  background: var(--kanban-col-bg, #f1f3f5);
+  color: var(--text-color, #212529);
+}
+
+/* グローバル全表示や per-column reveal で本来隠れているはずのカードが見えているとき、
+   通常表示と区別するための点線ボーダー＋少しだけ透過。.is-done の opacity:0.55 と差別化する。 */
+.kanban-card.is-revealed-hidden {
+  border-style: dashed;
+  opacity: 0.85;
+}
+
+/* ポップオーバー本体 */
+.hide-checked-popover {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  z-index: 50;
+  min-width: 260px;
+  padding: 0.85rem 0.95rem;
+  background: var(--card-color, #fff);
+  color: var(--text-color, #212529);
+  border: 1px solid var(--kanban-col-border, #dee2e6);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.hide-checked-popover[hidden] {
+  display: none;
+}
+
+.hide-checked-popover-title {
+  margin: 0 0 0.3rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.hide-checked-popover-desc {
+  margin: 0 0 0.7rem;
+  font-size: 0.8rem;
+  color: var(--gray-text-color, #6c757d);
+}
+
+.hide-checked-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.4rem 0;
+  font-size: 0.85rem;
+}
+
+.hide-checked-field input[type="number"] {
+  width: 4.5rem;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--kanban-col-border, #ced4da);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  background: var(--card-color, #fff);
+  color: var(--text-color, #212529);
+}
+
+.hide-checked-field input[type="number"]:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 1px;
+}
+
+.hide-checked-field-unit {
+  color: var(--gray-text-color, #6c757d);
+  font-size: 0.78rem;
+}
+
+.hide-checked-field.is-toggle {
+  cursor: pointer;
+  user-select: none;
+}
+
+.hide-checked-popover-hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.72rem;
+  color: var(--gray-text-color, #6c757d);
+  line-height: 1.4;
+}
+
+/* prefers-reduced-motion: チップのトランジションを無効化 */
+@media (prefers-reduced-motion: reduce) {
+  .kanban-column-hidden-chip {
+    transition: none;
+  }
+}
+
 /* ===== prefers-color-scheme: 自動ダーク化はユーザー操作優先のため無効化 ===== */
 /* common/style.css の prefers-color-scheme は :root に対するので、
    body[data-theme="light"] を明示的に上書きしておく */
