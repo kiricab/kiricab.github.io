@@ -529,11 +529,27 @@ body[data-theme="dark"] .dropzone.drag-over {
   border-radius: 6px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
   opacity: 0;
-  pointer-events: none;
+  visibility: hidden;
   transform: translateY(-4px);
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  /* 閉じる側だけ 200ms の grace period を設け、ヘッダ→ツールバー間のホバー追従を許容する。
+     visibility は遅延付きで切り替えることで、フェードアウト完了まで :hover を受け取れるようにする。 */
+  transition:
+    opacity 0.15s ease 0.2s,
+    transform 0.15s ease 0.2s,
+    visibility 0s linear 0.35s;
   z-index: 7;
   white-space: nowrap;
+}
+
+/* ヘッダ底辺〜ツールバー上辺の 4px デッドゾーンを埋める透明ブリッジ。
+   ツールバー表示中のみ当たり判定が有効になり、斜め移動でホバーが外れて消えるのを防ぐ。 */
+.kanban-column-actions::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -8px;
+  height: 8px;
 }
 
 body[data-theme="dark"] .kanban-column-actions {
@@ -543,14 +559,17 @@ body[data-theme="dark"] .kanban-column-actions {
 .kanban-column-header:hover > .kanban-column-actions,
 .kanban-column-header:focus-within > .kanban-column-actions {
   opacity: 1;
-  pointer-events: auto;
+  visibility: visible;
   transform: translateY(0);
+  /* 開く側は即時 */
+  transition-delay: 0s;
 }
 
 @media (hover: none) {
   .kanban-column-actions {
     /* タッチデバイスでは常時表示。下方向フロートだとカードに被るので相対配置に切替 */
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
     transform: none;
     position: static;
@@ -559,6 +578,11 @@ body[data-theme="dark"] .kanban-column-actions {
     background: transparent;
     padding: 0;
     margin-left: 0.2rem;
+    transition: none;
+  }
+  /* タッチ環境ではブリッジ不要（クリック領域を奪わないよう無効化） */
+  .kanban-column-actions::before {
+    display: none;
   }
 }
 
@@ -1931,11 +1955,25 @@ body[data-theme="dark"] .swimlane-header:hover {
   border-radius: 6px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
   opacity: 0;
-  pointer-events: none;
+  visibility: hidden;
   transform: translateX(-4px);
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  /* 閉じる側だけ 200ms の grace period を設け、レール→ツールバー間のホバー追従を許容する。 */
+  transition:
+    opacity 0.15s ease 0.2s,
+    transform 0.15s ease 0.2s,
+    visibility 0s linear 0.35s;
   z-index: 6;
   white-space: nowrap;
+}
+
+/* レール右辺〜ツールバー左辺の 4px デッドゾーンを埋める透明ブリッジ。 */
+.swimlane-actions::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -8px;
+  width: 8px;
 }
 
 body[data-theme="dark"] .swimlane-actions {
@@ -1945,16 +1983,23 @@ body[data-theme="dark"] .swimlane-actions {
 .swimlane-header:hover > .swimlane-actions,
 .swimlane-header:focus-within > .swimlane-actions {
   opacity: 1;
-  pointer-events: auto;
+  visibility: visible;
   transform: translateX(0);
+  /* 開く側は即時 */
+  transition-delay: 0s;
 }
 
 /* タッチ環境では hover が発火しないため常時表示。レール右隣に固定で出す。 */
 @media (hover: none) {
   .swimlane-actions {
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
     transform: translateX(0);
+    transition: none;
+  }
+  .swimlane-actions::before {
+    display: none;
   }
 }
 
