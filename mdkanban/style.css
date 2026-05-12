@@ -464,6 +464,50 @@ body[data-theme="dark"] .dropzone.drag-over {
   opacity: 0.5;
 }
 
+/* 折りたたみ中のカラム本体／レーン行に置く drop プレースホルダー。
+   通常時は非表示、カードDnD中（.kanban-board.is-card-dragging）のみ可視化する。 */
+.kanban-column-cards-placeholder,
+.swimlane-collapsed-slot {
+  display: none;
+}
+.kanban-board.is-card-dragging .kanban-column-cards-placeholder {
+  display: block;
+  min-height: 80px;
+  margin-top: 0.25rem;
+  border: 2px dashed var(--kanban-col-border);
+  border-radius: 8px;
+  background-color: transparent;
+  transition: border-color 0.12s ease, background-color 0.12s ease, box-shadow 0.12s ease;
+}
+.kanban-board.is-card-dragging .swimlane-collapsed-slot {
+  display: block;
+  min-height: 32px;
+  border: 2px dashed var(--kanban-col-border);
+  border-radius: 8px;
+  background-color: transparent;
+  transition: border-color 0.12s ease, background-color 0.12s ease, box-shadow 0.12s ease;
+}
+.kanban-column-cards-placeholder.is-card-drop-target,
+.swimlane-collapsed-slot.is-card-drop-target {
+  border-style: solid;
+  border-color: var(--primary-color);
+  background-color: var(--secondary-color);
+  box-shadow: 0 0 0 2px var(--primary-color) inset;
+}
+
+/* スイムレーン折りたたみ用 drop 行: 通常は非表示、折りたたみ時のみ表示。
+   ヘッダ列（rail）を除き、カラムトラックに揃えた N 個の slot を並べる。 */
+.swimlane-collapsed-row {
+  display: none;
+}
+.swimlane.is-collapsed .swimlane-collapsed-row {
+  grid-column: 2 / -1;
+  display: grid;
+  grid-template-columns: var(--mdkanban-col-tracks, repeat(var(--mdkanban-cols, 3), 300px));
+  column-gap: 0.75rem;
+  padding: 0;
+}
+
 .kanban-column-title {
   font-size: 0.95rem;
   overflow: hidden;

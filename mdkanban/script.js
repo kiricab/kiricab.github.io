@@ -973,7 +973,15 @@ lanes:
         const header = buildColumnHeaderElement(col, colIdx);
         colEl.appendChild(header);
 
-        // 折りたたみ中はカード領域・追加ボタンを描画しない（F1-8）
+        // 折りたたみ中はカード領域を描画しないが、カードDnDの drop target は本体に置く
+        if (isColumnCollapsed(col.name)) {
+          const placeholder = document.createElement('div');
+          placeholder.className = 'kanban-column-cards-placeholder';
+          placeholder.dataset.colIndex = String(colIdx);
+          attachCardDropEndOfCellHandlers(placeholder, colIdx, null);
+          colEl.appendChild(placeholder);
+        }
+
         if (!isColumnCollapsed(col.name)) {
           const cardsWrap = document.createElement('div');
           cardsWrap.className = 'kanban-column-cards';
@@ -1316,7 +1324,17 @@ lanes:
       cellWrap.className = 'swimlane-cell';
       if (isColumnCollapsed(col.name)) cellWrap.classList.add('is-collapsed');
 
-      // 折りたたみ中はカード領域も「+ カード追加」も描画しない（DnD 受け付け不可・F1-6 / F1-8）
+      // カラム折りたたみ中はカード領域を描画しないが、カードDnDの drop プレースホルダーを置く。
+      // セルが属する lane（laneName）を渡し、別 lane から来たカードはこの lane に切り替える。
+      if (isColumnCollapsed(col.name)) {
+        const placeholder = document.createElement('div');
+        placeholder.className = 'kanban-column-cards-placeholder';
+        placeholder.dataset.colIndex = String(colIdx);
+        placeholder.dataset.lane = laneName;
+        attachCardDropEndOfCellHandlers(placeholder, colIdx, laneName);
+        cellWrap.appendChild(placeholder);
+      }
+
       if (!isColumnCollapsed(col.name)) {
         const cardsWrap = document.createElement('div');
         cardsWrap.className = 'kanban-column-cards';
@@ -1349,6 +1367,22 @@ lanes:
       row.appendChild(cellWrap);
     });
     swimlaneEl.appendChild(row);
+
+    // レーン折りたたみ時の drop 行: 行本体（row）が display:none で隠れるので、
+    // 同じ列幅トラックの上に薄い slot を並べる。CSS で .is-collapsed のときだけ可視化される。
+    const collapsedRow = document.createElement('div');
+    collapsedRow.className = 'swimlane-collapsed-row';
+    collapsedRow.setAttribute('aria-hidden', 'true');
+    board.columns.forEach((col, colIdx) => {
+      const slot = document.createElement('div');
+      slot.className = 'swimlane-collapsed-slot';
+      slot.dataset.colIndex = String(colIdx);
+      slot.dataset.lane = laneName;
+      attachCardDropEndOfCellHandlers(slot, colIdx, laneName);
+      collapsedRow.appendChild(slot);
+    });
+    swimlaneEl.appendChild(collapsedRow);
+
     return swimlaneEl;
   }
 
@@ -3122,6 +3156,9 @@ lanes:
     document.querySelectorAll('.kanban-column-cards.is-drop-target').forEach(n => {
       n.classList.remove('is-drop-target');
     });
+    document.querySelectorAll('.is-card-drop-target').forEach(n => {
+      n.classList.remove('is-card-drop-target');
+    });
   }
 
   /**
@@ -3172,6 +3209,8 @@ lanes:
       const fromLane = swimlaneAncestor ? swimlaneAncestor.dataset.laneName : null;
       state.dragging = { cardId, fromColIdx, fromCardIdx, fromLane };
       cardEl.classList.add('is-dragging');
+      // 折りたたみカラム／レーンの drop プレースホルダーを可視化するためのフラグ
+      if (els.kanbanBoard) els.kanbanBoard.classList.add('is-card-dragging');
       try {
         ev.dataTransfer.effectAllowed = 'move';
         ev.dataTransfer.setData('text/plain', cardId);
@@ -3180,6 +3219,7 @@ lanes:
 
     cardEl.addEventListener('dragend', () => {
       cardEl.classList.remove('is-dragging');
+      if (els.kanbanBoard) els.kanbanBoard.classList.remove('is-card-dragging');
       clearAllDropIndicators();
       state.dragging = null;
       // dragend 直後にブラウザが click を発火させる場合があるため、120ms間 click を抑止する。
@@ -3229,6 +3269,53 @@ lanes:
         : null;
       const { cardId, fromColIdx, fromCardIdx, fromLane } = state.dragging;
       moveCard(fromColIdx, fromCardIdx, toColIdx, absoluteIndex, cardId, fromLane, toLane);
+      clearAllDropIndicators();
+      state.dragging = null;
+    });
+  }
+
+  /**
+   * 折りたたみ中のカラム本体／レーン行に置く drop プレースホルダー用ハンドラ。
+   * 落としたカードは指定セル（colIdx × laneNameOrNull）の末尾に追加する。
+   * - 通常モード: laneNameOrNull=null を渡し、card.lane は触らない
+   * - スイムレーンモードでカラム折りたたみ時: ドラッグ元 lane を維持したいので、呼び出し側で laneName=null を渡せばここで fromLane を採用する
+   * - スイムレーンモードでレーン折りたたみ時: 呼び出し側で laneName=<対象レーン> を渡す（lane 切替）
+   */
+  function attachCardDropEndOfCellHandlers(el, colIdx, laneNameOrNull) {
+    el.addEventListener('dragover', (ev) => {
+      if (!state.dragging) return; // カードDnD中のみ反応（列／レーン並び替えは別系統）
+      ev.preventDefault();
+      ev.stopPropagation();
+      try { ev.dataTransfer.dropEffect = 'move'; } catch (e) { /* noop */ }
+      el.classList.add('is-card-drop-target');
+    });
+    el.addEventListener('dragleave', (ev) => {
+      if (!state.dragging) return;
+      const related = ev.relatedTarget;
+      if (related && el.contains(related)) return;
+      el.classList.remove('is-card-drop-target');
+    });
+    el.addEventListener('drop', (ev) => {
+      if (!state.dragging) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      el.classList.remove('is-card-drop-target');
+      const board = state.board;
+      if (!board) return;
+      const toCol = board.columns[colIdx];
+      if (!toCol) return;
+      const { cardId, fromColIdx, fromCardIdx, fromLane } = state.dragging;
+      const useSwimlanes = !!board.useSwimlanes;
+      let toLane;
+      if (!useSwimlanes) {
+        toLane = null;
+      } else if (laneNameOrNull !== null && laneNameOrNull !== undefined) {
+        toLane = laneNameOrNull;
+      } else {
+        toLane = fromLane || '';
+      }
+      const targetIndex = toCol.cards.length; // moveCard は cards.length 以上を「末尾シグナル」として解釈する
+      moveCard(fromColIdx, fromCardIdx, colIdx, targetIndex, cardId, fromLane, toLane);
       clearAllDropIndicators();
       state.dragging = null;
     });
