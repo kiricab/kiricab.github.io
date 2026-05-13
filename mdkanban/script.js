@@ -3091,6 +3091,8 @@
     els.emptyState.hidden = true;
     els.boardSection.hidden = false;
     els.restoreBanner.hidden = true;
+    // ファイルが開かれている状態をbodyに反映し、ヘッダの非表示制御に使う
+    document.body.classList.add('has-board');
 
     // 新規ロード時は dirty 状態と自動保存ステータスをリセット
     clearDirty();

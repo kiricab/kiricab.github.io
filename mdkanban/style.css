@@ -2317,6 +2317,16 @@ body[data-theme="dark"] .swimlane-actions {
   display: inline-flex;
 }
 
+/* ファイル未読込時はヘッダの「ファイルを開く・新規作成・テーマ・表示密度・完了非表示」ボタンを隠す。
+   起動 CTA（空状態セクション）に同等の操作ボタンが用意されているため、ヘッダは保存系のみで充分。 */
+body:not(.has-board) #open-file-btn,
+body:not(.has-board) #new-board-btn,
+body:not(.has-board) #theme-toggle,
+body:not(.has-board) #density-toggle,
+body:not(.has-board) .hide-checked-wrap {
+  display: none !important;
+}
+
 /* カラム末尾の控えめなチップ。普段は低コントラスト、ホバー/フォーカスで前景化。 */
 .kanban-column-hidden-chip {
   display: flex;
