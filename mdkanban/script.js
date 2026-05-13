@@ -105,37 +105,6 @@
     return m ? `${m[1]}T${m[2]}` : '';
   }
 
-  const SAMPLE_MD = `---
-kanban-plugin: basic
-lanes:
-  - バックエンド
-  - フロントエンド
----
-
-# 春のリリース計画
-
-## TODO
-
-- [ ] API設計 #lane/バックエンド #design @2026-05-10
-  - [ ] エンドポイント洗い出し
-  - [ ] レビュー会
-- [ ] 画面実装 #lane/フロントエンド #seo
-- [ ] アクセシビリティ点検 #a11y @2026-05-15
-- [ ] 検証用スクリプト #lane/QA
-
-## Doing
-
-- [ ] ドキュメント整備 #lane/バックエンド @2026-04-25
-  詳細はこちらを参照: [社内Wiki](https://example.com)
-- [ ] パフォーマンス計測 #perf
-
-## Done
-
-- [x] 仕様書作成 #lane/バックエンド #planning
-- [x] 関係者ヒアリング
-- [x] キックオフMTG
-`;
-
   // -------- 要素参照 --------
   const $ = (id) => document.getElementById(id);
 
@@ -143,7 +112,7 @@ lanes:
     body: document.body,
     fileInput: $('file-input'),
     openFileBtn: $('open-file-btn'),
-    sampleBtn: $('sample-btn'),
+    newBoardBtn: $('new-board-btn'),
     themeToggle: $('theme-toggle'),
     densityToggle: $('density-toggle'),
     // F13: 完了済みカード表示設定
@@ -164,9 +133,9 @@ lanes:
     boardTitle: $('board-title'),
     boardStats: $('board-stats'),
     kanbanBoard: $('kanban-board'),
-    dropzone: $('dropzone'),
-    dropzoneOpenBtn: $('dropzone-open-btn'),
-    dropzoneSampleBtn: $('dropzone-sample-btn'),
+    emptyOpenBtn: $('empty-open-btn'),
+    emptyNewBtn: $('empty-new-btn'),
+    emptyFsaNote: $('empty-fsa-note'),
     cardModal: $('card-modal'),
     cardModalBackdrop: $('card-modal-backdrop'),
     cardModalClose: $('card-modal-close'),
@@ -3135,10 +3104,36 @@ lanes:
     showStatus(`${board.columns.length}列・${totalCards}枚を表示中`, 'success');
   }
 
-  function loadSample() {
-    // サンプルは「別ファイル」相当。loadMarkdown のデフォルト動作で fileHandle が null 化され、
-    // FSAで開いていた本物のファイルにサンプル内容が誤上書きされるリスクを断つ。
-    loadMarkdown(SAMPLE_MD, 'サンプル.md');
+  /**
+   * 新規ボードを作成する。FSA の showSaveFilePicker で保存先ファイルを必ず指定させ、
+   * デフォルトカラム（Todo / Doing / Done）入りのテンプレートを書き込んでから開く。
+   * FSA 未対応ブラウザではボタンが無効化されているため通常呼ばれないが、念のためガードする。
+   */
+  async function createNewBoardFlow() {
+    if (!('showSaveFilePicker' in window)) return;
+    let handle;
+    try {
+      handle = await window.showSaveFilePicker({
+        suggestedName: 'kanban.md',
+        types: [{
+          description: 'Markdown',
+          accept: { 'text/markdown': ['.md', '.markdown'] }
+        }]
+      });
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      showStatus('保存先を指定できませんでした: ' + (e && e.message ? e.message : e), 'error');
+      return;
+    }
+
+    const rawName = handle.name || 'kanban.md';
+    const baseTitle = rawName.replace(/\.(md|markdown)$/i, '') || '新規ボード';
+    const template = `# ${baseTitle}\n\n## Todo\n\n## Doing\n\n## Done\n`;
+
+    loadMarkdown(template, rawName, { fileHandle: handle });
+    updateSaveControlsVisibility();
+    // 直後に1回 autoSaveNow を呼んでテンプレートをディスクへ書き込み、保存先を実体化する
+    try { await autoSaveNow(); } catch (_) { /* 失敗してもUI表示は続行 */ }
   }
 
   // -------- カードDnD（列間移動・列内並び替え） --------
@@ -3941,62 +3936,6 @@ lanes:
     reader.readAsText(file, 'UTF-8');
   }
 
-  // -------- ドラッグ&ドロップ --------
-  function setupDragDrop() {
-    const dz = els.dropzone;
-
-    // ページ全体でデフォルトドロップを抑止
-    ['dragover', 'drop'].forEach(ev => {
-      window.addEventListener(ev, (e) => {
-        // ドロップゾーン外でもファイルドロップを受け付ける
-        if (e.target.closest && e.target.closest('input[type="file"]')) return;
-        e.preventDefault();
-      });
-    });
-
-    // ページ全体ドラッグ中はドロップゾーンをハイライト
-    let dragCounter = 0;
-    window.addEventListener('dragenter', (e) => {
-      if (!e.dataTransfer || !Array.from(e.dataTransfer.types || []).includes('Files')) return;
-      dragCounter++;
-      dz.classList.add('drag-over');
-    });
-    window.addEventListener('dragleave', () => {
-      dragCounter = Math.max(0, dragCounter - 1);
-      if (dragCounter === 0) dz.classList.remove('drag-over');
-    });
-    window.addEventListener('drop', async (e) => {
-      dragCounter = 0;
-      dz.classList.remove('drag-over');
-      if (!e.dataTransfer || !e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
-      e.preventDefault();
-      // FSA対応ブラウザはハンドル取得を試みる（失敗してもファイル自体は読み込む）
-      let handle = null;
-      try {
-        if (e.dataTransfer.items && e.dataTransfer.items[0] && e.dataTransfer.items[0].getAsFileSystemHandle) {
-          handle = await e.dataTransfer.items[0].getAsFileSystemHandle();
-          if (handle && handle.kind !== 'file') handle = null;
-        }
-      } catch (err) { /* ハンドル取得失敗時は通常のファイル読み込みにフォールバック */ }
-      if (handle) {
-        try {
-          const file = await handle.getFile();
-          // ハンドルは readFileWithHandle 経由で loadMarkdown に渡す（先に state.fileHandle を直接代入しない）。
-          readFileWithHandle(file, handle);
-          return;
-        } catch (err) { /* fallthrough */ }
-      }
-      readFile(e.dataTransfer.files[0]);
-    });
-
-    dz.addEventListener('click', () => els.fileInput.click());
-    dz.addEventListener('keydown', (ev) => {
-      if (ev.key === 'Enter' || ev.key === ' ') {
-        ev.preventDefault();
-        els.fileInput.click();
-      }
-    });
-  }
 
   // -------- テーマ・密度 --------
   function applyTheme(theme) {
@@ -4238,15 +4177,24 @@ lanes:
 
     // イベント
     els.openFileBtn.addEventListener('click', openFileEntry);
-    els.dropzoneOpenBtn.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      openFileEntry();
-    });
-    els.sampleBtn.addEventListener('click', loadSample);
-    els.dropzoneSampleBtn.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      loadSample();
-    });
+    if (els.emptyOpenBtn) els.emptyOpenBtn.addEventListener('click', openFileEntry);
+    if (els.newBoardBtn) els.newBoardBtn.addEventListener('click', createNewBoardFlow);
+    if (els.emptyNewBtn) els.emptyNewBtn.addEventListener('click', createNewBoardFlow);
+
+    // FSA 未対応ブラウザでは「新規作成」を無効化（保存先指定ができないため）
+    if (!('showSaveFilePicker' in window)) {
+      const unsupportedTitle = '新規作成は Chrome / Edge など File System Access API 対応ブラウザでのみ利用できます';
+      if (els.newBoardBtn) {
+        els.newBoardBtn.disabled = true;
+        els.newBoardBtn.title = unsupportedTitle;
+      }
+      if (els.emptyNewBtn) {
+        els.emptyNewBtn.disabled = true;
+        els.emptyNewBtn.title = unsupportedTitle;
+      }
+      if (els.emptyFsaNote) els.emptyFsaNote.hidden = false;
+    }
+
     els.fileInput.addEventListener('change', (ev) => {
       const f = ev.target.files && ev.target.files[0];
       if (f) readFile(f);
@@ -4303,7 +4251,6 @@ lanes:
       ev.returnValue = '';
     });
 
-    setupDragDrop();
     maybeOfferRestore();
     updateSaveControlsVisibility();
   }

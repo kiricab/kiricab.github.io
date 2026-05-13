@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>mdkanban - Markdownをそのままカンバン表示｜ログイン不要・ブラウザ完結ビューワー</title>
-  <meta name="description" content="Obsidian Kanban互換のMarkdownファイルをドラッグ&ドロップするだけでカンバンボード表示。ログイン不要・インストール不要・サーバー送信なし。スマホでも閲覧できる無料Webツール。">
+  <meta name="description" content="Obsidian Kanban互換のMarkdownファイルを開くだけでカンバンボード表示。新規作成にも対応。ログイン不要・インストール不要・サーバー送信なし。スマホでも閲覧できる無料Webツール。">
 
   <!-- OGP -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://kiricab.github.io/mdkanban/">
   <meta property="og:title" content="mdkanban - Markdownをそのままカンバン表示｜ログイン不要・ブラウザ完結ビューワー">
-  <meta property="og:description" content="Obsidian Kanban互換のMarkdownファイルをドラッグ&ドロップするだけでカンバンボード表示。ログイン不要・インストール不要・サーバー送信なし。スマホでも閲覧できる無料Webツール。">
+  <meta property="og:description" content="Obsidian Kanban互換のMarkdownファイルを開くだけでカンバンボード表示。新規作成にも対応。ログイン不要・インストール不要・サーバー送信なし。スマホでも閲覧できる無料Webツール。">
   <meta property="og:site_name" content="KIRICAB Tools">
   <meta property="og:locale" content="ja_JP">
   <meta property="og:image" content="https://kiricab.github.io/common/og-image.svg">
@@ -19,7 +19,7 @@
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="mdkanban - Markdownをそのままカンバン表示｜ログイン不要・ブラウザ完結ビューワー">
-  <meta name="twitter:description" content="Obsidian Kanban互換のMarkdownファイルをドラッグ&ドロップするだけでカンバンボード表示。ログイン不要・インストール不要・サーバー送信なし。">
+  <meta name="twitter:description" content="Obsidian Kanban互換のMarkdownファイルを開くだけでカンバンボード表示。新規作成にも対応。ログイン不要・インストール不要・サーバー送信なし。">
   <meta name="twitter:image" content="https://kiricab.github.io/common/og-image.svg">
   <!-- Canonical -->
   <link rel="canonical" href="https://kiricab.github.io/mdkanban/">
@@ -48,14 +48,14 @@
     <div class="kanban-header-inner">
       <div class="kanban-title-wrap">
         <h1>📋 mdkanban</h1>
-        <p class="kanban-tagline">Markdownをドロップするだけでカンバン表示。ログイン不要・全部ローカル。</p>
+        <p class="kanban-tagline">Markdownを開くだけでカンバン表示。ログイン不要・全部ローカル。</p>
       </div>
       <div class="kanban-toolbar" role="toolbar" aria-label="ツールバー">
         <span id="file-name-display" class="file-name-display" aria-live="polite"></span>
         <span id="dirty-marker" class="dirty-marker" hidden aria-label="未保存の変更あり" title="未保存の変更があります">●</span>
         <span id="save-status" class="save-status" hidden aria-live="polite"></span>
         <button type="button" class="tb-btn" id="open-file-btn" aria-label="Markdownファイルを開く">📂 ファイルを開く</button>
-        <button type="button" class="tb-btn" id="sample-btn" aria-label="サンプルを表示">✨ サンプル</button>
+        <button type="button" class="tb-btn" id="new-board-btn" aria-label="新規ボードを作成" title="新規ボードを作成（保存先を指定）">＋ 新規作成</button>
         <button type="button" class="tb-btn" id="save-btn" aria-label="開いたMarkdownファイルへ上書き保存" title="元のファイルへ上書き保存（Chrome系のみ）" hidden>💾 保存</button>
         <button type="button" class="tb-btn" id="download-btn" aria-label="現在のMarkdownをダウンロード" title="ダウンロード" hidden>⬇ ダウンロード</button>
         <button type="button" class="tb-btn" id="copy-btn" aria-label="現在のMarkdownをクリップボードへコピー" title="クリップボードへコピー" hidden>📋 コピー</button>
@@ -118,16 +118,17 @@
       </div>
     </div>
 
-    <!-- 空状態（ドロップゾーン） -->
+    <!-- 空状態（起動CTA） -->
     <section id="empty-state" class="empty-state">
-      <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Markdownファイルをドラッグ&ドロップまたはクリックして選択">
-        <div class="dropzone-icon" aria-hidden="true">📋</div>
-        <p class="dropzone-main">Markdownファイル（.md）をドラッグ&ドロップ<br>または<strong>ここをクリックして選択</strong></p>
-        <p class="dropzone-sub">処理はすべてブラウザ内で完結します。ファイルは外部に送信されません。</p>
-        <div class="dropzone-actions">
-          <button type="button" class="btn" id="dropzone-open-btn">📂 ファイルを開く</button>
-          <button type="button" class="btn secondary" id="dropzone-sample-btn">✨ サンプルを表示</button>
+      <div class="empty-cta">
+        <div class="empty-cta-icon" aria-hidden="true">📋</div>
+        <p class="empty-cta-main">Markdownファイル（.md）からカンバンを表示</p>
+        <p class="empty-cta-sub">処理はすべてブラウザ内で完結します。ファイルは外部に送信されません。</p>
+        <div class="empty-cta-actions">
+          <button type="button" class="btn" id="empty-open-btn">📂 ファイルを開く</button>
+          <button type="button" class="btn secondary" id="empty-new-btn" aria-label="新規ボードを作成" title="新規ボードを作成（保存先を指定）">＋ 新規作成</button>
         </div>
+        <p id="empty-fsa-note" class="empty-cta-note" hidden>※「新規作成」は Chrome / Edge など File System Access API 対応ブラウザでのみ利用できます。</p>
       </div>
 
       <div class="onboarding-guide">
@@ -164,13 +165,13 @@
     <!-- SEOコンテンツ -->
     <section class="seo-content container">
       <h2>mdkanbanについて</h2>
-      <p>mdkanbanは、Markdownファイル（<code>.md</code>）をブラウザにドラッグ&ドロップするだけでカンバンボードとして表示し、カードのドラッグ&ドロップで列の並び替えや列間移動もそのまま行える無料ツールです。Obsidian Kanbanプラグインで作成したボードファイルをそのまま開け、見慣れた列ごとのレイアウトでタスクを俯瞰しながら状態を更新できます。</p>
+      <p>mdkanbanは、Markdownファイル（<code>.md</code>）をブラウザで開くだけでカンバンボードとして表示し、カードのドラッグ&ドロップで列の並び替えや列間移動もそのまま行える無料ツールです。Obsidian Kanbanプラグインで作成したボードファイルをそのまま開けるほか、「＋ 新規作成」から Todo / Doing / Done の3カラム入りボードを新しく作って保存先ファイルにそのまま書き出すこともできます（Chrome / Edge）。見慣れた列ごとのレイアウトでタスクを俯瞰しながら状態を更新できます。</p>
       <p>並び替えた結果は元のMarkdown構造を保ったまま、Chrome系ブラウザでは元ファイルへ直接保存（File System Access API）、その他のブラウザではダウンロードまたはクリップボードへのコピーで持ち出せます。すべての処理はお使いのブラウザ内で完結し、ファイルがサーバーに送信されることはありません。情報セキュリティに敏感な業務でのMarkdown閲覧・並び替えにもご利用いただけます。</p>
 
       <h3>使い方</h3>
       <ol class="howto-steps">
         <li>このページを開く（インストール・登録は不要です）</li>
-        <li>Markdownファイル（<code>.md</code>）をページ内にドラッグ&ドロップする、または「ファイルを開く」ボタンから選択する</li>
+        <li>「📂 ファイルを開く」で既存の Markdown ファイル（<code>.md</code>）を選択する、または「＋ 新規作成」（Chrome / Edge 限定）で保存先ファイルを指定して新しいボードを作成する</li>
         <li>自動でカンバンボードとして表示されます（<code>##</code> 見出しが列、<code>-</code> 箇条書きがカードに変換されます）</li>
         <li>カードをドラッグして別の列にドロップ、または同じ列内で上下に並び替えできます。カード上の<strong>鉛筆アイコン</strong>でタイトルをインライン編集、<strong>ゴミ箱アイコン</strong>で削除、各列下部の<strong>「+ カード追加」</strong>で新規作成できます。詳細モーダルでは本文（Markdown）とサブタスクをまとめて編集できます</li>
         <li>カードを行（プロジェクト別・担当者別など）でもグループ化したい場合は、frontmatter に <code>lanes:</code> キー（YAML 配列）でレーン名を宣言してから、カード文字列に <code>#lane/&lt;名前&gt;</code> を追記します（例：frontmatter に <code>lanes: [バックエンド, フロントエンド]</code>、カードに <code>- [ ] API設計 #lane/バックエンド</code>）。スイムレーン表示に切り替わり、レーンの追加・削除・並び替え・名前変更はレーンヘッダから直接操作でき、その結果は <code>lanes:</code> へ自動的に書き戻されます</li>
@@ -341,7 +342,7 @@
     "@type": "WebApplication",
     "name": "mdkanban",
     "url": "https://kiricab.github.io/mdkanban/",
-    "description": "Obsidian Kanban互換のMarkdownファイルをドラッグ&ドロップするだけでカンバンボード表示。カードのドラッグ&ドロップで列の並び替えや列間移動、Markdownへの書き戻し（Chrome系の元ファイル上書き／ダウンロード／クリップボードコピー）にも対応。ログイン不要・インストール不要・サーバー送信なしのブラウザ完結ツール。",
+    "description": "Obsidian Kanban互換のMarkdownファイルを開くだけでカンバンボード表示。新規作成、カードのドラッグ&ドロップによる列の並び替えや列間移動、Markdownへの書き戻し（Chrome系の元ファイル上書き／ダウンロード／クリップボードコピー）にも対応。ログイン不要・インストール不要・サーバー送信なしのブラウザ完結ツール。",
     "applicationCategory": "UtilitiesApplication",
     "operatingSystem": "Any",
     "inLanguage": "ja",
@@ -397,7 +398,7 @@
     "totalTime": "PT1M",
     "step": [
       { "@type": "HowToStep", "position": 1, "name": "ページを開く", "text": "mdkanbanのページを開きます。インストールやアカウント登録は不要です。" },
-      { "@type": "HowToStep", "position": 2, "name": "ファイルを読み込む", "text": "Markdownファイル（.md）をページ内にドラッグ&ドロップする、または「ファイルを開く」ボタンから選択します。" },
+      { "@type": "HowToStep", "position": 2, "name": "ファイルを読み込む／新規作成する", "text": "「ファイルを開く」ボタンで既存の Markdown ファイル（.md）を選択するか、「＋ 新規作成」ボタンで保存先を指定して新しいボードを作成します（新規作成は Chrome / Edge など File System Access API 対応ブラウザのみ）。" },
       { "@type": "HowToStep", "position": 3, "name": "カンバン表示を確認する", "text": "自動でカンバンボードとして表示されます。## 見出しが列、- 箇条書きがカードに変換されます。" },
       { "@type": "HowToStep", "position": 4, "name": "カードを並び替える", "text": "カードをドラッグして別の列にドロップ、または同じ列内で上下に並び替えできます。フィルタ中も列移動は可能です。" },
       { "@type": "HowToStep", "position": 5, "name": "スイムレーンで行グルーピングする", "text": "frontmatter に lanes: キー（YAML 配列）でレーン名を宣言し、カード文字列に #lane/<名前> を追記します（例：frontmatter に lanes: [バックエンド, フロントエンド]、カードに - [ ] API設計 #lane/バックエンド）。スイムレーン表示に切り替わり、レーンヘッダから追加・削除・並び替え・名前変更ができ、結果は lanes: 配列へ自動的に書き戻されます。" },
