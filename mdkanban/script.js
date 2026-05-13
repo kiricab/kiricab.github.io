@@ -672,10 +672,11 @@
     }
 
     // 厳密モード（スイムレーン）:
-    //   - frontmatter に `lanes:` キーが**有る**場合のみスイムレーンモード。
-    //   - lanes: の出現順がそのままレーン表示順。末尾に「未分類」レーン（name=''）を1つ固定で持つ。
-    //   - 未列挙 lane 名は「未分類」へ寄せる（card.lane を '' に正規化）。
-    //   - frontmatter に `lanes:` キーが**無い**場合は通常モード。buildCard が #lane/X を通常タグ扱いする。
+    //   - frontmatter に `lanes:` キーが**有る**場合: lanes: の出現順がそのままレーン表示順。
+    //     末尾に「未分類」レーン（name=''）を1つ固定で持つ。未列挙 lane 名は「未分類」へ寄せる。
+    //   - frontmatter に `lanes:` キーが**無い**場合: 「未分類」レーン1本だけのスイムレーン表示にする
+    //     （`#lane/X` は通常タグ扱いのまま。card.lane は '' で揃っている）。`hasLanesKey` 自体は false の
+    //     ままなので、保存時に lanes: は書き戻されない。常にスイムレーン UI を出すための表示専用の扱い。
     if (result.hasLanesKey) {
       const lanesList = (result.lanesWhitelist || []).map((name, i) => ({ id: `lane-${i}`, name }));
       lanesList.push({ id: 'lane-default', name: '' });
@@ -686,11 +687,10 @@
           c.lane = '';
         }
       }));
-      result.useSwimlanes = true;
     } else {
-      result.lanes = [];
-      result.useSwimlanes = false;
+      result.lanes = [{ id: 'lane-default', name: '' }];
     }
+    result.useSwimlanes = true;
 
     // F2-A-6: 現在の columns に存在しないカラム名は黙って除去（孤児エントリの自動掃除）
     if (result.autoCheckColumns && result.autoCheckColumns.length > 0) {
@@ -795,11 +795,12 @@
         else if (card.checked === false) prefix = '- [ ] ';
         else prefix = '- ';
         // titleはタグ・期限のメタ表記を含む原文を保持している。
-        // - スイムレーンモード: `#lane/X` は DnD で書き換わるので既存の `#lane/...` を全削除し、
+        // - lanes: 宣言ファイル: `#lane/X` は DnD で書き換わるので既存の `#lane/...` を全削除し、
         //   card.lane が lanes: ホワイトリストに在れば末尾に付け直す。「未分類」（lane=''）の場合は付けない。
-        // - 通常モード: `#lane/X` は通常タグとして card.title に含まれているのでそのまま貼り戻す。
+        // - lanes: 宣言が無いファイル: `#lane/X` は通常タグとして card.title に含まれているのでそのまま貼り戻す
+        //   （表示はスイムレーンでも保存は従来通り、Obsidian 互換を保つため）。
         let serializedTitle = card.title;
-        if (board.useSwimlanes) {
+        if (board.hasLanesKey) {
           const laneStripRe = new RegExp(`(?:^|\\s)#lane\\/[${LANE_NAME_CHARS}]+(?:\\/[${LANE_NAME_CHARS}]+)*`, 'g');
           serializedTitle = serializedTitle.replace(laneStripRe, ' ').replace(/\s+/g, ' ').trim();
           if (card.lane) {
@@ -1151,7 +1152,10 @@
     realLanes.forEach((lane, laneIdx) => {
       els.kanbanBoard.appendChild(renderSwimlaneRow(board, lane, laneIdx, realLanes.length));
     });
-    if (defaultLane && defaultLaneCardCount > 0) {
+    // 「未分類」レーンは:
+    //   - lanes: 宣言ファイル: 該当カードがある場合のみ表示
+    //   - lanes: 宣言が無いファイル: 唯一のレーンなので常に表示（カード0件でも）
+    if (defaultLane && (defaultLaneCardCount > 0 || !board.hasLanesKey)) {
       els.kanbanBoard.appendChild(renderSwimlaneRow(board, defaultLane, realLanes.length, realLanes.length));
     }
 
@@ -1693,13 +1697,14 @@
     }));
     board.lanes.splice(idx, 1);
 
-    // realLanes が0件になったら lanes: キーごと削除して従来モードへ戻す
+    // realLanes が0件になったら lanes: キーをファイルから外す（保存時に書き戻されなくなる）。
+    // ただし表示上は常にスイムレーン（「未分類」レーン1本のみ）を維持するため、
+    // board.lanes は default レーンを残し、useSwimlanes は true のままにする。
     const remainingReal = board.lanes.filter(l => l.name !== '');
     if (remainingReal.length === 0) {
       board.hasLanesKey = false;
-      board.lanes = [];
-      board.useSwimlanes = false;
-      // すべてのカードを通常モードに正規化（lane='' 維持）。
+      board.lanes = [{ id: 'lane-default', name: '' }];
+      // すべてのカードを通常モード相当に正規化（lane='' 維持）。
       // タグ抽出は通常モードロジックで再計算する必要があるため、card.title から再パースし直す。
       board.columns.forEach(col => col.cards.forEach(c => {
         const meta = reparseTitleMeta(c.title, false);
