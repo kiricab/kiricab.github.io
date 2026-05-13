@@ -3112,6 +3112,7 @@
   /**
    * 新規ボードを作成する。FSA の showSaveFilePicker で保存先ファイルを必ず指定させ、
    * デフォルトカラム（Todo / Doing / Done）入りのテンプレートを書き込んでから開く。
+   * Done カラムは自動チェック ON をデフォルトとする（auto-check-columns に含める）。
    * FSA 未対応ブラウザではボタンが無効化されているため通常呼ばれないが、念のためガードする。
    */
   async function createNewBoardFlow() {
@@ -3133,7 +3134,7 @@
 
     const rawName = handle.name || 'kanban.md';
     const baseTitle = rawName.replace(/\.(md|markdown)$/i, '') || '新規ボード';
-    const template = `# ${baseTitle}\n\n## Todo\n\n## Doing\n\n## Done\n`;
+    const template = `---\nauto-check-columns:\n  - Done\n---\n\n# ${baseTitle}\n\n## Todo\n\n## Doing\n\n## Done\n`;
 
     loadMarkdown(template, rawName, { fileHandle: handle });
     updateSaveControlsVisibility();
