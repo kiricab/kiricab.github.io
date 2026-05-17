@@ -1084,50 +1084,9 @@
     titleEl.textContent = card.displayTitle || card.title;
     cardEl.appendChild(titleEl);
 
-    // 編集・削除アクション（hover/focusで可視化、タッチデバイスでは常時表示）
-    const actionsEl = document.createElement('div');
-    actionsEl.className = 'card-actions';
-    // 編集ボタン
-    const editBtn = document.createElement('button');
-    editBtn.type = 'button';
-    editBtn.className = 'card-action-btn is-edit';
-    editBtn.setAttribute('aria-label', `カード「${card.displayTitle || card.title || '無題'}」を編集`);
-    editBtn.title = '編集';
-    editBtn.textContent = '✏️';
-    editBtn.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      ev.preventDefault();
-      startInlineEdit(card.id, false);
-    });
-    editBtn.addEventListener('keydown', (ev) => {
-      if (ev.key === 'Enter' || ev.key === ' ') {
-        ev.preventDefault();
-        ev.stopPropagation();
-        startInlineEdit(card.id, false);
-      }
-    });
-    // 削除ボタン
-    const delBtn = document.createElement('button');
-    delBtn.type = 'button';
-    delBtn.className = 'card-action-btn is-delete';
-    delBtn.setAttribute('aria-label', `カード「${card.displayTitle || card.title || '無題'}」を削除`);
-    delBtn.title = '削除';
-    delBtn.textContent = '🗑';
-    delBtn.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      ev.preventDefault();
-      requestDeleteCard(card.id);
-    });
-    delBtn.addEventListener('keydown', (ev) => {
-      if (ev.key === 'Enter' || ev.key === ' ') {
-        ev.preventDefault();
-        ev.stopPropagation();
-        requestDeleteCard(card.id);
-      }
-    });
-    actionsEl.appendChild(editBtn);
-    actionsEl.appendChild(delBtn);
-    cardEl.appendChild(actionsEl);
+    // 編集・削除はカードクリック→モーダルに集約（カード上の per-card アクションは廃止）。
+    // 理由: タイトルのみ編集できる ✏️ と業界慣習（Trello/Linear 等）の不整合・タッチでの誤タップ・
+    // 視覚ノイズを解消するため。全項目の編集と削除はモーダル内のボタンから行う。
 
     if (card.bodyParts.length > 0) {
       const previewEl = document.createElement('p');
