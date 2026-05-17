@@ -1218,20 +1218,18 @@
     headerRow.appendChild(renderAddColumnControl());
     els.kanbanBoard.appendChild(headerRow);
 
-    // 各 lane の行を描画。「未分類」レーンは該当カード0件なら省略。
+    // 各 lane の行を描画。未分類レーンは末尾に常時表示する（lanes: 宣言の有無・カード件数に関わらず）。
+    // 理由:
+    //   - lane タグ無しカードの新規追加 / 既存カードを lane 無しへ戻す DnD の受け皿として常に必要
+    //   - 最後の1枚を他レーンへ動かした瞬間に行ごと消える/復活するレイアウトシフトを回避
+    //   - 空で邪魔な場合は既存のレーン折りたたみ機能（collapsedLanes）で畳んで永続化できる
     const realLanes = board.lanes.filter(l => l.name !== '');
     const defaultLane = board.lanes.find(l => l.name === '');
-    const defaultLaneCardCount = defaultLane
-      ? board.columns.reduce((s, col) => s + col.cards.filter(c => c.lane === '' && matchesFilter(c)).length, 0)
-      : 0;
 
     realLanes.forEach((lane, laneIdx) => {
       els.kanbanBoard.appendChild(renderSwimlaneRow(board, lane, laneIdx, realLanes.length));
     });
-    // 「未分類」レーンは:
-    //   - lanes: 宣言ファイル: 該当カードがある場合のみ表示
-    //   - lanes: 宣言が無いファイル: 唯一のレーンなので常に表示（カード0件でも）
-    if (defaultLane && (defaultLaneCardCount > 0 || !board.hasLanesKey)) {
+    if (defaultLane) {
       els.kanbanBoard.appendChild(renderSwimlaneRow(board, defaultLane, realLanes.length, realLanes.length));
     }
 
