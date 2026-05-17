@@ -2983,10 +2983,11 @@
     reserializeAndPersist();
     markDirty();
     renderBoard();
-    // 閲覧モードに戻して、変更後の card を描画し直す
-    state.currentModalCard = loc.card;
-    setModalEditMode(false);
-    renderModalView(loc.card);
+    // 保存はそのモーダル編集セッションの terminal action。閲覧モーダルへ留まらずに
+    // ボードへ戻す（インライン編集確定の挙動と一貫させる）。
+    //   - state.editing は既に null にしてあるので closeCardModal の「未保存破棄」分岐には入らない
+    //   - state.lastFocusBeforeModal によりフォーカスは編集元（カード or 追加ボタン）に戻る
+    closeCardModal();
     triggerAutoSave();
   }
 
