@@ -210,6 +210,12 @@ body:not(.has-board) .file-status-capsule {
   flex-direction: column;
 }
 
+/* 集中モード（ボード表示中）は共通CSSの main { padding-top: 2rem } を打ち消す。
+   空状態（ヒーロー風）では 2rem の上余白を残したいので body.has-board の時だけ縮める。 */
+body.has-board .kanban-main {
+  padding-top: 0;
+}
+
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -396,9 +402,9 @@ body[data-theme="dark"] .restore-banner {
 .board-title-row {
   max-width: 1400px;
   margin: 0 auto;
-  /* 上余白は最小限。48px のコンパクトヘッダ直下にあるため、追加で 1rem 取ると
-     ボード上部の縦領域が無駄になる。4px のブリージングだけ確保する。 */
-  padding: 0.25rem 1.5rem 0.5rem;
+  /* タイトルが行内で対称に配置されるよう上下 padding を等しくする。
+     48px のコンパクトヘッダ直下なので追加余白は最小限（0.5rem）。 */
+  padding: 0.5rem 1.5rem;
   width: 100%;
   display: flex;
   align-items: baseline;
@@ -428,7 +434,9 @@ body[data-theme="dark"] .restore-banner {
 .kanban-board {
   display: flex;
   gap: 1rem;
-  padding: 1rem 1.5rem 2rem;
+  /* 上 padding は board-title-row の bottom padding(0.5rem) で十分。重ねて 1rem 取ると
+     タイトル下の余白が上余白の2倍超になり視覚的に非対称に見えるため 0 にする。 */
+  padding: 0 1.5rem 2rem;
   overflow-x: auto;
   align-items: flex-start;
   -webkit-overflow-scrolling: touch;
