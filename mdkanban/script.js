@@ -4395,6 +4395,35 @@
       if (input) input.focus();
     });
 
+    // 編集フォームの implicit form submission を抑止する。
+    // タイトル <input type="text"> がフォーム内に1つあるため、Enter で既定の form submit が走り、
+    // モーダル状態を破棄したままページが遷移してしまうのを防ぐ（保険）。
+    if (els.cardModalEditForm) {
+      els.cardModalEditForm.addEventListener('submit', (ev) => ev.preventDefault());
+      // Cmd/Ctrl + Enter はどのフィールドからでも保存（Slack / GitHub Issue 慣習）。
+      // IME 変換中の Enter は二段ガード（isComposing / keyCode 229）で除外する。
+      els.cardModalEditForm.addEventListener('keydown', (ev) => {
+        if (ev.key !== 'Enter') return;
+        if (ev.isComposing || ev.keyCode === 229) return;
+        if (!(ev.metaKey || ev.ctrlKey)) return;
+        ev.preventDefault();
+        commitModalEditMode();
+      });
+    }
+
+    // タイトル欄: Enter で保存して閉じる（インラインタイトル編集と同じ慣習）。
+    // タイトルは1行のみで、本文は別 textarea のため Enter を保存に割り当てる。
+    if (els.cmeTitle) {
+      els.cmeTitle.addEventListener('keydown', (ev) => {
+        if (ev.key !== 'Enter') return;
+        if (ev.isComposing || ev.keyCode === 229) return;
+        // Cmd/Ctrl 修飾は上のフォームレベルハンドラに任せる（二重発火回避）
+        if (ev.metaKey || ev.ctrlKey) return;
+        ev.preventDefault();
+        commitModalEditMode();
+      });
+    }
+
     // モーダル削除ボタン（閲覧モード時のみ可視）
     if (els.cardModalDeleteBtn) {
       els.cardModalDeleteBtn.addEventListener('click', () => {
