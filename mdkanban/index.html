@@ -44,42 +44,85 @@
 </head>
 <body data-theme="light">
 
-  <header class="kanban-header">
-    <div class="kanban-header-inner">
-      <div class="kanban-title-wrap">
+  <!-- 集中モード対応ヘッダ:
+       - 空状態（body:not(.has-board)）: 他ツールと揃った中央ヒーロー（h1=2rem, tagline 表示）
+       - ボード表示中（body.has-board）: 高さ約48pxのコンパクト統合バー（h1 を小さく左寄せ、
+         ファイル名チップとコマンドボタン群を1段に集約）。約100px の縦領域節約。
+       両モードで <h1> は DOM に残しブランド/SEO/見出し階層を維持する。 -->
+  <header class="kanban-app-header">
+    <div class="kanban-app-header-inner">
+      <div class="kanban-brand">
         <h1>📋 mdkanban</h1>
         <p class="kanban-tagline">Markdownを開くだけでカンバン表示。ログイン不要・全部ローカル。</p>
       </div>
       <div class="kanban-toolbar" role="toolbar" aria-label="ツールバー">
-        <span id="file-name-display" class="file-name-display" aria-live="polite"></span>
-        <span id="dirty-marker" class="dirty-marker" hidden aria-label="未保存の変更あり" title="未保存の変更があります">●</span>
-        <span id="save-status" class="save-status" hidden aria-live="polite"></span>
-        <button type="button" class="tb-btn" id="open-file-btn" aria-label="Markdownファイルを開く">📂 ファイルを開く</button>
-        <button type="button" class="tb-btn" id="new-board-btn" aria-label="新規ボードを作成" title="新規ボードを作成（保存先を指定）">＋ 新規作成</button>
-        <button type="button" class="tb-btn" id="save-btn" aria-label="開いたMarkdownファイルへ上書き保存" title="元のファイルへ上書き保存（Chrome系のみ）" hidden>💾 保存</button>
-        <button type="button" class="tb-btn" id="download-btn" aria-label="現在のMarkdownをダウンロード" title="ダウンロード" hidden>⬇ ダウンロード</button>
-        <button type="button" class="tb-btn" id="copy-btn" aria-label="現在のMarkdownをクリップボードへコピー" title="クリップボードへコピー" hidden>📋 コピー</button>
-        <button type="button" class="tb-btn icon-btn" id="theme-toggle" aria-label="テーマ切替（ライト/ダーク）" title="テーマ切替">🌙</button>
-        <button type="button" class="tb-btn icon-btn" id="density-toggle" aria-label="表示密度切替（コンパクト/詳細）" title="表示密度切替">▦</button>
-        <!-- F13: 完了済みカード表示設定（既定で 7 日経過した checked カードを自動非表示） -->
-        <div class="hide-checked-wrap">
-          <button type="button" class="tb-btn icon-btn" id="hide-checked-toggle"
-                  aria-label="完了済みカードの表示設定" aria-haspopup="dialog" aria-expanded="false"
-                  title="完了済みカードの表示設定">👁</button>
-          <div id="hide-checked-popover" class="hide-checked-popover" role="dialog"
-               aria-label="完了済みカードの表示設定" hidden>
-            <h3 class="hide-checked-popover-title">完了済みカードの自動非表示</h3>
-            <p class="hide-checked-popover-desc">チェックして指定日数が経過したカードを自動で隠します。</p>
-            <label class="hide-checked-field">
-              <span>日数</span>
-              <input type="number" id="hc-days-input" min="0" max="365" step="1" inputmode="numeric">
-              <span class="hide-checked-field-unit">日（0 で常に表示）</span>
-            </label>
-            <label class="hide-checked-field is-toggle">
-              <input type="checkbox" id="hc-reveal-all">
-              <span>今だけ全て表示</span>
-            </label>
-            <p class="hide-checked-popover-hint">※「今だけ全て表示」はリロードでリセットされます。</p>
+        <!-- ファイル状態カプセル: ファイル名のみを内包。save-status と dirty-marker は
+             どちらも capsule 左外側に absolute 配置され、優先順位（error>saving>saved>dirty）
+             で排他的に1つだけ表示される。同じスロットを共有することで意味の重複と視覚ノイズを避ける。
+             狭幅では static フローに戻し idle/clean で display:none。 -->
+        <div class="file-status-capsule" aria-live="polite">
+          <span id="save-status" class="save-status" data-status="idle" aria-hidden="true"></span>
+          <span id="dirty-marker" class="dirty-marker" data-hidden="true" aria-hidden="true" title="未保存の変更があります"><span class="dirty-dot" aria-hidden="true">●</span> 未保存</span>
+          <span id="file-name-display" class="file-name-display"></span>
+        </div>
+        <!-- 非FSA環境用 トップレベル DL/Copy: auto-save が無いブラウザでは
+             ⬇/📋 が唯一の保存手段なので moment-to-moment primary としてヘッダに常時露出。
+             FSA 対応環境ではメニュー内のみに格納し、ヘッダはすっきりさせる。 -->
+        <button type="button" class="tb-btn" id="toolbar-download-btn"
+                aria-label="現在のMarkdownをダウンロード" title="ダウンロード" hidden>⬇ ダウンロード</button>
+        <button type="button" class="tb-btn" id="toolbar-copy-btn"
+                aria-label="現在のMarkdownをクリップボードへコピー" title="クリップボードへコピー" hidden>📋 コピー</button>
+
+        <!-- オーバーフローメニュー: 主要でないアクションを集約。
+             ファイル系 (📂/+/💾/⬇/📋) と表示設定系 (🌙/▦/👁) を区切り線で 2 グループに分ける。
+             ⋮ アイコンは「このコンテキストのアクション」の意で kebab を採用。 -->
+        <div class="overflow-menu-wrap">
+          <button type="button" class="tb-btn icon-btn" id="overflow-menu-toggle"
+                  aria-label="メニュー" aria-haspopup="menu" aria-expanded="false"
+                  aria-controls="overflow-menu" title="メニュー">⋮</button>
+          <div id="overflow-menu" class="overflow-menu" role="menu"
+               aria-labelledby="overflow-menu-toggle" hidden>
+            <div class="overflow-menu-group" role="group" aria-label="ファイル">
+              <button type="button" class="overflow-menu-item" role="menuitem"
+                      id="open-file-btn" aria-label="Markdownファイルを開く">📂 ファイルを開く</button>
+              <button type="button" class="overflow-menu-item" role="menuitem"
+                      id="new-board-btn" aria-label="新規ボードを作成">＋ 新規作成</button>
+              <button type="button" class="overflow-menu-item" role="menuitem"
+                      id="save-btn" aria-label="開いたMarkdownファイルへ上書き保存" hidden>💾 今すぐ保存</button>
+              <button type="button" class="overflow-menu-item" role="menuitem"
+                      id="download-btn" aria-label="現在のMarkdownをダウンロード" hidden>⬇ ダウンロード</button>
+              <button type="button" class="overflow-menu-item" role="menuitem"
+                      id="copy-btn" aria-label="現在のMarkdownをクリップボードへコピー" hidden>📋 クリップボードへコピー</button>
+            </div>
+            <hr class="overflow-menu-divider" aria-hidden="true">
+            <div class="overflow-menu-group" role="group" aria-label="表示設定">
+              <button type="button" class="overflow-menu-item" role="menuitem"
+                      id="theme-toggle" aria-label="テーマ切替（ライト/ダーク）">🌙 テーマ切替（ライト/ダーク）</button>
+              <button type="button" class="overflow-menu-item" role="menuitem"
+                      id="density-toggle" aria-label="表示密度切替（コンパクト/詳細）">▦ 表示密度切替</button>
+              <!-- F13: 完了済みカード表示設定（既定で 7 日経過した checked カードを自動非表示） -->
+              <div class="hide-checked-wrap">
+                <button type="button" class="overflow-menu-item" role="menuitem"
+                        id="hide-checked-toggle"
+                        aria-label="完了済みカードの表示設定" aria-haspopup="dialog" aria-expanded="false"
+                        title="完了済みカードの表示設定">👁 完了済みカード設定</button>
+                <div id="hide-checked-popover" class="hide-checked-popover" role="dialog"
+                     aria-label="完了済みカードの表示設定" hidden>
+                  <h3 class="hide-checked-popover-title">完了済みカードの自動非表示</h3>
+                  <p class="hide-checked-popover-desc">チェックして指定日数が経過したカードを自動で隠します。</p>
+                  <label class="hide-checked-field">
+                    <span>日数</span>
+                    <input type="number" id="hc-days-input" min="0" max="365" step="1" inputmode="numeric">
+                    <span class="hide-checked-field-unit">日（0 で常に表示）</span>
+                  </label>
+                  <label class="hide-checked-field is-toggle">
+                    <input type="checkbox" id="hc-reveal-all">
+                    <span>今だけ全て表示</span>
+                  </label>
+                  <p class="hide-checked-popover-hint">※「今だけ全て表示」はリロードでリセットされます。</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <input type="file" id="file-input" accept=".md,.markdown,text/markdown" hidden>
@@ -162,8 +205,11 @@
       <div id="kanban-board" class="kanban-board" role="list" aria-label="カンバンボード"></div>
     </section>
 
-    <!-- SEOコンテンツ -->
-    <section class="seo-content container">
+    <!-- 集中モード: ボード読込時はデフォルトで折り畳む。空状態時は open。
+         Google は <details> 内テキストを通常通りインデックスする（公式回答済み）。 -->
+    <details class="seo-content-details container" open>
+      <summary class="seo-content-summary">📖 mdkanbanについて・使い方・FAQ</summary>
+    <section class="seo-content">
       <h2>mdkanbanについて</h2>
       <p>mdkanbanは、Markdownファイル（<code>.md</code>）をブラウザで開くだけでカンバンボードとして表示し、カードのドラッグ&ドロップで列の並び替えや列間移動もそのまま行える無料ツールです。Obsidian Kanbanプラグインで作成したボードファイルをそのまま開けるほか、「＋ 新規作成」から Todo / Doing / Done の3カラム入りボードを新しく作って保存先ファイルにそのまま書き出すこともできます（Chrome / Edge）。見慣れた列ごとのレイアウトでタスクを俯瞰しながら状態を更新できます。</p>
       <p>並び替えた結果は元のMarkdown構造を保ったまま、Chrome系ブラウザでは元ファイルへ直接保存（File System Access API）、その他のブラウザではダウンロードまたはクリップボードへのコピーで持ち出せます。すべての処理はお使いのブラウザ内で完結し、ファイルがサーバーに送信されることはありません。情報セキュリティに敏感な業務でのMarkdown閲覧・並び替えにもご利用いただけます。</p>
@@ -252,6 +298,7 @@
         </details>
       </div>
     </section>
+    </details>
 
   </main>
 

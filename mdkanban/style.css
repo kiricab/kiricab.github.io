@@ -55,33 +55,79 @@ body {
   flex-direction: column;
 }
 
-/* ===== ヘッダー ===== */
-.kanban-header {
-  background-color: var(--primary-color);
-  color: var(--text-color-light);
-  padding: 1rem 1.5rem;
-  border-bottom: 3px solid var(--primary-color-dark);
+/* ===== 集中モード対応ヘッダ =====
+   空状態（body:not(.has-board)）: 他ツール共通の中央寄せヒーロー風（h1=2rem, tagline 表示）。
+   ボード表示中（body.has-board）: 高さ約48pxのコンパクト統合バー。h1 を小さく左寄せ、
+   tagline 非表示、ツールバーを同一行に集約してカンバン領域を最大化する。
+   <h1> は常に DOM に残し、ブランド・SEO・見出し階層を維持する。 */
+
+/* 空状態時の見た目は common/style.css の `header { ... }` をベースに、
+   `.kanban-app-header-inner` で 900px 中央寄せ＋tagline 表示を行う。 */
+.kanban-app-header {
+  /* 背景色・色・border-bottom 等は common/style.css の header に依存。
+     必要な分だけここで上書きする。 */
 }
 
-.kanban-header-inner {
-  max-width: 1400px;
+.kanban-app-header-inner {
+  max-width: 900px;
   margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
+  padding: 1rem 2rem;
+  text-align: center;
 }
 
-.kanban-title-wrap h1 {
+.kanban-brand {
+  /* 空状態時は中央寄せ */
+}
+
+.kanban-app-header h1 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 2rem;
 }
 
 .kanban-tagline {
   margin: 0.25rem 0 0;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* 空状態時はヘッダ内ツールバーは非表示（起動CTA側に同等ボタンがある） */
+body:not(.has-board) .kanban-toolbar {
+  display: none;
+}
+
+/* ===== ボード表示中: コンパクト統合バー ===== */
+body.has-board .kanban-app-header {
+  /* common header の padding 1.5rem 0 / text-align: center を上書き */
+  padding: 0;
+  text-align: left;
+  /* border-bottom はそのまま使う（共通スタイル） */
+}
+
+body.has-board .kanban-app-header-inner {
+  max-width: 1400px;
+  padding: 0.4rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  text-align: left;
+}
+
+body.has-board .kanban-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+}
+
+body.has-board .kanban-app-header h1 {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+body.has-board .kanban-tagline {
+  /* コンパクトバーではタグライン非表示 */
+  display: none;
 }
 
 .kanban-toolbar {
@@ -91,16 +137,40 @@ body {
   flex-wrap: wrap;
 }
 
+/* ボード表示中はツールバーを右寄せに（ブランド左／ツールバー右） */
+body.has-board .kanban-toolbar {
+  flex: 1 1 auto;
+  justify-content: flex-end;
+}
+
+/* ファイル状態カプセル: ファイル名 + dirty を内包する。save-status は capsule の子だが
+   CSS で position: absolute にしてフレックスフローから外し、capsule の左外側に浮かべる。
+   これによりカプセル本体は常にファイル名分の幅だけを占め、状態遷移時もカプセル/ボタンの
+   位置はまったく動かない（ui-ux-pro-max §7 layout-shift-avoid）。 */
+.file-status-capsule {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 0.25rem 0.6rem;
+  max-width: 360px;
+}
+
+/* ファイル未読込時はカプセル自体を非表示 */
+body:not(.has-board) .file-status-capsule {
+  display: none;
+}
+
 .file-name-display {
   color: rgba(255, 255, 255, 0.95);
   font-size: 0.9rem;
-  background: rgba(255, 255, 255, 0.12);
-  padding: 0.25rem 0.6rem;
-  border-radius: 6px;
-  max-width: 240px;
+  max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 0 1 auto;
 }
 
 .file-name-display:empty {
@@ -1032,48 +1102,98 @@ body[data-theme="dark"] .kanban-column-cards.is-drop-target {
   opacity: 1;
 }
 
-/* 未保存マーカー */
+/* 未保存マーカー（"● 未保存" ピル）: save-status と同じ absolute スロットに浮かぶ。
+   優先順位（error/saving/saved > dirty）で排他的に表示されるため、両方が同時に
+   見えることは無い。スタイルは save-status と統一感を持たせる。 */
 .dirty-marker {
-  color: #ff9800;
-  font-size: 1.2rem;
-  line-height: 1;
-  align-self: center;
-  user-select: none;
-}
-
-body[data-theme="dark"] .dirty-marker {
-  color: #ffb74d;
-}
-
-/* ===== 自動保存ステータスインジケーター（ヘッダー右側） ===== */
-.save-status {
+  position: absolute;
+  right: calc(100% + 0.4rem);
+  top: 50%;
+  transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.2rem 0.55rem;
+  padding: 0.1rem 0.55rem;
   border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(255, 152, 0, 0.22);
+  color: var(--text-color-light);
+  border: 1px solid rgba(255, 183, 77, 0.55);
+  white-space: nowrap;
+  opacity: 1;
+  transition: opacity 200ms ease;
+  pointer-events: none; /* 装飾的表示なのでクリック透過 */
+}
+
+.dirty-marker[data-hidden="true"] {
+  opacity: 0;
+}
+
+.dirty-marker .dirty-dot {
+  color: #ff9800;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+body[data-theme="dark"] .dirty-marker .dirty-dot {
+  color: #ffb74d;
+}
+
+/* ===== 自動保存ステータスインジケーター（カプセル左外に absolute 配置） =====
+   right: calc(100% + 0.4rem) で capsule の左端から 0.4rem 離れた位置にステータスを浮かべる。
+   absolute なので flex フローに影響せず、状態遷移時にカプセルやボタンが動かない。
+   ブランドとカプセルの間の余白に自然に浮かぶ。 */
+.save-status {
+  position: absolute;
+  right: calc(100% + 0.4rem);
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
   font-weight: 600;
   background: rgba(255, 255, 255, 0.18);
   color: var(--text-color-light);
   border: 1px solid rgba(255, 255, 255, 0.28);
   white-space: nowrap;
-  transition: opacity 0.25s ease;
+  opacity: 1;
+  transition: opacity 200ms ease;
+  pointer-events: none; /* 装飾的表示なのでクリック透過 */
 }
 
-.save-status[hidden] { display: none; }
+.save-status[data-status="idle"] {
+  opacity: 0;
+  pointer-events: none;
+}
 
-.save-status.is-saving {
+.save-status[data-status="saving"] {
   background: rgba(255, 220, 130, 0.25);
   border-color: rgba(255, 220, 130, 0.45);
 }
 
-.save-status.is-saved {
+.save-status[data-status="saved"] {
   background: rgba(120, 220, 150, 0.25);
   border-color: rgba(120, 220, 150, 0.5);
 }
 
-.save-status.is-error {
+/* reduced-motion: フェードを無効化 */
+@media (prefers-reduced-motion: reduce) {
+  .dirty-marker,
+  .save-status {
+    transition: none;
+  }
+}
+
+/* dirty と save-status はカプセル左外の同一スロットに重なって absolute 配置される。
+   JS で優先順位（error/saving/saved > dirty）に従い片方だけを opacity:1 にする。
+   両方が同時に opacity:1 になることは無いため z-index 制御は不要。 */
+
+.save-status[data-status="error"] {
   background: rgba(255, 130, 130, 0.28);
   border-color: rgba(255, 130, 130, 0.55);
 }
@@ -2239,7 +2359,7 @@ body[data-theme="dark"] .swimlane-actions {
 
 /* ===== seo-content（共通スタイルを上書き調整） ===== */
 .seo-content {
-  margin: 1rem auto 2rem;
+  margin: 0;
 }
 
 .seo-content code {
@@ -2250,18 +2370,95 @@ body[data-theme="dark"] .swimlane-actions {
   font-family: SFMono-Regular, Menlo, Consolas, monospace;
 }
 
+/* ===== seo-content の集中モード折りたたみ ===== */
+/* SEO テキストは DOM に残しつつ、ボード表示時は既定で折り畳む。
+   Google は <details> 内テキストを通常通りインデックスする。 */
+.seo-content-details {
+  margin: 1rem auto 2rem;
+  background-color: var(--card-color);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--secondary-color);
+  box-shadow: var(--box-shadow);
+  padding: 0;
+  /* common style の .container は padding を持つが、ここでは summary/コンテンツ側で個別制御 */
+}
+
+.seo-content-summary {
+  cursor: pointer;
+  padding: 1rem 1.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--primary-color);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  user-select: none;
+  border-radius: var(--border-radius);
+}
+
+.seo-content-summary::-webkit-details-marker {
+  display: none;
+}
+
+.seo-content-summary::after {
+  content: "▼";
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--gray-text-color);
+  transition: transform 0.2s ease;
+}
+
+.seo-content-details[open] > .seo-content-summary::after {
+  transform: rotate(180deg);
+}
+
+.seo-content-summary:hover {
+  background-color: var(--background-color);
+}
+
+.seo-content-summary:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* 展開時は内側 section の padding で調整 */
+.seo-content-details[open] > .seo-content {
+  padding: 0 2rem 1.5rem;
+  border-top: 1px solid var(--secondary-color);
+}
+
 /* ===== レスポンシブ ===== */
 @media (max-width: 900px) {
-  .kanban-header-inner { flex-direction: column; align-items: flex-start; }
-  .kanban-toolbar { width: 100%; }
+  body.has-board .kanban-app-header-inner { flex-direction: column; align-items: stretch; }
+  body.has-board .kanban-toolbar { width: 100%; justify-content: flex-start; }
   .file-name-display { flex: 1 1 auto; max-width: none; }
   .board-title { font-size: 1.2rem; }
+
+  /* 狭幅ではヘッダ左に余白が無い（toolbar が独立行で左端から始まる）ので、
+     save-status / dirty-marker を absolute から通常フローに戻し、capsule の左隣に並べる。
+     非表示時は display:none で完全に消す（出現時の小さなシフトは許容）。 */
+  .save-status,
+  .dirty-marker {
+    position: static;
+    transform: none;
+    align-self: center;
+  }
+  .save-status[data-status="idle"],
+  .dirty-marker[data-hidden="true"] {
+    display: none;
+  }
+  /* オーバーフローメニューのトリガを行末（右端）に押し出して、
+     メニュードロップダウン（right:0 アンカー）が画面左にはみ出さないようにする。 */
+  .overflow-menu-wrap { margin-left: auto; }
+  /* メニュー本体はビューポート幅を超えないように制限 */
+  .overflow-menu {
+    max-width: calc(100vw - 1rem);
+  }
 }
 
 @media (max-width: 600px) {
-  .kanban-header { padding: 0.75rem 1rem; }
-  .kanban-title-wrap h1 { font-size: 1.25rem; }
-  .kanban-tagline { font-size: 0.78rem; }
+  body.has-board .kanban-app-header-inner { padding: 0.4rem 1rem; }
   .container { padding: 1rem; }
   .empty-state { padding: 1.5rem 1rem; }
   .empty-cta { padding: 2rem 1rem; }
@@ -2311,20 +2508,88 @@ body[data-theme="dark"] .swimlane-actions {
 
 /* ===== F13: チェック済みカードの自動非表示 UI ===== */
 
-/* ツールバーのアンカー要素。ポップオーバーを直下に絶対配置するための位置基準。 */
+/* オーバーフローメニュー内に配置されているアンカー要素。
+   メニュー項目として全幅表示するため display: block, ポップオーバーは右隣にスライド開閉。 */
 .hide-checked-wrap {
+  position: relative;
+  display: block;
+}
+
+/* ファイル未読込時はヘッダのオーバーフローメニュー・ツールバー昇格DL/Copy をまとめて隠す。
+   起動 CTA（空状態セクション）に同等の操作ボタンが用意されているためヘッダは何も要らない。 */
+body:not(.has-board) .overflow-menu-wrap,
+body:not(.has-board) #toolbar-download-btn,
+body:not(.has-board) #toolbar-copy-btn {
+  display: none !important;
+}
+
+/* ===== オーバーフローメニュー =====
+   ⋮ ボタンクリックで下にドロップダウン。明るい背景で背後のヘッダから視覚的に分離する。
+   ファイル系・表示設定の 2 グループを区切り線で分ける。 */
+.overflow-menu-wrap {
   position: relative;
   display: inline-flex;
 }
 
-/* ファイル未読込時はヘッダの「ファイルを開く・新規作成・テーマ・表示密度・完了非表示」ボタンを隠す。
-   起動 CTA（空状態セクション）に同等の操作ボタンが用意されているため、ヘッダは保存系のみで充分。 */
-body:not(.has-board) #open-file-btn,
-body:not(.has-board) #new-board-btn,
-body:not(.has-board) #theme-toggle,
-body:not(.has-board) #density-toggle,
-body:not(.has-board) .hide-checked-wrap {
-  display: none !important;
+.overflow-menu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  min-width: 240px;
+  max-width: 320px;
+  background-color: var(--card-color);
+  color: var(--text-color);
+  border: 1px solid var(--secondary-color);
+  border-radius: var(--border-radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  padding: 0.35rem 0;
+  z-index: 100;
+}
+
+.overflow-menu[hidden] { display: none; }
+
+.overflow-menu-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.overflow-menu-divider {
+  border: none;
+  border-top: 1px solid var(--secondary-color);
+  margin: 0.35rem 0;
+}
+
+.overflow-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  color: var(--text-color);
+  border: none;
+  padding: 0.55rem 1rem;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.overflow-menu-item:hover,
+.overflow-menu-item:focus-visible {
+  background-color: var(--background-color);
+  outline: none;
+}
+
+.overflow-menu-item:focus-visible {
+  box-shadow: inset 2px 0 0 var(--primary-color);
+}
+
+.overflow-menu-item[hidden] { display: none; }
+
+/* メニューが開いている時のトグルボタン視覚 */
+#overflow-menu-toggle[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.28);
 }
 
 /* カラム末尾の控えめなチップ。普段は低コントラスト、ホバー/フォーカスで前景化。 */
@@ -2376,12 +2641,13 @@ body:not(.has-board) .hide-checked-wrap {
   opacity: 0.85;
 }
 
-/* ポップオーバー本体 */
+/* ポップオーバー本体: オーバーフローメニュー右側からさらに左へ展開する形になるため、
+   ボタン直下ではなく右端の左外側にスライド表示する（menu の左端 - popover幅 - gap）。 */
 .hide-checked-popover {
   position: absolute;
-  top: calc(100% + 0.4rem);
-  right: 0;
-  z-index: 50;
+  top: 0;
+  right: calc(100% + 0.4rem);
+  z-index: 110;
   min-width: 260px;
   padding: 0.85rem 0.95rem;
   background: var(--card-color, #fff);

@@ -115,6 +115,12 @@
     newBoardBtn: $('new-board-btn'),
     themeToggle: $('theme-toggle'),
     densityToggle: $('density-toggle'),
+    // オーバーフローメニュー
+    overflowMenuToggle: $('overflow-menu-toggle'),
+    overflowMenu: $('overflow-menu'),
+    // 非FSA環境用 ツールバー昇格 DL/Copy
+    toolbarDownloadBtn: $('toolbar-download-btn'),
+    toolbarCopyBtn: $('toolbar-copy-btn'),
     // F13: 完了済みカード表示設定
     hideCheckedToggle: $('hide-checked-toggle'),
     hideCheckedPopover: $('hide-checked-popover'),
@@ -191,7 +197,8 @@
     autoSaveTimer: null,             // setTimeout のID（debounce）
     autoSaveStatus: 'idle',          // 'idle'|'saving'|'saved'|'error'
     autoSavePendingHide: null,       // 「✓ 保存済み」消去用 setTimeout
-    currentModalCard: null           // モーダルが開いているカードの参照
+    currentModalCard: null,          // モーダルが開いているカードの参照
+    seoAutoCollapsed: false          // 集中モード: SEO 詳細を初回ボード読込時に1度だけ自動で畳む
   };
 
   // カードIDのカウンター（パース毎にリセット）
@@ -3094,6 +3101,14 @@
     // ファイルが開かれている状態をbodyに反映し、ヘッダの非表示制御に使う
     document.body.classList.add('has-board');
 
+    // 集中モード: 初回ボード読込時に SEO 詳細セクションを畳む。
+    // ページセッション内で 1 度だけ自動操作し、以降のユーザー操作は尊重する。
+    if (!state.seoAutoCollapsed) {
+      const seoDetails = document.querySelector('.seo-content-details');
+      if (seoDetails) seoDetails.open = false;
+      state.seoAutoCollapsed = true;
+    }
+
     // 新規ロード時は dirty 状態と自動保存ステータスをリセット
     clearDirty();
     if (state.autoSaveTimer) {
@@ -3769,23 +3784,30 @@
     state.autoSaveStatus = status;
     const el = els.saveStatus;
     if (!el) return;
-    el.classList.remove('is-saving', 'is-saved', 'is-error');
-    if (status === 'saving') {
-      el.textContent = '💾 保存中…';
-      el.classList.add('is-saving');
-      el.hidden = false;
-    } else if (status === 'saved') {
-      el.textContent = '✓ 保存済み';
-      el.classList.add('is-saved');
-      el.hidden = false;
-    } else if (status === 'error') {
-      el.textContent = '⚠ 保存失敗';
-      el.classList.add('is-error');
-      el.hidden = false;
+    // data-status をスタイルキーに、opacity 切替でレイアウトシフトを起こさない。
+    // idle 時は aria-hidden を付けて SR から隠す。文字列は残しても opacity:0 で見えない。
+    const LABELS = { saving: '💾 保存中…', saved: '✓ 保存済み', error: '⚠ 保存失敗', idle: '' };
+    el.dataset.status = status;
+    el.textContent = LABELS[status] || '';
+    el.setAttribute('aria-hidden', status === 'idle' ? 'true' : 'false');
+    // dirty と save-status は同一スロットを共有。優先順位（error/saving/saved > dirty）で排他表示。
+    refreshFileSaveStateUI();
+  }
+
+  /** dirty と save-status は capsule 左外の同一スロットに重なって配置されているため、
+   *  片方だけを opacity:1 にして見せる。優先順位:
+   *    error / saving / saved（save-status が非idle）> dirty > なし。 */
+  function refreshFileSaveStateUI() {
+    if (!els.dirtyMarker) return;
+    const saveActive = state.autoSaveStatus && state.autoSaveStatus !== 'idle';
+    // save-status が表示される時は dirty を隠す。それ以外は state.dirty に従う。
+    const dirtyVisible = !saveActive && !!state.dirty;
+    els.dirtyMarker.dataset.hidden = dirtyVisible ? 'false' : 'true';
+    els.dirtyMarker.setAttribute('aria-hidden', dirtyVisible ? 'false' : 'true');
+    if (dirtyVisible) {
+      els.dirtyMarker.setAttribute('aria-label', '未保存の変更あり');
     } else {
-      // idle
-      el.textContent = '';
-      el.hidden = true;
+      els.dirtyMarker.removeAttribute('aria-label');
     }
   }
 
@@ -3803,24 +3825,36 @@
 
   // -------- 保存・書き戻し --------
 
+  // dirty-marker は常に DOM 上に残し data-hidden + aria-hidden で見た目だけ切替。
+  // hidden 属性（display:none）はカプセル内のレイアウトシフト原因になるため使わない。
+  // save-status と同一スロットを共有するため、表示判定は refreshFileSaveStateUI() に集約。
   function markDirty() {
     state.dirty = true;
-    if (els.dirtyMarker) els.dirtyMarker.hidden = false;
+    refreshFileSaveStateUI();
     updateSaveControlsVisibility();
   }
 
   function clearDirty() {
     state.dirty = false;
-    if (els.dirtyMarker) els.dirtyMarker.hidden = true;
+    refreshFileSaveStateUI();
   }
 
-  /** 保存系UI（保存・DL・コピー）の表示制御 */
+  /** 保存系UI（保存・DL・コピー）の表示制御。
+   *  - メニュー内 DL/Copy: hasBoard 時に表示（バックアップ手段）
+   *  - ツールバー昇格 DL/Copy: 非FSA環境かつ hasBoard の時のみヘッダに常時露出
+   *    （auto-save が無いので保存手段として moment-to-moment primary）
+   *  - 保存ボタン: FSAサポート＆ハンドル取得済みの時のみ（メニュー内、任意の手動保存）。 */
   function updateSaveControlsVisibility() {
     const hasBoard = !!state.board;
+    const hasFsa = 'showSaveFilePicker' in window;
+    // メニュー内 DL/Copy（バックアップ用、hasBoard なら常時利用可）
     if (els.downloadBtn) els.downloadBtn.hidden = !hasBoard;
     if (els.copyBtn) els.copyBtn.hidden = !hasBoard;
+    // 非FSA環境では DL/Copy をヘッダに昇格して常時表示
+    if (els.toolbarDownloadBtn) els.toolbarDownloadBtn.hidden = !(hasBoard && !hasFsa);
+    if (els.toolbarCopyBtn) els.toolbarCopyBtn.hidden = !(hasBoard && !hasFsa);
     // 保存ボタンは FSAサポート＆ハンドル取得済みのみ
-    const canSaveInPlace = hasBoard && ('showOpenFilePicker' in window) && !!state.fileHandle;
+    const canSaveInPlace = hasBoard && hasFsa && !!state.fileHandle;
     if (els.saveBtn) els.saveBtn.hidden = !canSaveInPlace;
   }
 
@@ -3946,16 +3980,21 @@
 
 
   // -------- テーマ・密度 --------
+  // メニュー項目はアイコン＋次に切替える先を示すラベル。クリックで実行された後はラベルが反転する。
   function applyTheme(theme) {
     els.body.setAttribute('data-theme', theme);
-    els.themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+    els.themeToggle.textContent = theme === 'dark'
+      ? '☀️ ライトモードに切替'
+      : '🌙 ダークモードに切替';
     els.themeToggle.setAttribute('aria-label', theme === 'dark' ? 'ライトテーマに切替' : 'ダークテーマに切替');
     try { localStorage.setItem(STORAGE_KEYS.theme, theme); } catch (e) { /* noop */ }
   }
 
   function applyDensity(density) {
     els.body.setAttribute('data-density', density);
-    els.densityToggle.textContent = density === 'compact' ? '▦' : '☰';
+    els.densityToggle.textContent = density === 'compact'
+      ? '▦ 詳細表示に切替'
+      : '☰ コンパクト表示に切替';
     els.densityToggle.setAttribute('aria-label', density === 'compact' ? '詳細表示に切替' : 'コンパクト表示に切替');
     els.densityToggle.title = density === 'compact' ? '詳細表示に切替' : 'コンパクト表示に切替';
     try { localStorage.setItem(STORAGE_KEYS.density, density); } catch (e) { /* noop */ }
@@ -4218,6 +4257,59 @@
     if (els.saveBtn) els.saveBtn.addEventListener('click', saveToFile);
     if (els.downloadBtn) els.downloadBtn.addEventListener('click', downloadMarkdown);
     if (els.copyBtn) els.copyBtn.addEventListener('click', copyMarkdown);
+
+    // ツールバー昇格 DL/Copy（非FSA環境）: 既存ハンドラに委譲
+    if (els.toolbarDownloadBtn) els.toolbarDownloadBtn.addEventListener('click', downloadMarkdown);
+    if (els.toolbarCopyBtn) els.toolbarCopyBtn.addEventListener('click', copyMarkdown);
+
+    // ===== オーバーフローメニュー =====
+    // ⋮ クリックでメニュー開閉。外側クリック・Escape でクローズ。
+    // メニュー項目クリックでメニュー自動クローズ（hide-checked-toggle はネストポップオーバーを持つので例外）。
+    if (els.overflowMenuToggle && els.overflowMenu) {
+      const openMenu = () => {
+        els.overflowMenu.hidden = false;
+        els.overflowMenuToggle.setAttribute('aria-expanded', 'true');
+      };
+      const closeMenu = () => {
+        els.overflowMenu.hidden = true;
+        els.overflowMenuToggle.setAttribute('aria-expanded', 'false');
+        // メニュー閉じる時はネストの hide-checked-popover も閉じる
+        if (state.hideCheckedPopoverOpen && typeof closeHideCheckedPopover === 'function') {
+          closeHideCheckedPopover();
+        }
+      };
+      els.overflowMenuToggle.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        if (els.overflowMenu.hidden) openMenu(); else closeMenu();
+      });
+      // 外側クリックで閉じる（hide-checked-popover の内側クリックは外側扱いしない）
+      document.addEventListener('click', (ev) => {
+        if (els.overflowMenu.hidden) return;
+        if (els.overflowMenu.contains(ev.target)) return;
+        if (els.overflowMenuToggle.contains(ev.target)) return;
+        closeMenu();
+      });
+      // Escape で閉じる
+      document.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Escape' && !els.overflowMenu.hidden) {
+          // ネストポップオーバーが開いている時は、そちらを先に閉じる
+          if (state.hideCheckedPopoverOpen && typeof closeHideCheckedPopover === 'function') {
+            closeHideCheckedPopover();
+            return;
+          }
+          closeMenu();
+          els.overflowMenuToggle.focus();
+        }
+      });
+      // メニュー項目クリックで自動クローズ（hide-checked-toggle 以外）
+      els.overflowMenu.querySelectorAll('.overflow-menu-item').forEach((item) => {
+        if (item.id === 'hide-checked-toggle') return; // ネストポップオーバーは保持
+        item.addEventListener('click', () => {
+          // 元のクリックハンドラ実行後にメニュー閉じる（同フレームで OK）
+          setTimeout(closeMenu, 0);
+        });
+      });
+    }
 
     els.cardModalClose.addEventListener('click', closeCardModal);
     els.cardModalBackdrop.addEventListener('click', closeCardModal);
