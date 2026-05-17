@@ -181,6 +181,7 @@
     overflowMenuToggle: $('overflow-menu-toggle'),
     overflowMenu: $('overflow-menu'),
     // 非FSA環境用 ツールバー昇格 DL/Copy
+    toolbarReloadBtn: $('toolbar-reload-btn'),
     toolbarDownloadBtn: $('toolbar-download-btn'),
     toolbarCopyBtn: $('toolbar-copy-btn'),
     // F13: 完了済みカード表示設定
@@ -3881,6 +3882,8 @@
     // 保存ボタンは FSAサポート＆ハンドル取得済みのみ
     const canSaveInPlace = hasBoard && hasFsa && !!state.fileHandle;
     if (els.saveBtn) els.saveBtn.hidden = !canSaveInPlace;
+    // 再読み込みボタンも保存と同じ条件: ハンドルがあるときだけ意味を持つ
+    if (els.toolbarReloadBtn) els.toolbarReloadBtn.hidden = !canSaveInPlace;
   }
 
   /** Markdownを現在のboardからシリアライズして取得 */
@@ -3952,6 +3955,52 @@
       state.autoSaveTimer = null;
     }
     await autoSaveNow();
+  }
+
+  /**
+   * 現在のハンドル経由でディスクから .md を再読み込みする。外部エディタでの編集を反映する用途。
+   * - 読み取り権限を要求（自動保存のため readwrite で取得しておくと以降の autosave も即有効化）
+   * - ディスクの内容が現在のシリアライズ済み Markdown と一致するなら何もしない（無音）
+   * - 異なる場合: dirty 状態ならユーザーに確認してから loadMarkdown で差し替える
+   * - silent=true のときは権限ダイアログを出さず、queryPermission が granted の場合だけ反映
+   */
+  async function refreshFromDisk(opts) {
+    const silent = !!(opts && opts.silent);
+    const handle = state.fileHandle;
+    if (!handle) return;
+    try {
+      let perm = 'granted';
+      if (handle.queryPermission) {
+        perm = await handle.queryPermission({ mode: 'readwrite' });
+      }
+      if (perm !== 'granted') {
+        if (silent) return;
+        if (handle.requestPermission) {
+          perm = await handle.requestPermission({ mode: 'readwrite' });
+        }
+        if (perm !== 'granted') {
+          showStatus('読み取り権限が許可されませんでした', 'error');
+          return;
+        }
+      }
+      const file = await handle.getFile();
+      const text = await file.text();
+      if (text === state.serializedMarkdown) {
+        // 差分なし: silent 経路では何も出さない。明示クリックの場合だけ「変更なし」を案内。
+        if (!silent) showStatus('ディスクの内容は最新と同じです', 'success');
+        return;
+      }
+      // 差分あり: dirty なら破棄確認、そうでなければそのまま反映
+      if (state.dirty && !silent) {
+        const ok = window.confirm('未保存の変更があります。破棄してディスクの内容で上書きしますか？');
+        if (!ok) return;
+      }
+      loadMarkdown(text, state.fileName || file.name, { fileHandle: handle });
+      if (!silent) showStatus('ディスクの内容で再読み込みしました', 'success');
+    } catch (e) {
+      if (silent) return;
+      showStatus('再読み込みに失敗しました: ' + (e && e.message ? e.message : e), 'error');
+    }
   }
 
   /** File System Access API でファイルを開く（Chromium系のみ） */
@@ -4190,6 +4239,9 @@
       // ハンドル付きで復元: 以降の編集で autoSaveNow が requestPermission を実施し、
       //                   許可されれば変更が同じファイルへ自動保存される。
       loadMarkdown(saved, savedName || '', { fileHandle: savedHandle });
+      // 既に権限が残っているまれなケース（インストール済みPWA等）では
+      // 外部編集された .md をリロード直後に silent で取り込む。通常タブでは何も起きない。
+      refreshFromDisk({ silent: true });
     } else {
       loadMarkdown(saved, savedName || '');
     }
@@ -4256,6 +4308,7 @@
     if (els.emptyOpenBtn) els.emptyOpenBtn.addEventListener('click', openFileEntry);
     if (els.newBoardBtn) els.newBoardBtn.addEventListener('click', createNewBoardFlow);
     if (els.emptyNewBtn) els.emptyNewBtn.addEventListener('click', createNewBoardFlow);
+    if (els.toolbarReloadBtn) els.toolbarReloadBtn.addEventListener('click', () => refreshFromDisk());
 
     // FSA 未対応ブラウザでは「新規作成」を無効化（保存先指定ができないため）
     if (!('showSaveFilePicker' in window)) {

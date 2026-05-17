@@ -65,6 +65,11 @@
           <span id="dirty-marker" class="dirty-marker" data-hidden="true" aria-hidden="true" title="未保存の変更があります"><span class="dirty-dot" aria-hidden="true">●</span> 未保存</span>
           <span id="file-name-display" class="file-name-display"></span>
         </div>
+        <!-- ディスクから再読み込み: 外部エディタで編集された .md ファイル内容を反映する。
+             FSA 経由でハンドル取得済みのときだけ可視（更新→読込が物理的に可能なため）。
+             リロードでは権限がリセットされ自動再読込できないので、明示ボタンとして露出させる。 -->
+        <button type="button" class="tb-btn icon-btn" id="toolbar-reload-btn"
+                aria-label="ファイルをディスクから再読み込み" title="ディスクから再読み込み" hidden>🔄</button>
         <!-- 非FSA環境用 トップレベル DL/Copy: auto-save が無いブラウザでは
              ⬇/📋 が唯一の保存手段なので moment-to-moment primary としてヘッダに常時露出。
              FSA 対応環境ではメニュー内のみに格納し、ヘッダはすっきりさせる。 -->
