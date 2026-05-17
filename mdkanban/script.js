@@ -192,7 +192,6 @@
     restoreBanner: $('restore-banner'),
     restoreYesBtn: $('restore-yes-btn'),
     restoreNoBtn: $('restore-no-btn'),
-    statusArea: $('status-area'),
     tagFilterBar: $('tag-filter-bar'),
     activeTagDisplay: $('active-tag-display'),
     clearFilterBtn: $('clear-filter-btn'),
@@ -280,11 +279,19 @@
       .replace(/'/g, '&#39;');
   }
 
+  /**
+   * 通知の単一窓口。すべての成功/警告/エラーは右下の固定トースト領域に出す。
+   * インラインの status-area は廃止（描画後にレイアウトシフトを起こすため）。
+   * @param {string} message
+   * @param {'success'|'warning'|'error'} [type='success']
+   * @param {boolean} [autoHide=true] false にすると自動消去しない（パース警告など）
+   */
   function showStatus(message, type = 'success', autoHide = true) {
+    if (!els.toastArea) return null;
     const div = document.createElement('div');
-    div.className = `status-msg ${type}`;
+    div.className = `toast ${type}`.trim();
     div.textContent = message;
-    els.statusArea.appendChild(div);
+    els.toastArea.appendChild(div);
     if (autoHide) {
       setTimeout(() => {
         if (div.parentNode) div.parentNode.removeChild(div);
@@ -294,7 +301,7 @@
   }
 
   function clearStatus() {
-    els.statusArea.innerHTML = '';
+    if (els.toastArea) els.toastArea.innerHTML = '';
   }
 
   // -------- Markdownパース（カンバン用） --------
@@ -3188,7 +3195,8 @@
     updateSaveControlsVisibility();
 
     renderBoard();
-    showStatus(`${board.columns.length}列・${totalCards}枚を表示中`, 'success');
+    // 読み込み完了の通知はトーストでは出さない: ファイル名・列/枚数はヘッダに常時表示されており、
+    // ボードが描画されたこと自体が成功フィードバックとして十分（重複通知の回避）。
   }
 
   /**
@@ -3877,16 +3885,9 @@
     }
   }
 
-  /** 右下トースト */
+  /** 右下トースト（showStatus と同じ単一通知窓口へのエイリアス） */
   function showToast(message, type) {
-    if (!els.toastArea) return;
-    const div = document.createElement('div');
-    div.className = `toast ${type || ''}`.trim();
-    div.textContent = message;
-    els.toastArea.appendChild(div);
-    setTimeout(() => {
-      if (div.parentNode) div.parentNode.removeChild(div);
-    }, type === 'error' ? 5000 : 3000);
+    return showStatus(message, type || 'success', true);
   }
 
   // -------- 保存・書き戻し --------

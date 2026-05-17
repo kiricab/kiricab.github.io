@@ -243,47 +243,6 @@ body[data-theme="dark"] .restore-banner {
   gap: 0.5rem;
 }
 
-/* ===== ステータスエリア（トースト・警告・エラー） ===== */
-.status-area {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1.5rem;
-}
-
-.status-area:empty {
-  padding: 0;
-}
-
-.status-msg {
-  padding: 0.6rem 1rem;
-  border-radius: 6px;
-  margin-top: 0.75rem;
-  font-size: 0.9rem;
-  border: 1px solid transparent;
-}
-
-.status-msg.success {
-  background-color: #e7f5ec;
-  color: #1b6b3a;
-  border-color: #b6e0c4;
-}
-
-.status-msg.warning {
-  background-color: #fff8e1;
-  color: #6b4f00;
-  border-color: #f6c453;
-}
-
-.status-msg.error {
-  background-color: #fde2e2;
-  color: #b42318;
-  border-color: #f3a8a8;
-}
-
-body[data-theme="dark"] .status-msg.success { background:#1f3a2a; color:#9ae6b4; border-color:#2f5a3f; }
-body[data-theme="dark"] .status-msg.warning { background:#3a2f00; color:#fde68a; border-color:#6b5500; }
-body[data-theme="dark"] .status-msg.error   { background:#4a1e1e; color:#fca5a5; border-color:#7a2e2e; }
-
 /* ===== タグフィルタバー ===== */
 .tag-filter-bar {
   background-color: var(--card-color);
@@ -1222,17 +1181,27 @@ body[data-theme="dark"] .dirty-marker .dirty-dot {
   max-width: 320px;
 }
 
+.toast.success {
+  background: #e7f5ec;
+  color: #1b6b3a;
+  border-color: #b6e0c4;
+}
+
+.toast.warning {
+  background: #fff8e1;
+  color: #6b4f00;
+  border-color: #f6c453;
+}
+
 .toast.error {
   background: #fde2e2;
   color: #b42318;
   border-color: #f3a8a8;
 }
 
-body[data-theme="dark"] .toast.error {
-  background: #4a1e1e;
-  color: #fca5a5;
-  border-color: #7a2e2e;
-}
+body[data-theme="dark"] .toast.success { background:#1f3a2a; color:#9ae6b4; border-color:#2f5a3f; }
+body[data-theme="dark"] .toast.warning { background:#3a2f00; color:#fde68a; border-color:#6b5500; }
+body[data-theme="dark"] .toast.error   { background:#4a1e1e; color:#fca5a5; border-color:#7a2e2e; }
 
 /* スクリーンリーダー専用テキスト */
 .visually-hidden {

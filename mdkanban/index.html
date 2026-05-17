@@ -143,13 +143,10 @@
       </div>
     </div>
 
-    <!-- 状態表示（成功トースト・警告・エラー） -->
-    <div id="status-area" class="status-area" aria-live="polite"></div>
-
     <!-- DnD完了通知用ライブリージョン（スクリーンリーダー専用） -->
     <div id="dnd-live-region" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
 
-    <!-- 自動保存失敗時などの右下トースト -->
+    <!-- 右下トースト: 成功/警告/エラー通知や自動保存失敗の表示先（aria-live で SR にも通知） -->
     <div id="toast-area" class="toast-area" aria-live="polite" aria-atomic="true"></div>
 
     <!-- タグフィルタバー -->
