@@ -24,6 +24,68 @@
   const HIDE_CHECKED_DEFAULT_DAYS = 7;
   const HIDE_CHECKED_MAX_DAYS = 365;
 
+  // IndexedDB: 直近に開いた FileSystemFileHandle を保存する。
+  // localStorage には JSON 不可な FSA ハンドルを格納できないため IDB を使う。
+  // これがあれば、リロード後に「復元する」を押した時点で同じファイルへ自動保存を継続できる。
+  const IDB_DB_NAME = 'mdkanban';
+  const IDB_STORE = 'handles';
+  const IDB_HANDLE_KEY = 'lastHandle';
+
+  function idbOpen() {
+    return new Promise((resolve, reject) => {
+      if (!('indexedDB' in window)) { reject(new Error('IndexedDB 非対応')); return; }
+      const req = indexedDB.open(IDB_DB_NAME, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function saveHandleToIdb(handle) {
+    try {
+      const db = await idbOpen();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).put(handle, IDB_HANDLE_KEY);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error);
+      });
+      db.close();
+    } catch (_) { /* 非対応 / クォータ等は握りつぶす */ }
+  }
+
+  async function loadHandleFromIdb() {
+    try {
+      const db = await idbOpen();
+      const handle = await new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readonly');
+        const req = tx.objectStore(IDB_STORE).get(IDB_HANDLE_KEY);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error);
+      });
+      db.close();
+      return handle;
+    } catch (_) { return null; }
+  }
+
+  async function deleteHandleFromIdb() {
+    try {
+      const db = await idbOpen();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).delete(IDB_HANDLE_KEY);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error);
+      });
+      db.close();
+    } catch (_) { /* noop */ }
+  }
+
   // スイムレーン用の lane 名・タグ抽出に使う共通 character class（既存タグの記法と揃える）。
   const LANE_NAME_CHARS = 'A-Za-z0-9_\\-぀-ヿ㐀-鿿';
   // デフォルトレーン（lane 未指定カードが集まる行）の表示名
@@ -3081,6 +3143,9 @@
       ? opts.fileHandle
       : null;
     state.fileHandle = nextHandle;
+    // ハンドルを IDB に永続化（または削除）して、次回リロード時の自動保存復帰に備える。
+    if (nextHandle) saveHandleToIdb(nextHandle);
+    else deleteHandleFromIdb();
 
     state.board = board;
     state.fileName = fileName;
@@ -3769,6 +3834,7 @@
       const fatal = e && (e.name === 'NotAllowedError' || e.name === 'SecurityError' || e.name === 'InvalidStateError');
       if (fatal) {
         state.fileHandle = null;
+        deleteHandleFromIdb();
         updateSaveControlsVisibility();
         // インジケーター非表示
         state.autoSavePendingHide = setTimeout(() => {
@@ -4142,8 +4208,14 @@
     applyDensity(cur === 'compact' ? 'detailed' : 'compact');
   }
 
-  // -------- 復元提案 --------
-  function maybeOfferRestore() {
+  // -------- 自動復元 --------
+  /**
+   * リロード時、前回の lastContent があれば確認なしで自動復元する。
+   * IDB に FileSystemFileHandle が残っていれば自動保存先として再アタッチし、
+   * 最初のユーザー操作（編集→自動保存）のタイミングで requestPermission が走るようにする。
+   * 権限プロンプトはブラウザの仕様上、user activation を必要とするためここでは発行しない。
+   */
+  async function autoRestoreIfPossible() {
     let saved, savedName;
     try {
       saved = localStorage.getItem(STORAGE_KEYS.content);
@@ -4151,19 +4223,17 @@
     } catch (e) { return; }
     if (!saved || saved.trim() === '') return;
 
-    const label = savedName ? `「${savedName}」` : '前回のファイル';
-    document.getElementById('restore-banner-msg').textContent =
-      `${label}を復元できます。復元しますか？`;
-    els.restoreBanner.hidden = false;
+    // 念のため復元バナーは隠す（旧バージョンとの互換のため DOM 自体は残してある）。
+    if (els.restoreBanner) els.restoreBanner.hidden = true;
 
-    els.restoreYesBtn.addEventListener('click', () => {
-      // 復元バナー経由はFSAハンドル未取得（lastContentが別ファイル由来の可能性あり）。
-      // loadMarkdown のデフォルト動作で fileHandle=null となり、保存ボタンは非表示になる。
+    const savedHandle = await loadHandleFromIdb();
+    if (savedHandle) {
+      // ハンドル付きで復元: 以降の編集で autoSaveNow が requestPermission を実施し、
+      //                   許可されれば変更が同じファイルへ自動保存される。
+      loadMarkdown(saved, savedName || '', { fileHandle: savedHandle });
+    } else {
       loadMarkdown(saved, savedName || '');
-    }, { once: true });
-    els.restoreNoBtn.addEventListener('click', () => {
-      els.restoreBanner.hidden = true;
-    }, { once: true });
+    }
   }
 
   // -------- 初期化 --------
@@ -4351,7 +4421,7 @@
       ev.returnValue = '';
     });
 
-    maybeOfferRestore();
+    autoRestoreIfPossible();
     updateSaveControlsVisibility();
   }
 
