@@ -1,0 +1,174 @@
+/* mdkanban/css/header.css — 元 style.css から分割。共通変数等は base.css にあり、@import せずに index.html 側で並列読み込みする。 */
+/* ===== 集中モード対応ヘッダ =====
+   空状態（body:not(.has-board)）: 他ツール共通の中央寄せヒーロー風（h1=2rem, tagline 表示）。
+   ボード表示中（body.has-board）: 高さ約48pxのコンパクト統合バー。h1 を小さく左寄せ、
+   tagline 非表示、ツールバーを同一行に集約してカンバン領域を最大化する。
+   <h1> は常に DOM に残し、ブランド・SEO・見出し階層を維持する。 */
+
+/* 空状態時の見た目は common/style.css の `header { ... }` をベースに、
+   `.kanban-app-header-inner` で 900px 中央寄せ＋tagline 表示を行う。 */
+.kanban-app-header {
+  /* 背景色・色・border-bottom 等は common/style.css の header に依存。
+     必要な分だけここで上書きする。 */
+}
+
+.kanban-app-header-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+  text-align: center;
+}
+
+.kanban-brand {
+  /* 空状態時は中央寄せ */
+}
+
+.kanban-app-header h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.kanban-tagline {
+  margin: 0.25rem 0 0;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* 空状態時はヘッダ内ツールバーは非表示（起動CTA側に同等ボタンがある） */
+body:not(.has-board) .kanban-toolbar {
+  display: none;
+}
+
+/* ===== ボード表示中: コンパクト統合バー ===== */
+body.has-board .kanban-app-header {
+  /* common header の padding 1.5rem 0 / text-align: center を上書き */
+  padding: 0;
+  text-align: left;
+  /* border-bottom はそのまま使う（共通スタイル） */
+}
+
+body.has-board .kanban-app-header-inner {
+  max-width: 1400px;
+  padding: 0.4rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  text-align: left;
+}
+
+body.has-board .kanban-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+}
+
+body.has-board .kanban-app-header h1 {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+body.has-board .kanban-tagline {
+  /* コンパクトバーではタグライン非表示 */
+  display: none;
+}
+
+.kanban-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* ボード表示中はツールバーを右寄せに（ブランド左／ツールバー右） */
+body.has-board .kanban-toolbar {
+  flex: 1 1 auto;
+  justify-content: flex-end;
+}
+
+/* ファイル状態カプセル: ファイル名 + dirty を内包する。save-status は capsule の子だが
+   CSS で position: absolute にしてフレックスフローから外し、capsule の左外側に浮かべる。
+   これによりカプセル本体は常にファイル名分の幅だけを占め、状態遷移時もカプセル/ボタンの
+   位置はまったく動かない（ui-ux-pro-max §7 layout-shift-avoid）。 */
+.file-status-capsule {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 0.25rem 0.6rem;
+  max-width: 360px;
+}
+
+/* ファイル未読込時はカプセル自体を非表示 */
+body:not(.has-board) .file-status-capsule {
+  display: none;
+}
+
+.file-name-display {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.9rem;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 0 1 auto;
+}
+
+.file-name-display:empty {
+  display: none;
+}
+
+.tb-btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--text-color-light);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  font-family: inherit;
+}
+
+.tb-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.tb-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.tb-btn.icon-btn {
+  padding: 0.4rem 0.6rem;
+  min-width: 2.4rem;
+}
+/* ===== ボタン共通 ===== */
+.btn {
+  background-color: var(--primary-color);
+  color: var(--text-color-light);
+  border: none;
+  border-radius: 6px;
+  padding: 0.55rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s ease;
+}
+
+.btn:hover { opacity: 0.9; }
+.btn:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 2px; }
+
+.btn.secondary {
+  background-color: var(--secondary-color);
+  color: var(--text-color);
+}
+
+.btn.small {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.8rem;
+}
+

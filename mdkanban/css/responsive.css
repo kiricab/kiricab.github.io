@@ -1,0 +1,297 @@
+/* mdkanban/css/responsive.css — 元 style.css から分割。共通変数等は base.css にあり、@import せずに index.html 側で並列読み込みする。 */
+/* ===== レスポンシブ ===== */
+@media (max-width: 900px) {
+  body.has-board .kanban-app-header-inner { flex-direction: column; align-items: stretch; }
+  body.has-board .kanban-toolbar { width: 100%; justify-content: flex-start; }
+  .file-name-display { flex: 1 1 auto; max-width: none; }
+  .board-title { font-size: 1.2rem; }
+
+  /* 狭幅ではヘッダ左に余白が無い（toolbar が独立行で左端から始まる）ので、
+     save-status / dirty-marker を absolute から通常フローに戻し、capsule の左隣に並べる。
+     非表示時は display:none で完全に消す（出現時の小さなシフトは許容）。 */
+  .save-status,
+  .dirty-marker {
+    position: static;
+    transform: none;
+    align-self: center;
+  }
+  .save-status[data-status="idle"],
+  .dirty-marker[data-hidden="true"] {
+    display: none;
+  }
+  /* オーバーフローメニューのトリガを行末（右端）に押し出して、
+     メニュードロップダウン（right:0 アンカー）が画面左にはみ出さないようにする。 */
+  .overflow-menu-wrap { margin-left: auto; }
+  /* メニュー本体はビューポート幅を超えないように制限 */
+  .overflow-menu {
+    max-width: calc(100vw - 1rem);
+  }
+}
+
+@media (max-width: 600px) {
+  body.has-board .kanban-app-header-inner { padding: 0.4rem 1rem; }
+  .container { padding: 1rem; }
+  .empty-state { padding: 1.5rem 1rem; }
+  .empty-cta { padding: 2rem 1rem; }
+  .empty-cta-icon { font-size: 2.4rem; }
+  .empty-cta-main { font-size: 0.95rem; }
+  .kanban-board { padding: 1rem; gap: 0.75rem; }
+  .kanban-column { flex-basis: 84vw; max-width: 320px; max-height: none; }
+  .kanban-column-cards { max-height: 60vh; }
+  /* スイムレーンモードのモバイル対応: 横スクロール維持のため列幅は微調整（260px）。
+     サイドレール幅は 48px のまま据え置き — レール幅を狭くすることでカード領域を最大化する設計が
+     PC・モバイル共通で成立する。
+     列幅は --mdkanban-col-mobile を介して JS 側 --mdkanban-col-tracks の合成値に反映される。 */
+  .kanban-board.has-swimlanes {
+    padding: 0.75rem;
+    --mdkanban-add-col-track: 160px;
+    --mdkanban-col-expanded-width: 260px;
+  }
+  .kanban-board.has-swimlanes .kanban-column-headers {
+    gap: 0.5rem;
+  }
+  .kanban-board.has-swimlanes .swimlane {
+    column-gap: 0.5rem;
+  }
+  .kanban-board.has-swimlanes .swimlane-row {
+    gap: 0.5rem;
+  }
+  .kanban-board.has-swimlanes .kanban-column-cards {
+    max-height: none;
+  }
+  .card-modal-dialog {
+    width: calc(100% - 1rem);
+    max-height: calc(100vh - 1rem);
+  }
+  .card-modal-header { padding: 0.75rem 1rem; }
+  .card-modal-body { padding: 0.75rem 1rem 1rem; }
+  .tb-btn {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.8rem;
+  }
+  .file-name-display {
+    font-size: 0.8rem;
+    max-width: 100%;
+    flex-basis: 100%;
+    margin-bottom: 0.25rem;
+  }
+}
+
+/* ===== オーバーフローメニュー =====
+   ⋮ ボタンクリックで下にドロップダウン。明るい背景で背後のヘッダから視覚的に分離する。
+   ファイル系・表示設定の 2 グループを区切り線で分ける。 */
+.overflow-menu-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.overflow-menu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  min-width: 240px;
+  max-width: 320px;
+  background-color: var(--card-color);
+  color: var(--text-color);
+  border: 1px solid var(--secondary-color);
+  border-radius: var(--border-radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  padding: 0.35rem 0;
+  z-index: 100;
+}
+
+.overflow-menu[hidden] { display: none; }
+
+.overflow-menu-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.overflow-menu-divider {
+  border: none;
+  border-top: 1px solid var(--secondary-color);
+  margin: 0.35rem 0;
+}
+
+.overflow-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  color: var(--text-color);
+  border: none;
+  padding: 0.55rem 1rem;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.overflow-menu-item:hover,
+.overflow-menu-item:focus-visible {
+  background-color: var(--background-color);
+  outline: none;
+}
+
+.overflow-menu-item:focus-visible {
+  box-shadow: inset 2px 0 0 var(--primary-color);
+}
+
+.overflow-menu-item[hidden] { display: none; }
+
+/* メニューが開いている時のトグルボタン視覚 */
+#overflow-menu-toggle[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* カラム末尾の控えめなチップ。普段は低コントラスト、ホバー/フォーカスで前景化。 */
+.kanban-column-hidden-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  margin: 0.35rem 0 0;
+  padding: 0.35rem 0.5rem;
+  background: transparent;
+  border: 1px dashed var(--kanban-col-border, #dee2e6);
+  border-radius: 6px;
+  color: var(--gray-text-color, #6c757d);
+  font-size: 0.78rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.kanban-column-hidden-chip:hover,
+.kanban-column-hidden-chip:focus-visible {
+  background: var(--kanban-col-bg, #f1f3f5);
+  color: var(--text-color, #212529);
+  border-color: var(--kanban-col-border, #adb5bd);
+}
+
+.kanban-column-hidden-chip:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.kanban-column-hidden-chip-icon {
+  font-size: 0.85em;
+  line-height: 1;
+}
+
+.kanban-column-hidden-chip.is-revealed {
+  border-style: solid;
+  background: var(--kanban-col-bg, #f1f3f5);
+  color: var(--text-color, #212529);
+}
+
+/* グローバル全表示や per-column reveal で本来隠れているはずのカードが見えているとき、
+   通常表示と区別するための点線ボーダー＋少しだけ透過。.is-done の opacity:0.55 と差別化する。 */
+.kanban-card.is-revealed-hidden {
+  border-style: dashed;
+  opacity: 0.85;
+}
+
+/* ポップオーバー本体: オーバーフローメニュー右側からさらに左へ展開する形になるため、
+   ボタン直下ではなく右端の左外側にスライド表示する（menu の左端 - popover幅 - gap）。 */
+.hide-checked-popover {
+  position: absolute;
+  top: 0;
+  right: calc(100% + 0.4rem);
+  z-index: 110;
+  min-width: 260px;
+  padding: 0.85rem 0.95rem;
+  background: var(--card-color, #fff);
+  color: var(--text-color, #212529);
+  border: 1px solid var(--kanban-col-border, #dee2e6);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.hide-checked-popover[hidden] {
+  display: none;
+}
+
+.hide-checked-popover-title {
+  margin: 0 0 0.3rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.hide-checked-popover-desc {
+  margin: 0 0 0.7rem;
+  font-size: 0.8rem;
+  color: var(--gray-text-color, #6c757d);
+}
+
+.hide-checked-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.4rem 0;
+  font-size: 0.85rem;
+}
+
+.hide-checked-field input[type="number"] {
+  width: 4.5rem;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--kanban-col-border, #ced4da);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  background: var(--card-color, #fff);
+  color: var(--text-color, #212529);
+}
+
+.hide-checked-field input[type="number"]:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 1px;
+}
+
+.hide-checked-field-unit {
+  color: var(--gray-text-color, #6c757d);
+  font-size: 0.78rem;
+}
+
+.hide-checked-field.is-toggle {
+  cursor: pointer;
+  user-select: none;
+}
+
+.hide-checked-popover-hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.72rem;
+  color: var(--gray-text-color, #6c757d);
+  line-height: 1.4;
+}
+
+/* prefers-reduced-motion: チップのトランジションを無効化 */
+@media (prefers-reduced-motion: reduce) {
+  .kanban-column-hidden-chip {
+    transition: none;
+  }
+}
+
+/* ===== prefers-color-scheme: 自動ダーク化はユーザー操作優先のため無効化 ===== */
+/* common/style.css の prefers-color-scheme は :root に対するので、
+   body[data-theme="light"] を明示的に上書きしておく */
+@media (prefers-color-scheme: dark) {
+  body[data-theme="light"] {
+    --primary-color: #1e3a8a;
+    --primary-color-dark: #1e293b;
+    --secondary-color: #e9ecef;
+    --background-color: #f8f9fa;
+    --card-color: #ffffff;
+    --text-color: #212529;
+    --gray-text-color: #6c757d;
+    --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+    --kanban-col-bg: #f1f3f5;
+    --kanban-col-border: #dee2e6;
+    --kanban-card-bg: #ffffff;
+    --kanban-card-border: #dee2e6;
+  }
+}

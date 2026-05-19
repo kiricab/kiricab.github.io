@@ -2,7 +2,7 @@
 name: developer
 description: 企画者エージェントが作成した仕様書をもとに、kiricab.github.ioの新ツールを実装するエージェント。index.html・script.js・style.cssを生成し、既存ファイル（ルートindex.html・sitemap.xml・各ツールのフッター）も更新する。
 tools: "Read, Write, Edit, Glob, Grep, Bash"
-model: opus
+model: inherit
 color: red
 memory: project
 ---

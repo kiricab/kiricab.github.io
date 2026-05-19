@@ -2,7 +2,7 @@
 name: evaluator
 description: 開発者エージェントが実装したコードをレビューするエージェント。仕様との整合性、コード品質、ライセンス、セキュリティ、アクセシビリティ、CLAUDE.mdチェックリストの遵守を評価し、修正指示または承認を出す。
 tools: "Read, Write, Edit, Glob, Grep, Bash, mcp__playwright__browser_navigate, mcp__playwright__browser_snapshot, mcp__playwright__browser_take_screenshot, mcp__playwright__browser_click, mcp__playwright__browser_type, mcp__playwright__browser_wait_for, mcp__playwright__browser_console_messages, mcp__playwright__browser_resize, mcp__playwright__browser_press_key"
-model: opus
+model: inherit
 color: blue
 memory: project
 ---
