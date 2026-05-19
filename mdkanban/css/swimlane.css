@@ -1,0 +1,614 @@
+/* mdkanban/css/swimlane.css — 元 style.css から分割。共通変数等は base.css にあり、@import せずに index.html 側で並列読み込みする。 */
+/* ===== スイムレーン表示モード（行グルーピング・サイドレール方式） =====
+   frontmatter に `lanes:` キー（YAML 配列）が宣言されている場合のみ有効化される 2D グリッド表示。
+   `lanes:` の出現順序がそのままレーン表示順になる（厳密モード／ホワイトリスト方式）。
+   左端の lane ラベル列（48px 幅・サイドレール）＋各列（300px）を CSS Grid で並べ、
+   全体は overflow-x: auto で横スクロールを維持する。
+   レーン名はサイドレール内で transform: rotate(-90deg)（下から上に読む方向）で縦表示する。
+   ライト/ダーク両テーマで自然に見えるよう、共通の CSS 変数（--background-color 等）を流用する。 */
+.kanban-board.has-swimlanes {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  align-items: flex-start;
+  scroll-snap-type: none;
+  /* サイドレール幅をローカル変数化して各箇所から参照する */
+  --mdkanban-rail-width: 48px;
+  /* 「+ カラム追加」ボタン用トラック幅（モバイルではメディアクエリで 160px に上書き） */
+  --mdkanban-add-col-track: 200px;
+  /* 展開中の列トラック幅（モバイルではメディアクエリで 260px に上書き）。
+     JS 側で --mdkanban-col-tracks を組み立てる際に var() で参照されるため、
+     ビューポート幅変化時に再描画なしでも自動で追従する。 */
+  --mdkanban-col-expanded-width: 300px;
+}
+
+/* 上段: 列ヘッダ行（左端は空セル + 各列ヘッダ）。
+   親 flex-column の cross-axis 縮約を回避するため min-width: max-content を明示し、
+   グリッド固定幅（48px + N*300px + gap）を保ってスクロールを成立させる。 */
+.kanban-board.has-swimlanes .kanban-column-headers {
+  display: grid;
+  /* JS 側で --mdkanban-col-tracks を全列ぶんの幅文字列（折りたたみ 48px / 展開 300px or 260px）に都度設定する。
+     末尾には「+ カラム追加」ボタン用のトラック（--mdkanban-add-col-track）を置く。 */
+  grid-template-columns: var(--mdkanban-rail-width) var(--mdkanban-col-tracks, repeat(var(--mdkanban-cols, 3), 300px)) var(--mdkanban-add-col-track, 200px);
+  gap: 0.75rem;
+  min-width: max-content;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background-color: var(--background-color);
+  padding: 0 0 0.4rem;
+}
+
+.kanban-board.has-swimlanes .kanban-column-headers .kanban-column-header {
+  background-color: var(--kanban-col-bg);
+  border: 1px solid var(--kanban-col-border);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0;
+}
+
+/* コーナーセル: 48px の空セル。役割は「カード列ヘッダ行の左端にレール幅と同じ余白を確保する」のみ */
+.swimlane-corner {
+  background: transparent;
+  user-select: none;
+}
+
+/* 各 lane の行ブロック
+   サイドレール（header）とカードセル群（row）を 1 段の CSS Grid で並べる。
+   左端 var(--mdkanban-rail-width) を header に、残り N 列（300px）を row に割り当て、
+   row 自身も内部グリッドで N 個のセルを並べる。 */
+.swimlane {
+  display: grid;
+  grid-template-columns: var(--mdkanban-rail-width) var(--mdkanban-col-tracks, repeat(var(--mdkanban-cols, 3), 300px));
+  column-gap: 0.75rem;
+  row-gap: 0;
+  align-items: stretch;
+  min-width: max-content;
+  padding: 0.55rem 0;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+}
+
+.swimlane:hover {
+  background-color: rgba(30, 58, 138, 0.025);
+}
+
+body[data-theme="dark"] .swimlane:hover {
+  background-color: rgba(74, 111, 212, 0.06);
+}
+
+.swimlane + .swimlane {
+  border-top: 1px solid var(--kanban-col-border);
+  margin-top: 0.25rem;
+  padding-top: 0.75rem;
+}
+
+body[data-theme="dark"] .swimlane + .swimlane {
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+.swimlane:first-of-type {
+  padding-top: 0.25rem;
+}
+
+/* レーンヘッダ: 48px 幅の縦長サイドレール。内部は上から
+   [グリップ ⋮⋮ + トグル ▼ → 回転レーン名 → カウントバッジ] の縦積みレイアウト。
+   管理ボタン群（▲▼✎🗑）は :hover/:focus-within 時にレール右隣へフローティングするため、
+   絶対配置の基準点として position: relative を付与する。 */
+.swimlane-header {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: var(--mdkanban-rail-width);
+  min-height: 220px;
+  padding: 0.4rem 0 0.45rem;
+  background-color: var(--kanban-col-bg);
+  border: 1px solid var(--kanban-col-border);
+  border-left: 4px solid var(--primary-color);
+  border-radius: 4px 10px 10px 4px;
+  color: var(--text-color);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  margin-bottom: 0.4rem;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease, width 0.15s ease;
+}
+
+/* 設計メモ: .swimlane-header は position: sticky のままでも、
+   sticky 要素は absolutely positioned descendants の containing block を提供する。
+   そのため .swimlane-actions（position: absolute; left: 100% でレール右隣にフロート）と
+   .swimlane-name（position: absolute で 48px 幅をはみ出さないよう absolute 配置）は
+   このヘッダ自身を起点に正しく配置される。 */
+
+.swimlane-header.is-draggable {
+  cursor: grab;
+}
+
+.swimlane-header.is-draggable:active {
+  cursor: grabbing;
+}
+
+/* レーンヘッダ hover で軽く浮かせる */
+.swimlane-header:hover {
+  background-color: var(--card-color);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  border-color: var(--primary-color);
+}
+
+body[data-theme="dark"] .swimlane-header:hover {
+  background-color: var(--card-color);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* ドラッグ並び替えのドロップ先ハイライト */
+.swimlane.is-lane-drop-target > .swimlane-header {
+  border-color: var(--primary-color);
+  background-color: var(--secondary-color);
+  box-shadow: 0 0 0 2px var(--primary-color) inset;
+}
+
+/* 「未分類」レーンのヘッダは控えめに見せる（左ボーダーはダッシュ風で「自動集約レーン」を示唆） */
+.swimlane.is-default-lane > .swimlane-header {
+  background-color: transparent;
+  border-left-color: var(--gray-text-color);
+  border-left-width: 2px;
+  border-left-style: dashed;
+  color: var(--gray-text-color);
+  font-weight: 500;
+}
+
+.swimlane.is-default-lane > .swimlane-header:hover {
+  background-color: var(--card-color);
+  border-left-color: var(--gray-text-color);
+  border-color: var(--kanban-col-border);
+  box-shadow: none;
+}
+
+.swimlane.is-default-lane > .swimlane-header .swimlane-count {
+  background-color: transparent;
+  border: 1px solid var(--kanban-col-border);
+}
+
+/* 折りたたみトグルボタン: レール内で縦積みする主クリック領域。
+   - 上端: グリップ（::before "⋮⋮"）と トグル ▼
+   - 中央: 回転レーン名（rotate(-90deg)・absolute 配置で 48px 幅をはみ出さない）
+   - 下端: カウントバッジ
+   absolute 配置の swimlane-name の基準点として position: relative を付与する。 */
+.swimlane-collapse-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 1 1 auto;
+  gap: 0.3rem;
+  width: 100%;
+  padding: 0.1rem 0;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  min-height: 200px;
+}
+
+.swimlane-collapse-btn:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* draggable レーンヘッダの drag affordance: トグルボタン上端にグリップアイコンを CSS で挿入。
+   常時 0.45 程度で薄く表示し、hover で 0.9 に強調。タッチ環境では 0.55 で固定。 */
+.swimlane-header.is-draggable .swimlane-collapse-btn::before {
+  content: "⋮⋮";
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  letter-spacing: -2px;
+  color: var(--gray-text-color);
+  opacity: 0.45;
+  transition: opacity 0.15s ease, color 0.15s ease;
+  font-weight: 700;
+  line-height: 1;
+  display: block;
+  text-align: center;
+}
+
+.swimlane-header.is-draggable:hover .swimlane-collapse-btn::before,
+.swimlane-header.is-draggable:focus-within .swimlane-collapse-btn::before {
+  opacity: 0.9;
+  color: var(--primary-color);
+}
+
+@media (hover: none) {
+  .swimlane-header.is-draggable .swimlane-collapse-btn::before {
+    opacity: 0.55;
+  }
+}
+
+/* 折りたたみトグル ▼ — レール上端、グリップ直下に配置 */
+.swimlane-toggle {
+  display: block;
+  font-size: 0.7rem;
+  line-height: 1;
+  transition: transform 0.15s ease;
+  color: var(--gray-text-color);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.swimlane.is-collapsed .swimlane-toggle {
+  transform: rotate(-90deg);
+}
+
+.swimlane.is-collapsed .swimlane-row {
+  display: none;
+}
+
+/* 回転レーン名: 横書きのまま transform: rotate(-90deg) で左に90度回転（下から上に読む方向）。
+   レール幅 48px を box が物理的にはみ出さないよう、collapse-btn 内に position: absolute で配置し、
+   親（48px 幅）のレイアウトに影響を与えない。
+   回転前: width 140px × height 1.2em の box → 回転後: 視覚的に 1.2em 幅 × 140px 高さ。
+   140px は toggle ▼（上端 ~26px）と count バッジ（下端 ~22px）に重ならない安全マージンを確保した値。 */
+.swimlane-name {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 140px;
+  height: 1.2em;
+  margin: 0;
+  padding: 0;
+  line-height: 1.2;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  transform-origin: center center;
+  font-size: 0.85rem;
+  font-weight: inherit;
+  pointer-events: none;
+}
+
+/* カウントバッジ: 円形でレール下端に配置（flex 列の末尾に margin-top: auto で寄せる） */
+.swimlane-count {
+  background-color: var(--secondary-color);
+  color: var(--gray-text-color);
+  border-radius: 999px;
+  width: 26px;
+  height: 22px;
+  padding: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  flex-shrink: 0;
+  line-height: 1;
+  margin-top: auto;
+}
+
+.swimlane-row {
+  grid-column: 2 / -1;
+  display: grid;
+  grid-template-columns: var(--mdkanban-col-tracks, repeat(var(--mdkanban-cols, 3), 300px));
+  gap: 0.75rem;
+  align-items: start;
+}
+
+/* スイムレーン内の各セル：通常モードと同じカード積層スタイルを使うが、
+   列ヘッダはセル内には出さず（上段で集約）、min-height で空セルでも DnD 受けを確保。 */
+.kanban-board.has-swimlanes .kanban-column-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 64px;
+  background-color: var(--kanban-col-bg);
+  border: 1px solid var(--kanban-col-border);
+  border-radius: 8px;
+  padding: 0.5rem;
+  max-height: none;
+  overflow-y: visible;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+/* 空セルは内側に淡い「ここにカード追加」の視覚的余白を確保し、
+   ドラッグの drop target として認識しやすくする */
+.kanban-board.has-swimlanes .kanban-column-cards:empty {
+  background-color: transparent;
+  border-style: dashed;
+  border-color: var(--kanban-col-border);
+}
+
+.kanban-board.has-swimlanes .kanban-column-cards.is-drop-target {
+  border-style: solid;
+}
+
+/* スイムレーンモードのセル（カード領域 + 「+ カード追加」を縦に積む箱） */
+.swimlane-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+/* ===== レーンヘッダ管理アクション（▲▼✎🗑）— フローティング表示 =====
+   通常時は非表示。レーンヘッダ :hover / :focus-within でレール右隣にフェードイン。
+   sticky な .swimlane-header の内側に position: absolute で配置することで、
+   レール本体と一緒に横スクロール時も追従させる。 */
+.swimlane-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 0.15rem;
+  align-items: center;
+  position: absolute;
+  left: calc(100% + 4px);
+  top: 0;
+  padding: 0.25rem;
+  background-color: var(--card-color);
+  border: 1px solid var(--kanban-col-border);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-4px);
+  /* 閉じる側だけ 200ms の grace period を設け、レール→ツールバー間のホバー追従を許容する。 */
+  transition:
+    opacity 0.15s ease 0.2s,
+    transform 0.15s ease 0.2s,
+    visibility 0s linear 0.35s;
+  z-index: 6;
+  white-space: nowrap;
+}
+
+/* レール右辺〜ツールバー左辺の 4px デッドゾーンを埋める透明ブリッジ。 */
+.swimlane-actions::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -8px;
+  width: 8px;
+}
+
+body[data-theme="dark"] .swimlane-actions {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.swimlane-header:hover > .swimlane-actions,
+.swimlane-header:focus-within > .swimlane-actions {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+  /* 開く側は即時 */
+  transition-delay: 0s;
+}
+
+/* タッチ環境では hover が発火しないため常時表示。レール右隣に固定で出す。 */
+@media (hover: none) {
+  .swimlane-actions {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(0);
+    transition: none;
+  }
+  .swimlane-actions::before {
+    display: none;
+  }
+}
+
+.swimlane-action-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border: 0;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  line-height: 1;
+  color: var(--gray-text-color);
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.swimlane-action-btn:hover:not(:disabled) {
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+}
+
+.swimlane-action-btn:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 1px;
+}
+
+.swimlane-action-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.swimlane-action-btn.is-delete:hover:not(:disabled) {
+  background-color: rgba(201, 42, 42, 0.12);
+  color: #c92a2a;
+}
+
+/* ===== レーン名インライン編集 =====
+   `.swimlane-header.is-renaming` の間だけ、48px のサイドレールを 168px に一時拡張し、
+   入力欄を横書きで表示する。確定/キャンセル後は renderBoard() による再描画で is-renaming は自然に外れる。 */
+.swimlane-header.is-renaming {
+  width: 168px;
+  min-height: 0;
+  padding: 0.5rem 0.6rem;
+}
+
+.swimlane-header.is-renaming .swimlane-collapse-btn {
+  position: static;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.4rem;
+  min-height: 0;
+}
+
+/* 編集中はグリップ（⋮⋮）・折りたたみトグル（▼）・カウントバッジを隠し、
+   入力欄が拡張領域（~168px）を最大限使えるようにする。
+   入力欄はトグルボタンを置き換える形（JS 側で nameSpan→input に replaceWith）。 */
+.swimlane-header.is-renaming.is-draggable .swimlane-collapse-btn::before {
+  display: none;
+}
+
+.swimlane-header.is-renaming .swimlane-toggle,
+.swimlane-header.is-renaming .swimlane-count {
+  display: none;
+}
+
+.swimlane-rename-input {
+  width: 100%;
+  flex: 1 1 auto;
+  padding: 0.25rem 0.4rem;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-color);
+  background-color: var(--card-color);
+  border: 1px solid var(--primary-color);
+  border-radius: 4px;
+  /* 編集中の入力欄は横書きに（親 is-renaming 下でのみ表示されるため rotate は不要） */
+  transform: none;
+  height: auto;
+  text-align: left;
+  white-space: normal;
+}
+
+.swimlane-rename-input:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 0;
+}
+
+/* ===== 「+ レーン追加」コントロール（F8-A） — サイドレール幅48pxに収まる縦長スタイル ===== */
+
+/* レーン追加ボタンとフォームのラッパ。左端 sticky でサイドレール列に揃える。
+   ラッパ自体も 48px 幅。フォーム表示時はラッパに position: relative をかけ、
+   フォーム本体は absolute でレール右側にポップさせる。 */
+.swimlane-add-wrap {
+  width: var(--mdkanban-rail-width, 48px);
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  margin-top: 0.5rem;
+}
+
+/* レール幅48pxに収まるよう、ボタンは縦長表記（テキストを rotate(-90deg)）。
+   省略を避けるため文言は「+ レーン追加」のままだが、レール幅に合わせて高さ稼ぎでテキスト回転で対応。 */
+.swimlane-add-btn {
+  width: 100%;
+  height: 140px;
+  padding: 0.4rem 0;
+  background-color: transparent;
+  border: 1px dashed var(--kanban-col-border);
+  border-left: 4px dashed var(--kanban-col-border);
+  border-radius: 4px 8px 8px 4px;
+  color: var(--gray-text-color);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+/* レール幅48pxに収まらないボタンテキストは ::before で 90度回転して縦表示し、
+   元の textContent（DOM 上は "+ レーン追加" のまま）は font-size: 0 で視覚的に隠す。
+   aria-label / textContent はスクリーンリーダー向けに DOM に残す。 */
+.swimlane-add-btn {
+  font-size: 0;
+  line-height: 0;
+  white-space: nowrap;
+}
+
+.swimlane-add-btn::before {
+  content: "+ レーン追加";
+  display: inline-block;
+  font-size: 0.85rem;
+  line-height: 1;
+  transform: rotate(-90deg);
+  transform-origin: center center;
+  color: inherit;
+}
+
+.swimlane-add-btn:hover {
+  border-color: var(--primary-color);
+  border-left-color: var(--primary-color);
+  border-style: solid;
+  border-left-style: solid;
+  color: var(--primary-color);
+  background-color: var(--card-color);
+}
+
+.swimlane-add-btn:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* インライン入力フォーム（レーン追加） — レール幅48pxに収まらないためフローティング表示 */
+.swimlane-add-form {
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.6rem;
+  background-color: var(--card-color);
+  border: 1px solid var(--kanban-col-border);
+  border-radius: 10px;
+  box-shadow: var(--box-shadow);
+  position: absolute;
+  left: calc(100% + 6px);
+  top: 0;
+  z-index: 7;
+}
+
+.swimlane-add-input {
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  font: inherit;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  border: 1px solid var(--kanban-col-border);
+  border-radius: 4px;
+}
+
+.swimlane-add-input:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 0;
+  border-color: var(--primary-color);
+}
+
+.swimlane-add-error {
+  min-height: 1em;
+  font-size: 0.75rem;
+  color: #c92a2a;
+}
+
+.swimlane-add-error:empty {
+  display: none;
+}
+
+.swimlane-add-form-actions {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: flex-end;
+}
+

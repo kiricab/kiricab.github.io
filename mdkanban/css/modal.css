@@ -1,0 +1,391 @@
+/* mdkanban/css/modal.css — 元 style.css から分割。共通変数等は base.css にあり、@import せずに index.html 側で並列読み込みする。 */
+/* ===== カード詳細モーダル ===== */
+.card-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.card-modal[hidden] { display: none; }
+
+.card-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: var(--kanban-modal-overlay);
+}
+
+.card-modal-dialog {
+  position: relative;
+  background-color: var(--card-color);
+  color: var(--text-color);
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  max-width: 720px;
+  width: calc(100% - 2rem);
+  max-height: calc(100vh - 2rem);
+  display: flex;
+  flex-direction: column;
+}
+
+.card-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--secondary-color);
+}
+
+.card-modal-title {
+  margin: 0;
+  font-size: 1.15rem;
+  color: var(--primary-color);
+  border-bottom: none;
+  padding-bottom: 0;
+  word-break: break-word;
+}
+
+.card-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--gray-text-color);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.card-modal-close:hover { background-color: var(--secondary-color); }
+.card-modal-close:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 2px; }
+
+.card-modal-body {
+  padding: 1rem 1.25rem 1.25rem;
+  overflow-y: auto;
+  line-height: 1.7;
+}
+
+.card-modal-body h1,
+.card-modal-body h2,
+.card-modal-body h3,
+.card-modal-body h4 {
+  color: var(--primary-color);
+  border-bottom: none;
+  padding-bottom: 0;
+  margin: 1rem 0 0.5rem;
+}
+
+.card-modal-body h1 { font-size: 1.3rem; }
+.card-modal-body h2 { font-size: 1.15rem; }
+.card-modal-body h3 { font-size: 1.05rem; }
+
+.card-modal-body p { margin: 0.5rem 0; }
+
+.card-modal-body a {
+  color: var(--primary-color);
+  text-decoration: underline;
+}
+
+.card-modal-body a:hover { text-decoration: none; }
+
+.card-modal-body ul,
+.card-modal-body ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.card-modal-body code {
+  background-color: var(--background-color);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-family: SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.card-modal-body pre {
+  background-color: var(--background-color);
+  border: 1px solid var(--secondary-color);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+}
+
+.card-modal-body pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.card-modal-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+
+.card-modal-body blockquote {
+  border-left: 3px solid var(--primary-color);
+  margin: 0.5rem 0;
+  padding: 0.25rem 0.75rem;
+  color: var(--gray-text-color);
+  background-color: var(--background-color);
+  border-radius: 0 6px 6px 0;
+}
+
+.card-modal-body input[type="checkbox"] {
+  margin-right: 0.4rem;
+}
+
+/* モーダル内サブタスクセクション（marked 経由ではなく JS で直接組み立てる） */
+.card-modal-subtasks {
+  margin-top: 0.75rem;
+}
+.card-modal-subtasks > p {
+  margin: 0 0 0.25rem;
+}
+.card-modal-subtasks ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 0.25rem;
+}
+.card-modal-subtasks li {
+  margin: 0.15rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.card-modal-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--secondary-color);
+}
+
+.card-modal-meta:empty { display: none; }
+
+/* F12: モーダル末尾の作成日時・最終更新日時表示 */
+.card-modal-timestamps {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--secondary-color);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 12px;
+  color: var(--gray-text-color);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+}
+.card-modal-timestamps .sep { opacity: 0.5; }
+.card-modal-timestamps time { font-variant-numeric: tabular-nums; }
+
+/* モーダルヘッダー右の編集ボタンと閉じるボタン群 */
+.card-modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.card-modal-edit {
+  background: rgba(30, 58, 138, 0.08);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.card-modal-edit:hover {
+  background: rgba(30, 58, 138, 0.16);
+}
+
+.card-modal-edit:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+body[data-theme="dark"] .card-modal-edit {
+  background: rgba(74, 111, 212, 0.18);
+  color: #c8d4ff;
+  border-color: #c8d4ff;
+}
+
+/* モーダルフッター（削除・閉じる／保存・キャンセル） */
+.card-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--secondary-color);
+  padding: 0.75rem 1.25rem;
+  background: var(--background-color);
+  border-radius: 0 0 12px 12px;
+}
+
+.card-modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-left: auto;
+}
+
+/* `[hidden]` 属性を `display: flex` で上書きしてしまわないよう明示的にリセット。
+   閲覧モードでは編集アクション（保存・キャンセル）が、編集モードでは閲覧アクション
+   （削除・閉じる）が hidden で隠される必要がある。 */
+.card-modal-actions[hidden] { display: none; }
+
+.btn.danger {
+  background-color: #b42318;
+  color: #fff;
+}
+
+.btn.danger:hover { background-color: #8a1c12; opacity: 1; }
+.btn.danger:focus-visible { outline: 2px solid #b42318; outline-offset: 2px; }
+
+/* ===== モーダル編集フォーム ===== */
+.card-modal-edit-form {
+  padding: 0.75rem 1.25rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  overflow-y: auto;
+}
+
+.card-modal-edit-form[hidden] { display: none; }
+
+.cme-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.cme-label {
+  font-size: 0.78rem;
+  color: var(--gray-text-color);
+  font-weight: 600;
+}
+
+.cme-label code {
+  background-color: var(--background-color);
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+
+.cme-input,
+.cme-textarea,
+.cme-select {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text-color);
+  background: var(--card-color);
+  border: 1px solid var(--secondary-color);
+  border-radius: 6px;
+  padding: 0.5rem 0.65rem;
+  font-family: inherit;
+}
+
+.cme-textarea {
+  resize: vertical;
+  min-height: 6rem;
+  font-family: SFMono-Regular, Menlo, Consolas, monospace;
+  line-height: 1.5;
+}
+
+.cme-input:focus,
+.cme-textarea:focus,
+.cme-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.18);
+}
+
+/* レーン／カラム／期限を横一列にまとめる行（モバイルでは折り返し） */
+.cme-field-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+.cme-field-row .cme-field {
+  min-width: 0;
+}
+.cme-field-row .cme-field[hidden] {
+  display: none;
+}
+@media (max-width: 600px) {
+  .cme-field-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cme-subtasks {
+  list-style: none;
+  margin: 0 0 0.4rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.cme-subtask-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.cme-subtask-row input[type="checkbox"] {
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.cme-subtask-row input[type="text"] {
+  flex: 1 1 auto;
+  font: inherit;
+  font-size: 0.88rem;
+  color: var(--text-color);
+  background: var(--card-color);
+  border: 1px solid var(--secondary-color);
+  border-radius: 4px;
+  padding: 0.3rem 0.45rem;
+  min-width: 0;
+}
+
+.cme-subtask-row input[type="text"]:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.18);
+}
+
+.cme-subtask-remove {
+  flex-shrink: 0;
+  background: transparent;
+  color: var(--gray-text-color);
+  border: 1px solid var(--secondary-color);
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.cme-subtask-remove:hover {
+  background: #fde2e2;
+  color: #b42318;
+  border-color: #f3a8a8;
+}
+
+body[data-theme="dark"] .cme-subtask-remove:hover {
+  background: #4a1e1e;
+  color: #fca5a5;
+  border-color: #7a2e2e;
+}
+

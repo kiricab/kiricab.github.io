@@ -1,0 +1,207 @@
+/* mdkanban/css/board.css — 元 style.css から分割。共通変数等は base.css にあり、@import せずに index.html 側で並列読み込みする。 */
+/* ===== 復元バナー ===== */
+.restore-banner {
+  background-color: #fff8e1;
+  border-bottom: 1px solid #f6c453;
+  color: #6b4f00;
+}
+
+body[data-theme="dark"] .restore-banner {
+  background-color: #3a2f00;
+  border-bottom-color: #6b5500;
+  color: #fde68a;
+}
+
+.restore-banner-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1.5rem;
+}
+
+.restore-banner-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ===== タグフィルタバー ===== */
+.tag-filter-bar {
+  background-color: var(--card-color);
+  border-bottom: 1px solid var(--secondary-color);
+}
+
+.tag-filter-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 1.5rem;
+}
+
+.tag-filter-label {
+  color: var(--gray-text-color);
+  font-size: 0.875rem;
+}
+
+.active-tag {
+  display: inline-block;
+  background-color: var(--kanban-tag-bg);
+  color: var(--kanban-tag-color);
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* ===== 空状態（起動CTA） ===== */
+.empty-state {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.empty-cta {
+  border: 1px solid var(--secondary-color);
+  border-radius: 12px;
+  background-color: var(--card-color);
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.empty-cta-icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.empty-cta-main {
+  font-size: 1.05rem;
+  margin: 1rem 0 0.5rem;
+  color: var(--text-color);
+}
+
+.empty-cta-sub {
+  margin: 0 0 1.25rem;
+  color: var(--gray-text-color);
+  font-size: 0.9rem;
+}
+
+.empty-cta-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.empty-cta-note {
+  margin: 1rem 0 0;
+  color: var(--gray-text-color);
+  font-size: 0.82rem;
+}
+
+/* オンボーディングガイド */
+.onboarding-guide {
+  margin-top: 2rem;
+  background-color: var(--card-color);
+  border: 1px solid var(--secondary-color);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+}
+
+.onboarding-guide h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.onboarding-sample {
+  background-color: var(--background-color);
+  border: 1px solid var(--secondary-color);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  font-family: SFMono-Regular, Menlo, Consolas, monospace;
+  margin: 0.5rem 0 1rem;
+}
+
+.onboarding-points {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--text-color);
+  font-size: 0.9rem;
+  line-height: 1.8;
+}
+
+.onboarding-points code {
+  background-color: var(--background-color);
+  padding: 0.05rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+/* ===== 右下トースト（自動保存失敗など） ===== */
+.toast-area {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 1100;
+  pointer-events: none;
+}
+
+.toast {
+  padding: 0.6rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  background: var(--card-color);
+  color: var(--text-color);
+  border: 1px solid var(--secondary-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  pointer-events: auto;
+  max-width: 320px;
+}
+
+.toast.success {
+  background: #e7f5ec;
+  color: #1b6b3a;
+  border-color: #b6e0c4;
+}
+
+.toast.warning {
+  background: #fff8e1;
+  color: #6b4f00;
+  border-color: #f6c453;
+}
+
+.toast.error {
+  background: #fde2e2;
+  color: #b42318;
+  border-color: #f3a8a8;
+}
+
+body[data-theme="dark"] .toast.success { background:#1f3a2a; color:#9ae6b4; border-color:#2f5a3f; }
+body[data-theme="dark"] .toast.warning { background:#3a2f00; color:#fde68a; border-color:#6b5500; }
+body[data-theme="dark"] .toast.error   { background:#4a1e1e; color:#fca5a5; border-color:#7a2e2e; }
+
+/* ===== F13: チェック済みカードの自動非表示 UI ===== */
+
+/* オーバーフローメニュー内に配置されているアンカー要素。
+   メニュー項目として全幅表示するため display: block, ポップオーバーは右隣にスライド開閉。 */
+.hide-checked-wrap {
+  position: relative;
+  display: block;
+}
+
+/* ファイル未読込時はヘッダのオーバーフローメニュー・ツールバー昇格DL/Copy をまとめて隠す。
+   起動 CTA（空状態セクション）に同等の操作ボタンが用意されているためヘッダは何も要らない。 */
+body:not(.has-board) .overflow-menu-wrap,
+body:not(.has-board) #toolbar-download-btn,
+body:not(.has-board) #toolbar-copy-btn {
+  display: none !important;
+}
+

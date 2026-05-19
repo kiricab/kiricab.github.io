@@ -1,0 +1,147 @@
+/* mdkanban/css/base.css — 元 style.css から分割。共通変数等は base.css にあり、@import せずに index.html 側で並列読み込みする。 */
+/* mdkanban 固有スタイル
+   ライト／ダークの2モードを body[data-theme] で切替。
+   common/style.css で定義された CSS カスタムプロパティの上に
+   カンバン用のローカル変数を被せる。 */
+
+:root {
+  --kanban-col-bg: #f1f3f5;
+  --kanban-col-border: #dee2e6;
+  --kanban-card-bg: #ffffff;
+  --kanban-card-border: #dee2e6;
+  --kanban-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --kanban-tag-bg: #e7f1ff;
+  --kanban-tag-color: #1e3a8a;
+  --kanban-due-overdue-bg: #fde2e2;
+  --kanban-due-overdue-color: #b42318;
+  --kanban-due-today-bg: #fff4cc;
+  --kanban-due-today-color: #8a6100;
+  --kanban-due-future-bg: #e9ecef;
+  --kanban-due-future-color: #495057;
+  --kanban-modal-overlay: rgba(15, 23, 42, 0.55);
+}
+
+body[data-theme="dark"] {
+  --primary-color: #4a6fd4;
+  --primary-color-dark: #1e293b;
+  --secondary-color: #2d3748;
+  --background-color: #1a202c;
+  --card-color: #2d3748;
+  --text-color: #e2e8f0;
+  --gray-text-color: #a0aec0;
+  --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+  --kanban-col-bg: #232c3d;
+  --kanban-col-border: #2d3748;
+  --kanban-card-bg: #2d3748;
+  --kanban-card-border: #3a4456;
+  --kanban-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --kanban-tag-bg: #2a3a66;
+  --kanban-tag-color: #c8d4ff;
+  --kanban-due-overdue-bg: #4a1e1e;
+  --kanban-due-overdue-color: #fca5a5;
+  --kanban-due-today-bg: #4a3b00;
+  --kanban-due-today-color: #fde68a;
+  --kanban-due-future-bg: #374151;
+  --kanban-due-future-color: #d1d5db;
+  --kanban-modal-overlay: rgba(0, 0, 0, 0.7);
+}
+
+/* テーマプロパティが body 単位で再定義されるため、html/body にも反映 */
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== メインエリア ===== */
+.kanban-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 集中モード（ボード表示中）は共通CSSの main { padding-top: 2rem } を打ち消す。
+   空状態（ヒーロー風）では 2rem の上余白を残したいので body.has-board の時だけ縮める。 */
+body.has-board .kanban-main {
+  padding-top: 0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+}
+/* ===== seo-content（共通スタイルを上書き調整） ===== */
+.seo-content {
+  margin: 0;
+}
+
+.seo-content code {
+  background-color: var(--background-color);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-family: SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* ===== seo-content の集中モード折りたたみ ===== */
+/* SEO テキストは DOM に残しつつ、ボード表示時は既定で折り畳む。
+   Google は <details> 内テキストを通常通りインデックスする。 */
+.seo-content-details {
+  margin: 1rem auto 2rem;
+  background-color: var(--card-color);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--secondary-color);
+  box-shadow: var(--box-shadow);
+  padding: 0;
+  /* common style の .container は padding を持つが、ここでは summary/コンテンツ側で個別制御 */
+}
+
+.seo-content-summary {
+  cursor: pointer;
+  padding: 1rem 1.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--primary-color);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  user-select: none;
+  border-radius: var(--border-radius);
+}
+
+.seo-content-summary::-webkit-details-marker {
+  display: none;
+}
+
+.seo-content-summary::after {
+  content: "▼";
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--gray-text-color);
+  transition: transform 0.2s ease;
+}
+
+.seo-content-details[open] > .seo-content-summary::after {
+  transform: rotate(180deg);
+}
+
+.seo-content-summary:hover {
+  background-color: var(--background-color);
+}
+
+.seo-content-summary:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* 展開時は内側 section の padding で調整 */
+.seo-content-details[open] > .seo-content {
+  padding: 0 2rem 1.5rem;
+  border-top: 1px solid var(--secondary-color);
+}
+
