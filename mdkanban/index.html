@@ -253,8 +253,6 @@
         <li><strong>XSS対策</strong>: Markdown内の <code>&lt;script&gt;</code> や <code>javascript:</code> URLはサニタイズして無害化</li>
       </ul>
 
-      <p>2つのカンバンmdの差分を確認したいときは、同じKIRICAB Toolsの<a href="../diff/index.html">テキスト比較ツール</a>と組み合わせるとレビューがスムーズです。</p>
-
       <h2>よくある質問</h2>
       <div class="faq-list">
         <details>
@@ -270,12 +268,8 @@
           <p>はい。カードをドラッグして別の列にドロップしたり、同じ列内で上下に並び替えたりできるほか、<strong>カードタイトル・本文・サブタスクの編集</strong>、<strong>カードの追加・削除</strong>にも対応しています（カード上の鉛筆/ゴミ箱アイコン、各列下の「+ カード追加」ボタン、モーダルの編集ボタン）。Chrome系ブラウザで File System Access API 経由でファイルを開いた場合は変更が <strong>800ms デバウンスで自動的に元ファイルへ書き戻され</strong>（保存中は「💾 保存中…」、完了で「✓ 保存済み」をヘッダーに表示）、その他のブラウザでは「ダウンロード」「コピー」ボタンで持ち出せます。LocalStorageにも自動保存されるため、リロード時の復元バナーから編集後の状態を呼び戻せます。</p>
         </details>
         <details>
-          <summary>2つのカンバンmdの差分を比較したいときは？</summary>
-          <p>同じKIRICAB Toolsの<a href="../diff/index.html">テキスト比較ツール（diff）</a>をご利用ください。並び替え前後のMarkdownを左右に貼り付ければ、列とカードの移動を色分けでレビューできます。</p>
-        </details>
-        <details>
           <summary>タグや期限の色はカスタマイズできますか？</summary>
-          <p>期限バッジは今日基準で自動色分け（赤＝期限切れ／黄＝当日／灰＝未来）しており、カスタマイズには対応していません。タグ自体の配色を考えるときは<a href="../colorpallet/index.html">カラーパレット生成ツール</a>もご活用いただけます。</p>
+          <p>期限バッジは今日基準で自動色分け（赤＝期限切れ／黄＝当日／灰＝未来）しており、カスタマイズには対応していません。</p>
         </details>
         <details>
           <summary>対応していない記法はありますか？</summary>
@@ -433,8 +427,7 @@
       { "@type": "Question", "name": "どんなMarkdown形式に対応していますか？", "acceptedAnswer": { "@type": "Answer", "text": "Obsidian Kanbanプラグインの ## 見出し＝列、- [ ] タスク＝カード形式に対応します。frontmatterもパースして再シリアライズ時にそのまま貼り戻します。kanban-plugin: basic の有無は問いません。" } },
       { "@type": "Question", "name": "アップロードしたファイルはサーバーに送信されますか？", "acceptedAnswer": { "@type": "Answer", "text": "いいえ。すべての処理はお使いのブラウザ内で完結します。ファイル内容が外部のサーバーに送信されることはありません。" } },
       { "@type": "Question", "name": "カードの並び替えや編集はできますか？", "acceptedAnswer": { "@type": "Answer", "text": "カードのDnDによる列間移動・同列内並び替えに加え、カードタイトル・本文・サブタスクの編集、カードの追加・削除にも対応しています。Chrome系ブラウザで File System Access API 経由でファイルを開いた場合は変更が 800ms デバウンスで自動的に元ファイルへ書き戻されます。その他のブラウザではダウンロード／クリップボードコピーで持ち出せ、LocalStorageへも自動反映されます。" } },
-      { "@type": "Question", "name": "2つのカンバンmdの差分を比較したいときは？", "acceptedAnswer": { "@type": "Answer", "text": "同じKIRICAB Toolsのテキスト比較ツール（diff）をご利用ください。並び替え前後のMarkdownを左右に貼り付けて差分を確認できます。" } },
-      { "@type": "Question", "name": "タグや期限の色はカスタマイズできますか？", "acceptedAnswer": { "@type": "Answer", "text": "期限バッジは今日基準で自動色分け（赤＝期限切れ／黄＝当日／灰＝未来）しています。タグの配色を考えるときはカラーパレット生成ツールもご活用ください。" } },
+      { "@type": "Question", "name": "タグや期限の色はカスタマイズできますか？", "acceptedAnswer": { "@type": "Answer", "text": "期限バッジは今日基準で自動色分け（赤＝期限切れ／黄＝当日／灰＝未来）しており、カスタマイズには対応していません。" } },
       { "@type": "Question", "name": "対応していない記法はありますか？", "acceptedAnswer": { "@type": "Answer", "text": "担当者記法 @username や複数H1ボードなどは現バージョン非対応です。期限記法 @YYYY-MM-DD のみ特別扱いします。" } },
       { "@type": "Question", "name": "読み込めるファイルサイズの上限は？", "acceptedAnswer": { "@type": "Answer", "text": "1ファイルあたり5MBまでです。これを超えるファイルはエラー表示となります。" } },
       { "@type": "Question", "name": "スイムレーン（行グルーピング）はどう使いますか？", "acceptedAnswer": { "@type": "Answer", "text": "frontmatter に lanes: キー（YAML 配列）でレーン名を宣言し、カード本文に #lane/<レーン名> を書くと、その行に振り分けられます。lanes: の出現順がそのまま表示順です。lanes: に未列挙の #lane/X や lane 未指定のカードは末尾の「未分類」レーンへ集約され、レーンの追加・削除・並び替え・名前変更は画面上のレーンヘッダから操作できます。操作結果は lanes: 配列に自動で書き戻されます。lanes: キーが無いファイルではスイムレーン機能はオフで、#lane/X は通常のタグバッジとして表示されます（厳密モード）。" } },
