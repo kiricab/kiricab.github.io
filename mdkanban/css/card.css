@@ -1,0 +1,259 @@
+/* mdkanban/css/card.css — 元 style.css から分割。共通変数等は base.css にあり、@import せずに index.html 側で並列読み込みする。 */
+
+.kanban-column-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.kanban-card {
+  position: relative;
+  background-color: var(--kanban-card-bg);
+  border: 1px solid var(--kanban-card-border);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  box-shadow: var(--kanban-card-shadow);
+  cursor: grab;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease, opacity 0.12s ease;
+}
+
+.kanban-card:active { cursor: grabbing; }
+
+/* インライン編集中の textarea */
+.kanban-card.is-editing {
+  cursor: default;
+}
+
+.card-title-edit {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  color: var(--text-color);
+  background: var(--background-color);
+  border: 1px solid var(--primary-color);
+  border-radius: 4px;
+  padding: 0.3rem 0.4rem;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  min-height: 2.2rem;
+}
+
+.card-title-edit:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.18);
+}
+
+/* ===== 「+ カード追加」ボタン ===== */
+.add-card-btn {
+  margin-top: 0.4rem;
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  background: transparent;
+  border: 1px dashed var(--kanban-col-border);
+  border-radius: 6px;
+  color: var(--gray-text-color);
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: center;
+  transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.add-card-btn:hover {
+  background: rgba(30, 58, 138, 0.06);
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+body[data-theme="dark"] .add-card-btn:hover {
+  background: rgba(74, 111, 212, 0.14);
+}
+
+.add-card-btn:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* ===== 自動保存ステータスインジケーター（カプセル左外に absolute 配置） =====
+   right: calc(100% + 0.4rem) で capsule の左端から 0.4rem 離れた位置にステータスを浮かべる。
+   absolute なので flex フローに影響せず、状態遷移時にカプセルやボタンが動かない。
+   ブランドとカプセルの間の余白に自然に浮かぶ。 */
+.save-status {
+  position: absolute;
+  right: calc(100% + 0.4rem);
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--text-color-light);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  white-space: nowrap;
+  opacity: 1;
+  transition: opacity 200ms ease;
+  pointer-events: none; /* 装飾的表示なのでクリック透過 */
+}
+
+.save-status[data-status="idle"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.save-status[data-status="saving"] {
+  background: rgba(255, 220, 130, 0.25);
+  border-color: rgba(255, 220, 130, 0.45);
+}
+
+.save-status[data-status="saved"] {
+  background: rgba(120, 220, 150, 0.25);
+  border-color: rgba(120, 220, 150, 0.5);
+}
+
+/* reduced-motion: フェードを無効化 */
+@media (prefers-reduced-motion: reduce) {
+  .dirty-marker,
+  .save-status {
+    transition: none;
+  }
+}
+
+/* dirty と save-status はカプセル左外の同一スロットに重なって absolute 配置される。
+   JS で優先順位（error/saving/saved > dirty）に従い片方だけを opacity:1 にする。
+   両方が同時に opacity:1 になることは無いため z-index 制御は不要。 */
+
+.save-status[data-status="error"] {
+  background: rgba(255, 130, 130, 0.28);
+  border-color: rgba(255, 130, 130, 0.55);
+}
+
+/* スクリーンリーダー専用テキスト */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.kanban-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.10);
+}
+
+.kanban-card:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.kanban-card.is-done {
+  opacity: 0.55;
+}
+
+.kanban-card.is-done .kanban-card-title {
+  text-decoration: line-through;
+}
+
+/* DnD半透明は .is-done より後に書いて opacity を上書きする
+   （ドラッグ中の完了カードでも視覚フィードバックが効くように） */
+.kanban-card.is-dragging {
+  opacity: 0.4;
+  cursor: grabbing;
+}
+
+.kanban-card-title {
+  font-size: 0.92rem;
+  line-height: 1.4;
+  color: var(--text-color);
+  word-break: break-word;
+  margin: 0;
+}
+
+/* コンパクト：1〜2行までで切る */
+body[data-density="compact"] .kanban-card-preview { display: none; }
+body[data-density="compact"] .kanban-card-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 詳細：本文プレビュー1〜2行を表示 */
+.kanban-card-preview {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  color: var(--gray-text-color);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
+}
+
+.kanban-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+
+.kanban-card-meta:empty { display: none; }
+
+/* F12: カード表面の最終更新日時（詳細密度時のみ表示） */
+.kanban-card-timestamp {
+  margin-top: 0.4rem;
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--gray-text-color);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  letter-spacing: 0.01em;
+}
+body[data-density="compact"] .kanban-card-timestamp { display: none; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: default;
+}
+
+.badge.tag {
+  background-color: var(--kanban-tag-bg);
+  color: var(--kanban-tag-color);
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+}
+
+.badge.tag:hover { filter: brightness(0.95); }
+.badge.tag:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 1px; }
+
+.badge.due-overdue { background-color: var(--kanban-due-overdue-bg); color: var(--kanban-due-overdue-color); }
+.badge.due-today   { background-color: var(--kanban-due-today-bg);   color: var(--kanban-due-today-color); }
+.badge.due-future  { background-color: var(--kanban-due-future-bg);  color: var(--kanban-due-future-color); }
+
+.badge.subtask {
+  background-color: var(--secondary-color);
+  color: var(--gray-text-color);
+}
+

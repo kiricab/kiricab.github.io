@@ -10,6 +10,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `main` ブランチへのプッシュがそのままGitHub Pagesへのデプロイとなる。ビルド手順は不要。ローカルでの動作確認は各ツールの `index.html` をブラウザで直接開けばよい。
 
+**例外: `mdkanban` のみ ES Modules（`<script type="module">`）を採用しているため `file://` では動かない。** リポジトリのルートで以下を起動し、`http://127.0.0.1:8000/mdkanban/` を開く:
+
+```sh
+python3 -m http.server 8000
+```
+
 ## リポジトリ構成
 
 各ツールは独自のサブディレクトリに `index.html`・`script.js`・`style.css` をまとめた構成：
