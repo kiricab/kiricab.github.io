@@ -27,6 +27,14 @@ python3 -m http.server 8000
 - `mdeditor/` — WYSIWYGマークダウンエディタ（現在開発中のブランチ：`mdeditor`）
 - `common/style.css` — 全ツール共通のCSSカスタムプロパティとベーススタイル
 
+**サイト全体の補助ページ**（ツールではないが必須。Google AdSense 審査の前提条件でもある）:
+
+- `about/` — このサイトについて（運営者・ミッション・収録ツール一覧）
+- `privacy/` — プライバシーポリシー（GA・AdSense のクッキー利用・オプトアウト案内を含む）
+- `terms/` — 利用規約（免責・禁止事項・準拠法）
+- `contact/` — お問い合わせ（GitHub Issues 一本化）
+- `ads.txt` — AdSense Authorized Sellers（`google.com, pub-8141179596557780, DIRECT, f08c47fec0942fa0`）
+
 ## アーキテクチャパターン
 
 **共通CSSカスタムプロパティ** — 全ツールが `../common/style.css` をインポートしてデザインシステム（`--primary-color: #1e3a8a` など）を参照し、ツール固有のスタイルは各 `style.css` に追記する。
@@ -55,7 +63,7 @@ python3 -m http.server 8000
 1. `index.html`・`script.js`・`style.css` を格納した新規ディレクトリを作成する
 2. `../common/style.css` をツール固有のスタイルシートより先にリンクする
 3. ファビコンは `<link rel="icon" href="../common/favicon.svg">` で共通ファイルを参照する
-4. 既存の全 `index.html` のフッターナビにリンクを追加する
+4. 既存の全 `index.html` のフッターナビにリンクを追加する（フッターは「ツール横断」と「サイト情報（about/privacy/terms/contact）」の 2 段構成。新ツールは前者に追加する）
 5. `sitemap.xml` を更新する（`lastmod` を当日日付、`changefreq` を `monthly` に設定）
 6. ルートの `index.html` にボタンを追加する
 

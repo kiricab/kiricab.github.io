@@ -14,6 +14,15 @@
 | [`colorpallet/`](./colorpallet/) | 配色ハーモニーモード・LocalStorage 保存・PNG/JSON エクスポート対応のカラーパレット生成 |
 | [`mdkanban/`](./mdkanban/) | Obsidian Kanban 互換 Markdown をカンバンボードとして表示・編集 |
 
+## サイト情報
+
+| ページ | 概要 |
+|---|---|
+| [`about/`](./about/) | このサイトについて（運営方針・収録ツール一覧） |
+| [`privacy/`](./privacy/) | プライバシーポリシー |
+| [`terms/`](./terms/) | 利用規約 |
+| [`contact/`](./contact/) | お問い合わせ（GitHub Issues） |
+
 ## ローカルでの動作確認
 
 ビルド手順・パッケージマネージャは不要。各ツールの `index.html` をブラウザで直接開けばよい。
