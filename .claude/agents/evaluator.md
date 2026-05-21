@@ -80,7 +80,17 @@ memory: project
 - カラーコントラスト（`common/style.css` の変数使用で概ね担保）
 - 画像に `alt`、装飾SVGに `aria-hidden` または意味のあるラベル
 
-### 8. UI/UX（Playwright MCP によるブラウザ確認**必須**）
+### 8. UI/UX（Playwright MCP + `ui-ux-pro-max` スキルによる二重チェック**必須**）
+
+UI/UX 評価の前に、必ず `ui-ux-pro-max` スキルを呼び出して評価チェックリスト（特に Quick Reference §1〜§8）を取得し、それを基準に実装を点検すること。
+
+呼び出し例:
+```
+/ui-ux-pro-max:ui-ux-pro-max （対象ツールの製品タイプ・主要 UI 要素・確認したい観点を渡す）
+```
+
+スキルの基準に違反している箇所（コントラスト不足、タッチターゲット 44px 未満、アニメーション 500ms 超、フォーカスリング欠如、フォームエラー位置の不適切さ、`prefers-reduced-motion` 未対応など）は、Playwright 確認の前に静的レビューで指摘する。
+
 
 #### 確認必須シナリオ
 1. `mcp__playwright__browser_navigate` でツールの `index.html` を開く
