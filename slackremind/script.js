@@ -108,7 +108,7 @@
         targetNameEl.addEventListener('input', () => { markTouched('target'); update(); });
         targetNameEl.addEventListener('blur', () => { markTouched('target'); update(); });
 
-        bodyEl.addEventListener('input', () => { markTouched('body'); update(); });
+        bodyEl.addEventListener('input', () => { markTouched('body'); autoGrowBody(); update(); });
         bodyEl.addEventListener('blur', () => { markTouched('body'); update(); });
 
         tabBtnEls.forEach((el) => el.addEventListener('click', () => switchTab(el.dataset.tab)));
@@ -142,7 +142,15 @@
         onTargetTypeChange();
         onRepeatPatternChange();
         renderHistory();
+        autoGrowBody();
         update();
+    }
+
+    // textarea の内容に応じて高さを自動調整する。max-height は CSS 側で抑える。
+    function autoGrowBody() {
+        if (!bodyEl) return;
+        bodyEl.style.height = 'auto';
+        bodyEl.style.height = bodyEl.scrollHeight + 'px';
     }
 
     // ---------- イベントハンドラ ----------
@@ -790,6 +798,7 @@
 
         // 本文
         bodyEl.value = s.body || '';
+        autoGrowBody();
 
         // タブ
         switchTab(s.tab || 'relative');
