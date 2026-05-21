@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slack /remind ジェネレーター | 日本語フォームで簡単にリマインドコマンドを作成</title>
+    <meta name="description" content="Slack の /remind コマンドを日本語フォームで作成。自分・個人・チャンネル宛、繰り返し（毎日・毎週・平日）にも対応。コピーしてSlackに貼るだけ。">
+
+    <!-- OGP -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://kiricab.github.io/slackremind/">
+    <meta property="og:title" content="Slack /remind ジェネレーター | 日本語フォームで簡単にリマインドコマンドを作成">
+    <meta property="og:description" content="Slack の /remind コマンドを日本語フォームで作成。自分・個人・チャンネル宛、繰り返し（毎日・毎週・平日）にも対応。コピーしてSlackに貼るだけ。">
+    <meta property="og:site_name" content="KIRICAB Tools">
+    <meta property="og:locale" content="ja_JP">
+    <meta property="og:image" content="https://kiricab.github.io/common/og-image.svg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Slack /remind ジェネレーター | 日本語フォームで簡単にリマインドコマンドを作成">
+    <meta name="twitter:description" content="Slack の /remind コマンドを日本語フォームで作成。繰り返し（毎日・毎週・平日）にも対応。コピーしてSlackに貼るだけ。">
+    <meta name="twitter:image" content="https://kiricab.github.io/common/og-image.svg">
+    <!-- Canonical -->
+    <link rel="canonical" href="https://kiricab.github.io/slackremind/">
+
+    <link rel="icon" href="../common/favicon.svg">
+    <link rel="preconnect" href="https://www.googletagmanager.com">
+    <link rel="preconnect" href="https://pagead2.googlesyndication.com">
+    <link rel="stylesheet" href="../common/style.css">
+    <link rel="stylesheet" href="style.css">
+    <!-- Google AdSense-->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8141179596557780"
+     crossorigin="anonymous"></script>
+    <meta name="google-adsense-account" content="ca-pub-8141179596557780">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CN3KBWSXRE"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-CN3KBWSXRE');
+    </script>
+</head>
+<body>
+
+    <header>
+        <div class="container">
+            <h1>⏰ Slack /remind ジェネレーター</h1>
+            <p>日本語フォームで Slack のリマインドコマンドを作成・コピー</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- プレビュー -->
+        <section class="preview-card" aria-labelledby="preview-heading">
+            <h2 id="preview-heading">プレビュー</h2>
+            <div class="preview-box">
+                <code id="preview-output" class="preview-output" aria-live="polite" aria-atomic="true"><span class="pv-cmd">/remind</span> <span class="pv-target">me</span> <span class="pv-cmd">to</span> <span class="pv-missing">[本文を入力]</span> <span class="pv-time">in 30 minutes</span></code>
+                <button id="copy-btn" type="button" class="copy-btn" aria-label="コマンドをクリップボードにコピー">📋 コピー</button>
+            </div>
+            <p id="preview-explain" class="preview-explain" aria-live="polite">入力を完成させると、ここに解釈が表示されます。</p>
+            <p id="preview-error" class="preview-error" role="alert" hidden></p>
+        </section>
+
+        <!-- 入力フォーム -->
+        <section class="settings-card">
+            <h2>リマインドを組み立てる</h2>
+
+            <!-- ステップ1: 宛先 -->
+            <fieldset class="form-step">
+                <legend><span class="step-num">1</span>だれに通知する？</legend>
+                <div class="radio-row" role="radiogroup" aria-label="宛先の種類">
+                    <label class="radio-chip"><input type="radio" name="target-type" value="me" checked><span>自分 (me)</span></label>
+                    <label class="radio-chip"><input type="radio" name="target-type" value="user"><span>@ ユーザー</span></label>
+                    <label class="radio-chip"><input type="radio" name="target-type" value="channel"><span># チャンネル</span></label>
+                </div>
+                <div id="target-name-wrap" class="target-name-wrap" hidden>
+                    <label for="target-name" id="target-name-label">ユーザー名</label>
+                    <div class="target-name-row">
+                        <span id="target-prefix" class="target-prefix" aria-hidden="true">@</span>
+                        <input type="text" id="target-name" inputmode="text" autocomplete="off" placeholder="例: alice" maxlength="80">
+                    </div>
+                    <p id="target-name-error" class="field-error" hidden></p>
+                </div>
+            </fieldset>
+
+            <!-- ステップ2: 本文 -->
+            <fieldset class="form-step">
+                <legend><span class="step-num">2</span>なにを通知する？</legend>
+                <label for="reminder-body" class="sr-only">リマインド内容</label>
+                <textarea id="reminder-body" rows="2" maxlength="500" placeholder="例: 議事録を送る"></textarea>
+                <p id="body-error" class="field-error" hidden></p>
+            </fieldset>
+
+            <!-- ステップ3: 日時 -->
+            <fieldset class="form-step">
+                <legend><span class="step-num">3</span>いつ通知する？</legend>
+                <div class="tabs" role="tablist" aria-label="日時の指定方法">
+                    <button type="button" class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-relative" id="tabbtn-relative" data-tab="relative">相対時間</button>
+                    <button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-day" id="tabbtn-day" data-tab="day">今日・明日</button>
+                    <button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-date" id="tabbtn-date" data-tab="date">日付指定</button>
+                    <button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-repeat" id="tabbtn-repeat" data-tab="repeat">繰り返し</button>
+                </div>
+
+                <!-- モード1: 相対時間 -->
+                <div class="tab-panel active" id="tab-relative" role="tabpanel" aria-labelledby="tabbtn-relative">
+                    <div class="inline-fields">
+                        <label class="inline-field">
+                            <span>数値</span>
+                            <input type="number" id="rel-amount" min="1" max="9999" value="30" inputmode="numeric">
+                        </label>
+                        <label class="inline-field">
+                            <span>単位</span>
+                            <select id="rel-unit">
+                                <option value="minutes">分後</option>
+                                <option value="hours">時間後</option>
+                                <option value="days">日後</option>
+                            </select>
+                        </label>
+                    </div>
+                    <p id="rel-error" class="field-error" hidden></p>
+                </div>
+
+                <!-- モード2: 今日・明日 -->
+                <div class="tab-panel" id="tab-day" role="tabpanel" aria-labelledby="tabbtn-day" hidden>
+                    <div class="radio-row" role="radiogroup" aria-label="日">
+                        <label class="radio-chip"><input type="radio" name="day-rel" value="today" checked><span>今日</span></label>
+                        <label class="radio-chip"><input type="radio" name="day-rel" value="tomorrow"><span>明日</span></label>
+                        <label class="radio-chip"><input type="radio" name="day-rel" value="dayafter"><span>明後日</span></label>
+                    </div>
+                    <label class="inline-field">
+                        <span>時刻</span>
+                        <input type="time" id="day-time" value="09:00" step="60">
+                    </label>
+                    <p id="day-error" class="field-error" hidden></p>
+                </div>
+
+                <!-- モード3: 日付指定 -->
+                <div class="tab-panel" id="tab-date" role="tabpanel" aria-labelledby="tabbtn-date" hidden>
+                    <div class="inline-fields">
+                        <label class="inline-field">
+                            <span>日付</span>
+                            <input type="date" id="date-date">
+                        </label>
+                        <label class="inline-field">
+                            <span>時刻</span>
+                            <input type="time" id="date-time" value="09:00" step="60">
+                        </label>
+                    </div>
+                    <p id="date-error" class="field-error" hidden></p>
+                </div>
+
+                <!-- モード4: 繰り返し -->
+                <div class="tab-panel" id="tab-repeat" role="tabpanel" aria-labelledby="tabbtn-repeat" hidden>
+                    <div class="radio-row vertical" role="radiogroup" aria-label="繰り返しパターン">
+                        <label class="radio-chip"><input type="radio" name="repeat-pattern" value="daily" checked><span>毎日</span></label>
+                        <label class="radio-chip"><input type="radio" name="repeat-pattern" value="weekday"><span>平日</span></label>
+                        <label class="radio-chip"><input type="radio" name="repeat-pattern" value="weekend"><span>週末</span></label>
+                        <label class="radio-chip"><input type="radio" name="repeat-pattern" value="weekly"><span>毎週（曜日選択）</span></label>
+                        <label class="radio-chip"><input type="radio" name="repeat-pattern" value="monthly"><span>毎月N日</span></label>
+                    </div>
+
+                    <div id="repeat-weekly-wrap" class="repeat-extra" hidden>
+                        <span class="weekly-label">曜日（複数選択可）</span>
+                        <div class="weekday-row">
+                            <label class="checkbox-chip"><input type="checkbox" name="weekday" value="1"><span>月</span></label>
+                            <label class="checkbox-chip"><input type="checkbox" name="weekday" value="2"><span>火</span></label>
+                            <label class="checkbox-chip"><input type="checkbox" name="weekday" value="3"><span>水</span></label>
+                            <label class="checkbox-chip"><input type="checkbox" name="weekday" value="4"><span>木</span></label>
+                            <label class="checkbox-chip"><input type="checkbox" name="weekday" value="5"><span>金</span></label>
+                            <label class="checkbox-chip"><input type="checkbox" name="weekday" value="6"><span>土</span></label>
+                            <label class="checkbox-chip"><input type="checkbox" name="weekday" value="0"><span>日</span></label>
+                        </div>
+                    </div>
+
+                    <div id="repeat-monthly-wrap" class="repeat-extra" hidden>
+                        <label class="inline-field">
+                            <span>日</span>
+                            <input type="number" id="monthly-day" min="1" max="31" value="1" inputmode="numeric">
+                        </label>
+                    </div>
+
+                    <label class="inline-field">
+                        <span>時刻</span>
+                        <input type="time" id="repeat-time" value="09:00" step="60">
+                    </label>
+                    <p id="repeat-error" class="field-error" hidden></p>
+                </div>
+            </fieldset>
+        </section>
+
+        <!-- 履歴・お気に入り -->
+        <section class="settings-card history-card">
+            <details id="history-details">
+                <summary><h2>履歴 / お気に入り</h2></summary>
+                <div class="history-tabs" role="tablist" aria-label="履歴とお気に入りの切替">
+                    <button type="button" class="history-tab-btn active" role="tab" aria-selected="true" data-history-tab="history">履歴</button>
+                    <button type="button" class="history-tab-btn" role="tab" aria-selected="false" data-history-tab="favorites">★ お気に入り</button>
+                    <button type="button" id="history-clear-btn" class="history-clear-btn">全削除</button>
+                </div>
+                <ul id="history-list" class="history-list" aria-live="polite"></ul>
+                <ul id="favorites-list" class="history-list" hidden aria-live="polite"></ul>
+                <p id="history-empty" class="history-empty">まだ履歴はありません。コピーすると保存されます。</p>
+            </details>
+        </section>
+
+        <!-- SEOコンテンツ -->
+        <section class="seo-content">
+            <h2>Slack /remind とは？</h2>
+            <p><code>/remind</code> は Slack のスラッシュコマンドで、自分・特定のメンバー・チャンネルへ指定した時刻にリマインダーを送れます。本ツールは英語の構文を覚えなくても、日本語フォームから正しいコマンドを生成できます。</p>
+
+            <h2>使い方</h2>
+            <ol class="howto-steps">
+                <li>リマインドの宛先を選びます（自分 / @ユーザー / #チャンネル）。</li>
+                <li>リマインド内容を日本語で入力します。</li>
+                <li>日時タブを選び、いつ通知してほしいかを指定します。</li>
+                <li>プレビューに表示された <code>/remind ...</code> を「コピー」ボタンで取得します。</li>
+                <li>Slack の入力欄に貼り付けて送信すると、リマインダーが登録されます。</li>
+            </ol>
+
+            <h2>生成例</h2>
+            <ul class="example-list">
+                <li><code>/remind me to 議事録を送る in 30 minutes</code> — 30分後に自分宛て</li>
+                <li><code>/remind @alice to レビュー依頼 at 3pm tomorrow</code> — 明日 15:00 にメンバー宛て</li>
+                <li><code>/remind #general to 朝会 every Monday, Wednesday at 9am</code> — 毎週月・水 9:00 にチャンネルへ</li>
+            </ul>
+
+            <h2>よくある質問</h2>
+            <div class="faq-list">
+                <details>
+                    <summary>生成したコマンドはSlackのどの画面で使えますか？</summary>
+                    <p>Slack の任意のチャンネル・DM の入力欄に貼り付けて送信できます。送信後は自分にしか見えない確認メッセージが表示されます。</p>
+                </details>
+                <details>
+                    <summary>「明日の朝9時」のような自然な指定はできますか？</summary>
+                    <p>フォームの「今日・明日」タブで明日を選び、時刻に <code>09:00</code> を指定すると <code>at 9am tomorrow</code> が生成されます。</p>
+                </details>
+                <details>
+                    <summary>設定したリマインダーをあとから削除できますか？</summary>
+                    <p>はい。Slack の入力欄で <code>/remind list</code> を実行するとリマインダー一覧が表示され、各項目から削除できます。</p>
+                </details>
+                <details>
+                    <summary>タイムゾーンはどうなりますか？</summary>
+                    <p>Slack ワークスペースで設定されたタイムゾーンで通知されます。本ツールは時刻文字列を変換するのみで、サーバには送信しません。</p>
+                </details>
+                <details>
+                    <summary>Slack 絵文字をリマインドと一緒に使いたい</summary>
+                    <p>本サイトの<a href="../slackemojigen/index.html">Slack絵文字ジェネレーター</a>で絵文字画像を作成 → Slack にアップロード後、リマインド本文に <code>:emoji_name:</code> の形で記述できます。タスク管理を可視化したい場合は<a href="../mdkanban/index.html">mdカンバン</a>もあわせてどうぞ。</p>
+                </details>
+            </div>
+        </section>
+
+        <!-- トースト -->
+        <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="../index.html">ホーム</a>
+                <a href="../passgen/index.html">パスワード生成</a>
+                <a href="../slackemojigen/index.html">Slack絵文字生成</a>
+                <a href="../slackremind/index.html">Slack /remind ジェネレーター</a>
+                <a href="../diff/index.html">テキスト比較</a>
+                <a href="../colorpallet/index.html">カラーパレット生成</a>
+                <a href="../qrgen/index.html">QRコード生成</a>
+                <a href="../sealgen/index.html">印鑑生成</a>
+                <a href="../amida/index.html">あみだくじ</a>
+                <a href="../filmfilter/index.html">フィルム風フィルター</a>
+                <a href="../mdkanban/index.html">mdカンバン</a>
+            </div>
+            <div class="footer-links">
+                <a href="../about/index.html">このサイトについて</a>
+                <a href="../privacy/index.html">プライバシーポリシー</a>
+                <a href="../terms/index.html">利用規約</a>
+                <a href="../contact/index.html">お問い合わせ</a>
+            </div>
+            <p>&copy; 2025 Kiricab. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Slack /remind ジェネレーター",
+      "url": "https://kiricab.github.io/slackremind/",
+      "description": "Slack の /remind コマンドを日本語フォームで作成。自分・個人・チャンネル宛、繰り返し（毎日・毎週・平日）にも対応。",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Any",
+      "inLanguage": "ja",
+      "image": "https://kiricab.github.io/common/og-image.svg",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "JPY"
+      },
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "KIRICAB Tools",
+        "url": "https://kiricab.github.io/"
+      }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "ホーム", "item": "https://kiricab.github.io/" },
+        { "@type": "ListItem", "position": 2, "name": "Slack /remind ジェネレーター", "item": "https://kiricab.github.io/slackremind/" }
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "生成したコマンドはSlackのどの画面で使えますか？", "acceptedAnswer": { "@type": "Answer", "text": "Slack の任意のチャンネル・DM の入力欄に貼り付けて送信できます。送信後は自分にしか見えない確認メッセージが表示されます。" } },
+        { "@type": "Question", "name": "「明日の朝9時」のような自然な指定はできますか？", "acceptedAnswer": { "@type": "Answer", "text": "フォームの今日・明日タブで明日を選び、時刻に 09:00 を指定すると at 9am tomorrow が生成されます。" } },
+        { "@type": "Question", "name": "設定したリマインダーをあとから削除できますか？", "acceptedAnswer": { "@type": "Answer", "text": "はい。Slack の入力欄で /remind list を実行するとリマインダー一覧が表示され、各項目から削除できます。" } },
+        { "@type": "Question", "name": "タイムゾーンはどうなりますか？", "acceptedAnswer": { "@type": "Answer", "text": "Slack ワークスペースで設定されたタイムゾーンで通知されます。本ツールは時刻文字列を変換するのみで、サーバには送信しません。" } },
+        { "@type": "Question", "name": "Slack 絵文字をリマインドと一緒に使いたい", "acceptedAnswer": { "@type": "Answer", "text": "本サイトのSlack絵文字ジェネレーターで絵文字画像を作成 → Slackにアップロード後、リマインド本文に :emoji_name: の形で記述できます。" } }
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "Slack /remind コマンドを生成して送信する方法",
+      "inLanguage": "ja",
+      "step": [
+        { "@type": "HowToStep", "position": 1, "name": "宛先を選ぶ", "text": "リマインドの宛先を選びます（自分 / @ユーザー / #チャンネル）。" },
+        { "@type": "HowToStep", "position": 2, "name": "本文を入力", "text": "リマインド内容を日本語で入力します。" },
+        { "@type": "HowToStep", "position": 3, "name": "日時を指定", "text": "日時タブを選び、いつ通知してほしいかを指定します。" },
+        { "@type": "HowToStep", "position": 4, "name": "コピー", "text": "プレビューに表示された /remind コマンドをコピーします。" },
+        { "@type": "HowToStep", "position": 5, "name": "Slack で送信", "text": "Slack の入力欄に貼り付けて送信すると、リマインダーが登録されます。" }
+      ]
+    }
+    </script>
+</body>
+</html>
