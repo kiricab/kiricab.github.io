@@ -141,10 +141,12 @@
 }
 
 .radio-chip, .checkbox-chip {
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
     padding: 0.45rem 0.85rem;
+    min-height: 44px;
     border: 1px solid var(--secondary-color);
     border-radius: 999px;
     background: var(--card-color);
@@ -153,15 +155,32 @@
     user-select: none;
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
+/* ネイティブの input は視覚的に隠しつつ chip 全体をタップ判定として残す */
 .radio-chip input, .checkbox-chip input {
-    accent-color: var(--primary-color);
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+/* テキストは input の上に重ねて表示。クリックは label 親が拾うため pointer-events は無効化 */
+.radio-chip span, .checkbox-chip span {
+    position: relative;
+    z-index: 1;
+    pointer-events: none;
 }
 .radio-chip:has(input:checked),
 .checkbox-chip:has(input:checked) {
     background: var(--primary-color);
     color: var(--text-color-light);
     border-color: var(--primary-color);
+}
+/* 色だけでなく font-weight でも選択状態を示す（color-not-only 準拠） */
+.radio-chip:has(input:checked) span,
+.checkbox-chip:has(input:checked) span {
+    font-weight: 600;
 }
 .radio-chip:focus-within,
 .checkbox-chip:focus-within {
