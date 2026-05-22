@@ -135,10 +135,6 @@
     gap: 0.5rem;
     margin-top: 0.25rem;
 }
-.radio-row.vertical {
-    flex-direction: column;
-    align-items: flex-start;
-}
 
 .radio-chip, .checkbox-chip {
     position: relative;
