@@ -430,8 +430,8 @@
                 errors.target = (targetType === 'user')
                     ? '@ユーザー名を入力してください'
                     : '#チャンネル名を入力してください';
-            } else if (!/^[A-Za-z0-9._-]+$/.test(name)) {
-                errors.target = '半角英数・ハイフン・アンダースコア・ピリオドのみ使用できます';
+            } else if (name.length > 80) {
+                errors.target = '80文字以内で入力してください';
             } else {
                 const prefix = (targetType === 'user') ? '@' : '#';
                 partial.targetStr = prefix + name;
