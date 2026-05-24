@@ -461,7 +461,9 @@
 
         const targetStr = partial.targetStr;
         const targetDisplay = partial.targetDisplay;
-        const command = `/remind ${targetStr} to ${body} ${when.whenEn}`;
+        // 本文は常にダブルクオートで括る。本文に時刻キーワード（at/in/every/today/tomorrow 等）が
+        // 含まれた場合でも Slack 側が本文として確実に解釈するためのガード。
+        const command = `/remind ${targetStr} to "${body}" ${when.whenEn}`;
         const explain = buildExplain(targetType, targetDisplay, body, when.whenJa);
         const html = buildPreviewHtml(targetStr, body, when.whenEn);
         return {
@@ -503,10 +505,11 @@
 
     function buildPreviewHtml(targetStr, body, whenEn) {
         // XSS対策: 全テキストをエスケープしてから組み立てる
+        // 本文は常にダブルクオートで括って表示（コピー文字列と一致させる）
         return `<span class="pv-cmd">/remind</span> ` +
             `<span class="pv-target">${escapeHtml(targetStr)}</span> ` +
             `<span class="pv-cmd">to</span> ` +
-            `<span class="pv-body">${escapeHtml(body)}</span> ` +
+            `"<span class="pv-body">${escapeHtml(body)}</span>" ` +
             `<span class="pv-time">${escapeHtml(whenEn)}</span>`;
     }
 
@@ -515,8 +518,10 @@
         const targetHtml = partial.targetStr
             ? `<span class="pv-target">${escapeHtml(partial.targetStr)}</span>`
             : `<span class="pv-missing">[宛先を入力]</span>`;
+        // 本文が確定しているときのみダブルクオートで括る。
+        // 未入力時（pv-missing プレースホルダー）はクオート無しで自然な表示に保つ。
         const bodyHtml = partial.body
-            ? `<span class="pv-body">${escapeHtml(partial.body)}</span>`
+            ? `"<span class="pv-body">${escapeHtml(partial.body)}</span>"`
             : `<span class="pv-missing">[本文を入力]</span>`;
         const whenHtml = partial.whenEn
             ? `<span class="pv-time">${escapeHtml(partial.whenEn)}</span>`
