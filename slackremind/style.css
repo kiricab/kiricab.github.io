@@ -1,0 +1,553 @@
+/* Slack /remind ジェネレーター 固有スタイル */
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* プレビュー */
+.preview-card {
+    background-color: var(--card-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--box-shadow);
+    border: 1px solid var(--secondary-color);
+}
+
+.preview-box {
+    display: flex;
+    align-items: stretch;
+    gap: 0.75rem;
+    background: var(--background-color);
+    border: 1px solid var(--secondary-color);
+    border-radius: var(--border-radius);
+    padding: 0.85rem 1rem;
+    flex-wrap: wrap;
+}
+
+.preview-output {
+    flex: 1 1 280px;
+    min-width: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--text-color);
+    background: transparent;
+    padding: 0.25rem 0;
+}
+
+.preview-output .pv-cmd { color: var(--primary-color); font-weight: 700; }
+.preview-output .pv-target { color: #c026d3; font-weight: 600; }
+.preview-output .pv-body { color: var(--text-color); }
+.preview-output .pv-time { color: #047857; font-weight: 600; }
+/* 不足項目: 薄い赤背景 + 破線ボーダーで目立たせるが攻撃的にならない見た目 */
+.preview-output .pv-missing {
+    display: inline-block;
+    color: #b91c1c;
+    background: #fef2f2;
+    border: 1px dashed #fca5a5;
+    border-radius: 4px;
+    padding: 0 0.35rem;
+    font-size: 0.85em;
+    font-weight: 600;
+    font-style: normal;
+    line-height: 1.4;
+    vertical-align: baseline;
+}
+
+.copy-btn {
+    flex: 0 0 auto;
+    background-color: var(--primary-color);
+    color: var(--text-color-light);
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 0.6rem 1.1rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+}
+.copy-btn:hover { background-color: var(--primary-color-dark); }
+.copy-btn:active { transform: translateY(1px); }
+.copy-btn:focus-visible {
+    outline: 3px solid #93c5fd;
+    outline-offset: 2px;
+}
+
+.preview-explain {
+    margin: 0.75rem 0 0;
+    color: var(--gray-text-color);
+    font-size: 0.9rem;
+}
+
+.preview-error {
+    margin: 0.75rem 0 0;
+    color: #b91c1c;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* フォーム */
+.form-step {
+    border: 1px solid var(--secondary-color);
+    border-radius: var(--border-radius);
+    padding: 1rem 1.25rem 1.25rem;
+    margin: 0 0 1.25rem;
+    background: var(--background-color);
+}
+
+.form-step legend {
+    font-weight: 700;
+    color: var(--primary-color);
+    padding: 0 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 50%;
+    background: var(--primary-color);
+    color: var(--text-color-light);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+/* ラジオチップ・チェックボックスチップ */
+.radio-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+.radio-chip, .checkbox-chip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.85rem;
+    min-height: 44px;
+    border: 1px solid var(--secondary-color);
+    border-radius: 999px;
+    background: var(--card-color);
+    cursor: pointer;
+    font-size: 0.9rem;
+    user-select: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+/* ネイティブの input は視覚的に隠しつつ chip 全体をタップ判定として残す */
+.radio-chip input, .checkbox-chip input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+/* テキストは input の上に重ねて表示。クリックは label 親が拾うため pointer-events は無効化 */
+.radio-chip span, .checkbox-chip span {
+    position: relative;
+    z-index: 1;
+    pointer-events: none;
+}
+.radio-chip:has(input:checked),
+.checkbox-chip:has(input:checked) {
+    background: var(--primary-color);
+    color: var(--text-color-light);
+    border-color: var(--primary-color);
+}
+/* 色だけでなく font-weight でも選択状態を示す（color-not-only 準拠） */
+.radio-chip:has(input:checked) span,
+.checkbox-chip:has(input:checked) span {
+    font-weight: 600;
+}
+.radio-chip:focus-within,
+.checkbox-chip:focus-within {
+    outline: 2px solid #93c5fd;
+    outline-offset: 2px;
+}
+
+.weekday-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+}
+.weekly-label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--gray-text-color);
+    margin-bottom: 0.25rem;
+}
+
+/* 宛先入力欄 */
+.target-name-wrap {
+    margin-top: 0.75rem;
+}
+.target-name-wrap > label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--gray-text-color);
+    margin-bottom: 0.25rem;
+}
+.target-name-row {
+    display: inline-flex;
+    align-items: stretch;
+    background: var(--card-color);
+    border: 1px solid var(--secondary-color);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    max-width: 100%;
+}
+.target-prefix {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 0.7rem;
+    background: var(--secondary-color);
+    color: var(--text-color);
+    font-weight: 700;
+    font-family: ui-monospace, monospace;
+}
+.target-name-row input {
+    border: none;
+    padding: 0.55rem 0.75rem;
+    font-size: 1rem;
+    background: transparent;
+    color: var(--text-color);
+    min-width: 0;
+    flex: 1 1 200px;
+}
+.target-name-row input:focus { outline: none; }
+.target-name-row:focus-within {
+    outline: 2px solid #93c5fd;
+    outline-offset: 1px;
+}
+
+/* テキストエリア */
+textarea#reminder-body {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.6rem 0.8rem;
+    font-size: 1rem;
+    font-family: inherit;
+    border: 1px solid var(--secondary-color);
+    border-radius: var(--border-radius);
+    background: var(--card-color);
+    color: var(--text-color);
+    resize: vertical;
+    min-height: 4.5rem;
+    max-height: 12rem;
+    overflow-y: auto;
+}
+textarea#reminder-body:focus {
+    outline: 2px solid #93c5fd;
+    outline-offset: 1px;
+}
+
+/* タブ */
+.tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    border-bottom: 1px solid var(--secondary-color);
+    margin-bottom: 1rem;
+}
+.tab-btn {
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 0.55rem 0.9rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--gray-text-color);
+    cursor: pointer;
+}
+.tab-btn:hover { color: var(--primary-color); }
+.tab-btn.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+.tab-btn:focus-visible {
+    outline: 2px solid #93c5fd;
+    outline-offset: 2px;
+}
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.inline-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+}
+.inline-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.85rem;
+    color: var(--gray-text-color);
+}
+.inline-field input,
+.inline-field select {
+    padding: 0.5rem 0.7rem;
+    font-size: 1rem;
+    border: 1px solid var(--secondary-color);
+    border-radius: var(--border-radius);
+    background: var(--card-color);
+    color: var(--text-color);
+    min-width: 8rem;
+}
+.inline-field input:focus,
+.inline-field select:focus {
+    outline: 2px solid #93c5fd;
+    outline-offset: 1px;
+}
+
+.repeat-extra {
+    margin: 0.75rem 0 0.5rem;
+}
+
+/* フィールドエラー */
+.field-error {
+    color: #b91c1c;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin: 0.5rem 0 0;
+}
+
+/* 履歴 */
+.history-card details summary {
+    cursor: pointer;
+    list-style: none;
+}
+.history-card details summary::-webkit-details-marker { display: none; }
+.history-card details summary h2 {
+    display: inline-block;
+    margin: 0;
+    border: none;
+    padding: 0;
+    font-size: 1.25rem;
+}
+.history-card details summary::after {
+    content: "▼";
+    margin-left: 0.5rem;
+    color: var(--gray-text-color);
+    font-size: 0.8rem;
+    transition: transform 0.2s ease;
+    display: inline-block;
+}
+.history-card details[open] summary::after {
+    transform: rotate(180deg);
+}
+
+.history-tabs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 1rem 0 0.5rem;
+    border-bottom: 1px solid var(--secondary-color);
+    padding-bottom: 0.25rem;
+}
+.history-tab-btn {
+    background: transparent;
+    border: none;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--gray-text-color);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+.history-tab-btn.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+.history-tab-btn:focus-visible {
+    outline: 2px solid #93c5fd;
+    outline-offset: 1px;
+}
+.history-clear-btn {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid var(--secondary-color);
+    border-radius: var(--border-radius);
+    padding: 0.3rem 0.7rem;
+    color: var(--gray-text-color);
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+.history-clear-btn:hover {
+    color: #b91c1c;
+    border-color: #fca5a5;
+}
+
+.history-list {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0;
+}
+.history-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--secondary-color);
+    border-radius: var(--border-radius);
+    background: var(--background-color);
+    margin-bottom: 0.4rem;
+}
+.history-item-cmd {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+    color: var(--text-color);
+    background: transparent;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0;
+}
+.history-item-cmd:hover {
+    color: var(--primary-color);
+}
+.history-item-fav,
+.history-item-del {
+    flex: 0 0 auto;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: var(--gray-text-color);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+}
+.history-item-fav.is-fav { color: #f59e0b; }
+.history-item-fav:hover,
+.history-item-del:hover { background: var(--secondary-color); }
+
+.history-empty {
+    color: var(--gray-text-color);
+    font-size: 0.9rem;
+    margin: 0.75rem 0 0;
+}
+
+/* トースト */
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 2rem;
+    transform: translateX(-50%);
+    background: var(--primary-color-dark);
+    color: var(--text-color-light);
+    padding: 0.7rem 1.2rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+}
+.toast.is-visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-4px);
+}
+
+/* 例 */
+.example-list {
+    margin: 0.5rem 0 1rem;
+    padding-left: 1.2rem;
+}
+.example-list li {
+    margin-bottom: 0.35rem;
+}
+.example-list code {
+    background: var(--background-color);
+    border: 1px solid var(--secondary-color);
+    border-radius: 4px;
+    padding: 0.1rem 0.4rem;
+    font-size: 0.85rem;
+}
+
+.preview-card code,
+.seo-content code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* 復元ハイライト */
+@keyframes srFlash {
+    0%   { box-shadow: 0 0 0 3px #93c5fd; }
+    100% { box-shadow: 0 0 0 0 transparent; }
+}
+.settings-card.is-flash {
+    animation: srFlash 0.9s ease-out;
+}
+
+/* レスポンシブ */
+@media (max-width: 600px) {
+    .preview-card,
+    .form-step {
+        padding: 1rem;
+    }
+    .preview-box {
+        padding: 0.6rem 0.75rem;
+    }
+    .copy-btn {
+        width: 100%;
+    }
+    .inline-fields {
+        gap: 0.75rem;
+    }
+    .tab-btn {
+        padding: 0.5rem 0.6rem;
+        font-size: 0.85rem;
+    }
+}
+
+/* ダークモード調整 */
+@media (prefers-color-scheme: dark) {
+    .preview-output .pv-target { color: #e879f9; }
+    .preview-output .pv-time { color: #6ee7b7; }
+    .preview-output .pv-missing {
+        color: #fecaca;
+        background: rgba(127, 29, 29, 0.35);
+        border-color: #ef4444;
+    }
+    .preview-error,
+    .field-error { color: #fca5a5; }
+    .target-prefix { background: #1e293b; color: var(--text-color); }
+    .copy-btn:focus-visible,
+    .tab-btn:focus-visible,
+    .target-name-row:focus-within,
+    .radio-chip:focus-within,
+    .checkbox-chip:focus-within,
+    textarea#reminder-body:focus,
+    .inline-field input:focus,
+    .inline-field select:focus,
+    .history-tab-btn:focus-visible {
+        outline-color: #60a5fa;
+    }
+}
