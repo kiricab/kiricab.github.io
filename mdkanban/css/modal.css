@@ -156,6 +156,58 @@
   gap: 0.4rem;
 }
 
+/* F15: 閲覧モードのままトグルできるサブタスク行。
+   行全体を <label> にしてテキストのクリックでも切り替わるようにし、
+   縦 0.3rem のパディングでタップ領域を確保する。 */
+.card-modal-subtask {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.3rem 0.4rem;
+  margin: -0.3rem -0.4rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.card-modal-subtask:hover {
+  background: rgba(30, 58, 138, 0.06);
+}
+
+body[data-theme="dark"] .card-modal-subtask:hover {
+  background: rgba(74, 111, 212, 0.14);
+}
+
+.card-modal-subtask input[type="checkbox"] {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+}
+
+/* キーボード操作時はチェックボックスではなく行全体に枠を出す（当たり判定と一致させる） */
+.card-modal-subtask:has(input[type="checkbox"]:focus-visible) {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
+}
+
+.card-modal-subtask-title {
+  word-break: break-word;
+}
+
+/* 完了済みはカード表面の .is-done と同じ「取り消し線＋減光」で揃える */
+.card-modal-subtask.is-done .card-modal-subtask-title {
+  text-decoration: line-through;
+  color: var(--gray-text-color);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-modal-subtask { transition: none; }
+}
+
 .card-modal-meta {
   display: flex;
   flex-wrap: wrap;
