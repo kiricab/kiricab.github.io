@@ -1852,7 +1852,11 @@ function clearTagFilter() {
 // -------- カード詳細モーダル --------
 // buildCardMarkdownForModal は ./js/markdown.js に移動済み。
 
-/** card.subtasks からモーダル用のサブタスク section 要素を生成して返す。0件なら null。 */
+/**
+ * card.subtasks からモーダル用のサブタスク section 要素を生成して返す。0件なら null。
+ * F15: 閲覧モードのままチェックを付け外しできる。行全体を <label> にしてあるので
+ *      テキストのクリックでもトグルでき、スクリーンリーダーにもラベルが結び付く。
+ */
 function buildSubtasksSection(card) {
   if (!card.subtasks || card.subtasks.length === 0) return null;
   const section = document.createElement('div');
@@ -1863,18 +1867,84 @@ function buildSubtasksSection(card) {
   heading.appendChild(strong);
   section.appendChild(heading);
   const ul = document.createElement('ul');
-  card.subtasks.forEach(s => {
+  card.subtasks.forEach((s, idx) => {
     const li = document.createElement('li');
+    const label = document.createElement('label');
+    label.className = 'card-modal-subtask';
+    if (s.checked) label.classList.add('is-done');
     const cb = document.createElement('input');
     cb.type = 'checkbox';
     cb.checked = !!s.checked;
-    cb.disabled = true;
-    li.appendChild(cb);
-    li.appendChild(document.createTextNode(' ' + s.title));
+    cb.addEventListener('change', () => {
+      label.classList.toggle('is-done', cb.checked);
+      toggleSubtaskChecked(card, idx, cb.checked);
+    });
+    const text = document.createElement('span');
+    text.className = 'card-modal-subtask-title';
+    text.textContent = s.title;
+    label.appendChild(cb);
+    label.appendChild(text);
+    li.appendChild(label);
     ul.appendChild(li);
   });
   section.appendChild(ul);
   return section;
+}
+
+/**
+ * F15: 閲覧モードのモーダルからサブタスクのチェックを切り替えて即座に確定する。
+ * 閲覧モードには「保存」が無いため、DnD や F2 のチェックトグルと同じく操作即確定とする。
+ * モーダルは開いたままなので、背後のボードだけでなくモーダル内の進捗バッジ・更新日時も
+ * その場で貼り替える（本文を作り直すとスクロール位置とフォーカスが飛ぶため部分更新にする）。
+ */
+function toggleSubtaskChecked(card, index, checked) {
+  if (!card || !card.subtasks || !card.subtasks[index]) return;
+  if (card.subtasks[index].checked === checked) return;
+  card.subtasks[index].checked = checked;
+  // F12: サブタスクの変更はカードの最終更新日時を更新する
+  bumpCardTimestamps(card);
+  reserializeAndPersist();
+  markDirty();
+  renderBoard();
+  refreshModalMeta(card);
+  announceDnd(`サブタスク「${card.subtasks[index].title}」を${checked ? '完了' : '未完了'}にしました`);
+  triggerAutoSave();
+}
+
+/** 閲覧モードのモーダル内にある進捗バッジ行と日時行だけを最新の card で作り直す。 */
+function refreshModalMeta(card) {
+  const oldMeta = els.cardModalBody.querySelector('.card-modal-meta');
+  if (oldMeta) oldMeta.replaceWith(buildModalMetaElement(card));
+  const oldTs = els.cardModalBody.querySelector('.card-modal-timestamps');
+  if (oldTs) oldTs.replaceWith(buildModalTimestampsElement(card));
+}
+
+/** モーダル上部の期限・サブタスク進捗・タグバッジ行を生成する（タグはクリックで絞り込み）。 */
+function buildModalMetaElement(card) {
+  const meta = document.createElement('div');
+  meta.className = 'card-modal-meta';
+  meta.innerHTML = buildBadgeHtml(card);
+  meta.querySelectorAll('.badge.tag').forEach(btn => {
+    btn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      applyTagFilter(btn.getAttribute('data-tag'));
+      closeCardModal();
+    });
+  });
+  return meta;
+}
+
+/** F12: モーダル末尾の作成日時・最終更新日時の行を生成する。メタ無しカードは両方 '—'。 */
+function buildModalTimestampsElement(card) {
+  const timestampsEl = document.createElement('div');
+  timestampsEl.className = 'card-modal-timestamps';
+  const createdIso = timestampToIsoAttr(card.createdAt);
+  const updatedIso = timestampToIsoAttr(card.updatedAt);
+  timestampsEl.innerHTML =
+    `<span>作成: <time${createdIso ? ` datetime="${createdIso}"` : ''}>${escapeHtml(formatTimestampLong(card.createdAt))}</time></span>` +
+    `<span class="sep" aria-hidden="true">·</span>` +
+    `<span>更新: <time${updatedIso ? ` datetime="${updatedIso}"` : ''}>${escapeHtml(formatTimestampLong(card.updatedAt))}</time></span>`;
+  return timestampsEl;
 }
 
 function openCardModal(card) {
@@ -1912,29 +1982,9 @@ function renderModalView(card) {
   if (subtasksSection) {
     els.cardModalBody.appendChild(subtasksSection);
   }
-  const meta = document.createElement('div');
-  meta.className = 'card-modal-meta';
-  meta.innerHTML = buildBadgeHtml(card);
-  meta.querySelectorAll('.badge.tag').forEach(btn => {
-    btn.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      applyTagFilter(btn.getAttribute('data-tag'));
-      closeCardModal();
-    });
-  });
-  els.cardModalBody.insertBefore(meta, els.cardModalBody.firstChild);
-
+  els.cardModalBody.insertBefore(buildModalMetaElement(card), els.cardModalBody.firstChild);
   // F12: 作成日時・最終更新日時のメタ行をモーダル末尾に追加。
-  //       既存ファイル由来のメタ無しカードは両方 '—' を表示する。
-  const timestampsEl = document.createElement('div');
-  timestampsEl.className = 'card-modal-timestamps';
-  const createdIso = timestampToIsoAttr(card.createdAt);
-  const updatedIso = timestampToIsoAttr(card.updatedAt);
-  timestampsEl.innerHTML =
-    `<span>作成: <time${createdIso ? ` datetime="${createdIso}"` : ''}>${escapeHtml(formatTimestampLong(card.createdAt))}</time></span>` +
-    `<span class="sep" aria-hidden="true">·</span>` +
-    `<span>更新: <time${updatedIso ? ` datetime="${updatedIso}"` : ''}>${escapeHtml(formatTimestampLong(card.updatedAt))}</time></span>`;
-  els.cardModalBody.appendChild(timestampsEl);
+  els.cardModalBody.appendChild(buildModalTimestampsElement(card));
 }
 
 /**
