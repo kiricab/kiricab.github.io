@@ -244,6 +244,49 @@ function renderBoard() {
   els.kanbanBoard.appendChild(renderAddLaneControl());
 }
 
+/**
+ * F14: カード上の「複製」ボタンを生成して返す。
+ *   - カード本体は draggable かつ click でモーダルを開くため、click / keydown / dragstart を
+ *     すべてこのボタンで止めてカード側のハンドラへ伝播させない。
+ *   - アイコンは絵文字ではなく inline SVG（currentColor 追従なのでテーマ切替に自動対応）。
+ */
+function createDuplicateButton(card) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'kanban-card-duplicate';
+  btn.title = 'このカードを複製';
+  btn.setAttribute('aria-label', `カード「${card.displayTitle || card.title || '無題'}」を複製`);
+  // カードが draggable="true" なので、ボタン上でのドラッグ開始を明示的に殺す
+  btn.setAttribute('draggable', 'false');
+  btn.innerHTML =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+    '<rect x="9" y="9" width="12" height="12" rx="2"></rect>' +
+    '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>' +
+    '</svg>';
+
+  btn.addEventListener('click', (ev) => {
+    // カード本体の click（モーダルを開く）へ伝播させない
+    ev.preventDefault();
+    ev.stopPropagation();
+    // DnD 直後の誤発火はカード本体と同じ条件で抑止する
+    if (editingState.dragging
+      || (editingState.suppressClickUntil && performance.now() < editingState.suppressClickUntil)) {
+      return;
+    }
+    duplicateCard(card.id);
+  });
+  // Enter / Space は button 自身の既定動作で click になる。カード側の keydown へは流さない。
+  btn.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter' || ev.key === ' ') ev.stopPropagation();
+  });
+  btn.addEventListener('dragstart', (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+  });
+  return btn;
+}
+
 /** カード DOM を1枚生成して返す（通常／スイムレーン両モードで共通利用） */
 function createCardElement(card, colIdx, cardIdx) {
   const cardEl = document.createElement('article');
@@ -265,6 +308,12 @@ function createCardElement(card, colIdx, cardIdx) {
   // 編集・削除はカードクリック→モーダルに集約（カード上の per-card アクションは廃止）。
   // 理由: タイトルのみ編集できる ✏️ と業界慣習（Trello/Linear 等）の不整合・タッチでの誤タップ・
   // 視覚ノイズを解消するため。全項目の編集と削除はモーダル内のボタンから行う。
+  //
+  // F14 の複製ボタンだけは例外。モーダルを開かずに 1 アクションで完結することが機能の価値そのもの
+  // （モーダル経由にすると「開く→複製→また開く」となり複製の速さが失われる）なので、カード上に置く。
+  // 上記の廃止理由への対策は CSS 側: fine pointer ではホバー／フォーカス時のみ可視化して視覚ノイズを
+  // 抑え、coarse pointer（タッチ）では常時表示かつタップ領域を 44px 角まで広げて誤タップを避ける。
+  cardEl.appendChild(createDuplicateButton(card));
 
   if (card.bodyParts.length > 0) {
     const previewEl = document.createElement('p');
@@ -2880,6 +2929,89 @@ function deleteCard(cardId) {
   renderBoard();
   announceDnd(`カード「${title}」を削除しました`);
   triggerAutoSave();
+}
+
+/**
+ * F14: カードを複製する。
+ *   - 複製先は「元カードの直下」（同一カラム・同一レーン）
+ *   - タイトルは表示タイトル末尾に「のコピー」を付け、タグ／レーン／期限は引き継ぐ
+ *   - チェック状態はカード本体・サブタスクともリセット（自動チェック列なら F2 に従い true）
+ *   - createdAt / updatedAt は現在時刻
+ *   - 複製カードは**下書き**としてボードに置くだけで、この時点では永続化しない。
+ *     addNewCard と同じく isNew を立てるため、確定はモーダルの「保存」を押したときのみ。
+ *     キャンセル／Esc／モーダルを閉じるでカードごと破棄され、md にも localStorage にも残らない。
+ */
+function duplicateCard(cardId) {
+  if (!boardState.current) return;
+  // 編集中の他カードがあれば先に確定（addNewCard と同じ前処理）
+  if (editingState.editing) {
+    if (editingState.editing.mode === 'inline') commitInlineEdit(true);
+    else if (editingState.editing.mode === 'modal') commitModalEditMode();
+  }
+  const loc = findCardLocation(cardId);
+  if (!loc) return;
+  const src = loc.card;
+  const swimlaneMode = !!(boardState.current && boardState.current.hasLanesKey);
+
+  // タイトル合成: 生タイトルに直接「のコピー」を足すと `タスクA #urgent @2026-01-01のコピー` と
+  // 壊れるため、displayTitle（タグ・レーン・期限を除いた本体）にだけ付けてから組み直す。
+  //   - スイムレーンモード: `#lane/X` は src.lane にあり src.tags には含まれない → buildTitleForSave が再付与
+  //   - 通常モード: `#lane/X` は通常タグなので src.tags に `lane/X` の形で入っており tagsPart から復元される
+  const base = (src.displayTitle || '').trim();
+  const tagsPart = (src.tags || []).map(t => `#${t}`).join(' ');
+  const titleBody = [base ? `${base}のコピー` : 'のコピー', tagsPart].filter(Boolean).join(' ');
+  const rawTitle = buildTitleForSave(titleBody, src.lane, src.dueDate, swimlaneMode);
+
+  const nowTs = nowLocalTimestamp();
+  const copy = {
+    id: `c-${nextCardId()}-copy`,
+    title: '',
+    displayTitle: '',
+    checked: false,
+    tags: [],
+    lane: '',
+    dueDate: null,
+    // サブタスクは要素オブジェクトごと作り直す（浅いコピーだと元カードのチェックまで巻き添えになる）
+    subtasks: (src.subtasks || []).map(s => ({ title: s.title, checked: false })),
+    bodyParts: (src.bodyParts || []).slice(),
+    createdAt: nowTs,
+    updatedAt: nowTs
+  };
+  // title / displayTitle / tags / lane / dueDate をここで確定させる
+  reparseCardMetaFromTitle(copy, rawTitle, false);
+  // F2: 追加先カラムが自動チェック対象なら checked=true に上書き
+  syncCardCheckedToColumn(copy, loc.col.name);
+
+  // スイムレーンは同一 col.cards をレーンで絞って描画しているだけなので、
+  // この 1 行でレーン内でも元カードの直下に入る。
+  loc.col.cards.splice(loc.cardIdx + 1, 0, copy);
+
+  // 下書きなのでここでは再シリアライズ・dirty 化・自動保存を行わない。
+  // ボードには見えるが、確定するのはモーダルの「保存」を押したときだけ。
+  renderBoard();
+  announceDnd(`カード「${src.displayTitle || src.title || '無題'}」の複製を作成しました。保存すると確定します`);
+
+  // モーダルを閉じたあとのフォーカス戻り先。renderBoard で DOM ごと作り直されるため
+  // 要素の参照を持つと迷子になる。closeCardModal は focus() を呼ぶだけなので、
+  // 「元カードを id で引き直して focus する」オブジェクトを渡しておく。
+  // 引き直しを setTimeout 0 で遅らせるのは、閉じる経路によって renderBoard のタイミングが
+  // 違うため（保存は renderBoard → closeCardModal、キャンセルは closeCardModal → renderBoard）。
+  // 一拍おけばどちらの経路でも再描画後の DOM に対して確実にフォーカスできる。
+  const srcSelector = `.kanban-card[data-card-id="${cssEscape(src.id)}"]`;
+  openCardModal(copy);
+  editingState.lastFocusBeforeModal = {
+    focus() {
+      setTimeout(() => {
+        const el = document.querySelector(srcSelector);
+        if (el) el.focus();
+      }, 0);
+    }
+  };
+  enterModalEditMode();
+  // isNew を立てて「保存を押すまで確定しない」挙動にする（addNewCard と同じ）
+  if (editingState.editing && editingState.editing.mode === 'modal') {
+    editingState.editing.isNew = true;
+  }
 }
 
 /** 現在の board をシリアライズして boardState.serializedMarkdown と localStorage を更新する。 */

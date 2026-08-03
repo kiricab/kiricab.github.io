@@ -181,6 +181,91 @@ body[data-theme="dark"] .add-card-btn:hover {
   color: var(--text-color);
   word-break: break-word;
   margin: 0;
+  /* F14: 右上の複製ボタンとタイトル文字が重ならないよう逃がす。
+     ボタンは right: 0.3rem に 1.6rem 角なので、右端から 1.9rem を占める。余白込みで 2.1rem 空ける。 */
+  padding-right: 2.1rem;
+}
+
+/* ===== F14: カード複製ボタン ===== */
+/* 視覚ノイズを抑えるため fine pointer では既定で非可視。カード hover / カード内フォーカスで出す。
+   opacity だけでなく pointer-events も落とすことで、非可視時にクリックが吸われないようにする。 */
+.kanban-card-duplicate {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.3rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: var(--kanban-card-bg);
+  color: var(--gray-text-color);
+  cursor: pointer;
+  font-family: inherit;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.kanban-card-duplicate svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  display: block;
+}
+
+.kanban-card:hover .kanban-card-duplicate,
+.kanban-card:focus-within .kanban-card-duplicate,
+.kanban-card-duplicate:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.kanban-card-duplicate:hover {
+  background: rgba(30, 58, 138, 0.06);
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+body[data-theme="dark"] .kanban-card-duplicate:hover {
+  background: rgba(74, 111, 212, 0.14);
+}
+
+.kanban-card-duplicate:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 1px;
+}
+
+/* インライン編集中・ドラッグ中は邪魔になるので出さない */
+.kanban-card.is-editing .kanban-card-duplicate,
+.kanban-card.is-dragging .kanban-card-duplicate {
+  display: none;
+}
+
+/* タッチ端末（hover 不可）ではホバーで出せないので常時表示。
+   見た目は 1.6rem のままにしつつ、::before の当たり判定を 44x44px まで広げて
+   タッチターゲット最小サイズ（44px）を満たす。 */
+@media (hover: none) {
+  .kanban-card-duplicate {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .kanban-card-duplicate::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kanban-card-duplicate { transition: none; }
 }
 
 /* コンパクト：1〜2行までで切る */
