@@ -151,7 +151,10 @@
     min-width: 0;
 }
 
+/* 入力欄の共通見た目。新しい type を使うときはこの一覧と
+   下の :hover / :focus-visible にも必ず追加すること */
 input[type="text"],
+input[type="email"],
 input[type="number"],
 select,
 textarea {
@@ -196,6 +199,7 @@ select option {
 }
 
 input[type="text"]:hover,
+input[type="email"]:hover,
 input[type="number"]:hover,
 select:hover,
 textarea:hover {
