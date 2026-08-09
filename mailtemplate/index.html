@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>メールテンプレート作成ツール | 定型文の差し込み・HTMLメール生成</title>
+    <meta name="description" content="宛先・件名・本文を保存し、差し込み項目を埋めるだけで定型メールを作成。日付は自動入力、HTMLメールにも対応し、処理はすべてブラウザ内で完結します。">
+
+    <!-- OGP -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://kiricab.github.io/mailtemplate/">
+    <meta property="og:title" content="メールテンプレート作成ツール | 定型文の差し込み・HTMLメール生成">
+    <meta property="og:description" content="定型メールのテンプレートをブラウザに保存し、差し込み項目を埋めるだけで完成メールを生成。送付日などの日付は自動計算、HTMLメールの作成と.emlダウンロードにも対応。">
+    <meta property="og:site_name" content="KIRICAB Tools">
+    <meta property="og:locale" content="ja_JP">
+    <meta property="og:image" content="https://kiricab.github.io/common/og-image.svg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="メールテンプレート作成ツール | 定型文の差し込み・HTMLメール生成">
+    <meta name="twitter:description" content="定型メールのテンプレートを保存し、差し込み項目を埋めるだけで完成メールを生成。日付は自動計算、HTMLメールにも対応。インストール不要・ブラウザ内で完結。">
+    <meta name="twitter:image" content="https://kiricab.github.io/common/og-image.svg">
+    <!-- Canonical -->
+    <link rel="canonical" href="https://kiricab.github.io/mailtemplate/">
+
+    <link rel="icon" href="../common/favicon.svg">
+    <link rel="preconnect" href="https://www.googletagmanager.com">
+    <link rel="preconnect" href="https://pagead2.googlesyndication.com">
+    <link rel="stylesheet" href="../common/style.css">
+    <link rel="stylesheet" href="style.css">
+    <!-- Google AdSense-->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8141179596557780"
+     crossorigin="anonymous"></script>
+    <meta name="google-adsense-account" content="ca-pub-8141179596557780">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CN3KBWSXRE"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-CN3KBWSXRE');
+    </script>
+</head>
+<body>
+
+    <header>
+        <div class="container">
+            <h1>📧 メールテンプレート作成ツール</h1>
+            <p>処理はすべてブラウザ内で完結します</p>
+        </div>
+    </header>
+
+    <main class="container">
+
+        <p id="storage-warning" class="storage-warning" role="alert" hidden>
+            このブラウザではデータの保存が利用できません（プライベートブラウジングなどの可能性があります）。テンプレートの作成・利用はできますが、ページを閉じると失われます。
+        </p>
+
+        <div class="tabs" id="main-tabs" role="tablist" aria-label="メールテンプレート作成ツールの機能切替">
+            <button type="button" class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-use" id="tabbtn-use" data-tab="use">使う</button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-edit" id="tabbtn-edit" data-tab="edit" tabindex="-1">作成・編集</button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-data" id="tabbtn-data" data-tab="data" tabindex="-1">データ管理</button>
+        </div>
+
+        <!-- ============ タブ1: 使う ============ -->
+        <div class="tab-panel active" id="tab-use" role="tabpanel" aria-labelledby="tabbtn-use" tabindex="0">
+
+            <section class="settings-card empty-state" id="use-empty" hidden>
+                <h2>まだテンプレートがありません</h2>
+                <p>「作成・編集」タブから新しいテンプレートを作るか、まずはサンプルを読み込んで動きを確認してください。</p>
+                <div class="action-row">
+                    <button type="button" id="load-samples-btn" class="btn btn-primary">サンプルテンプレートを読み込む</button>
+                    <button type="button" id="goto-edit-btn" class="btn btn-ghost">作成・編集タブへ移動</button>
+                </div>
+            </section>
+
+            <section class="settings-card" id="use-main" hidden>
+                <h2>テンプレートを使う</h2>
+
+                <div class="field-block">
+                    <label for="use-template-select">テンプレート</label>
+                    <select id="use-template-select"></select>
+                </div>
+
+                <fieldset class="form-step">
+                    <legend><span class="step-num">1</span>差し込み項目</legend>
+                    <div id="use-variables" class="var-inputs"></div>
+                    <p id="use-no-variables" class="empty-note" hidden>このテンプレートには差し込み項目がありません。そのまま出力できます。</p>
+                    <p id="use-undefined-warn" class="field-warn" role="status" hidden></p>
+                </fieldset>
+
+                <fieldset class="form-step">
+                    <legend><span class="step-num">2</span>出力形式</legend>
+                    <div class="radio-row" role="radiogroup" aria-label="出力形式">
+                        <label class="radio-chip"><input type="radio" name="output-format" value="text" checked><span>プレーンテキスト</span></label>
+                        <label class="radio-chip"><input type="radio" name="output-format" value="html"><span>HTML</span></label>
+                    </div>
+                </fieldset>
+
+                <fieldset class="form-step">
+                    <legend><span class="step-num">3</span>プレビュー</legend>
+                    <dl class="preview-headers">
+                        <div class="preview-header-row"><dt>宛先 (To)</dt><dd id="pv-to"></dd></div>
+                        <div class="preview-header-row" id="pv-cc-row"><dt>Cc</dt><dd id="pv-cc"></dd></div>
+                        <div class="preview-header-row" id="pv-bcc-row"><dt>Bcc</dt><dd id="pv-bcc"></dd></div>
+                        <div class="preview-header-row"><dt>件名</dt><dd id="pv-subject"></dd></div>
+                    </dl>
+
+                    <div class="tabs subtabs" id="pv-subtabs" role="tablist" aria-label="HTML本文の表示方法" hidden>
+                        <button type="button" class="tab-btn active" role="tab" aria-selected="true" aria-controls="pv-html-preview-wrap" id="pvtab-preview" data-subtab="preview">実プレビュー</button>
+                        <button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="pv-html-source" id="pvtab-source" data-subtab="source" tabindex="-1">HTMLソース</button>
+                    </div>
+
+                    <div id="pv-body-live">
+                        <pre id="pv-body-text" class="pv-body-text"></pre>
+                        <div id="pv-html-preview-wrap" role="tabpanel" aria-labelledby="pvtab-preview" hidden>
+                            <iframe id="pv-frame" class="pv-frame" sandbox="" title="HTMLメールの表示プレビュー"></iframe>
+                        </div>
+                        <pre id="pv-html-source" class="pv-body-text pv-source" role="tabpanel" aria-labelledby="pvtab-source" hidden></pre>
+                    </div>
+                </fieldset>
+
+                <div class="action-row">
+                    <button type="button" id="copy-body-btn" class="btn btn-primary">📋 本文をコピー</button>
+                    <button type="button" id="copy-subject-btn" class="btn btn-ghost">件名をコピー</button>
+                    <button type="button" id="copy-to-btn" class="btn btn-ghost">宛先をコピー</button>
+                    <button type="button" id="mailto-btn" class="btn btn-ghost">✉ メールアプリで開く</button>
+                    <button type="button" id="eml-btn" class="btn btn-ghost">.eml ファイルをダウンロード</button>
+                </div>
+                <p id="action-note" class="action-note" role="status"></p>
+            </section>
+        </div>
+
+        <!-- ============ タブ2: 作成・編集 ============ -->
+        <div class="tab-panel" id="tab-edit" role="tabpanel" aria-labelledby="tabbtn-edit" tabindex="0" hidden>
+
+            <section class="settings-card">
+                <h2>テンプレート一覧</h2>
+                <div class="action-row">
+                    <button type="button" id="new-template-btn" class="btn btn-primary">＋ 新規作成</button>
+                </div>
+                <ul id="edit-template-list" class="tpl-list"></ul>
+                <p id="edit-empty" class="empty-note" hidden>まだテンプレートがありません。「＋ 新規作成」から作成してください。</p>
+            </section>
+
+            <section class="settings-card" id="editor-card" hidden>
+                <h2 id="editor-title">テンプレートを編集</h2>
+                <form id="editor-form" novalidate>
+
+                    <fieldset class="form-step">
+                        <legend><span class="step-num">1</span>基本情報</legend>
+                        <div class="field-block">
+                            <label for="edit-name">テンプレート名 <span class="req">*</span></label>
+                            <input type="text" id="edit-name" maxlength="60" autocomplete="off" placeholder="例: 月次報告メール">
+                            <p id="edit-name-error" class="field-error" role="alert" hidden></p>
+                        </div>
+                        <div class="field-block">
+                            <label for="edit-to">宛先 To</label>
+                            <div class="field-editor">
+                                <div id="to-highlight" class="field-highlight" aria-hidden="true"></div>
+                                <input type="text" id="edit-to" autocomplete="off" placeholder="例: sales@example.com, {{担当者メール}}">
+                            </div>
+                            <p class="field-hint">カンマ区切りで複数指定できます。<code>{{変数名}}</code> も使えます（メールアドレス型のみ）。</p>
+                            <p id="edit-to-warn" class="field-warn" role="status" hidden></p>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-block">
+                                <label for="edit-cc">Cc</label>
+                                <div class="field-editor">
+                                    <div id="cc-highlight" class="field-highlight" aria-hidden="true"></div>
+                                    <input type="text" id="edit-cc" autocomplete="off" placeholder="任意">
+                                </div>
+                                <p id="edit-cc-warn" class="field-warn" role="status" hidden></p>
+                            </div>
+                            <div class="field-block">
+                                <label for="edit-bcc">Bcc</label>
+                                <div class="field-editor">
+                                    <div id="bcc-highlight" class="field-highlight" aria-hidden="true"></div>
+                                    <input type="text" id="edit-bcc" autocomplete="off" placeholder="任意">
+                                </div>
+                                <p id="edit-bcc-warn" class="field-warn" role="status" hidden></p>
+                            </div>
+                        </div>
+                        <div class="field-block">
+                            <label for="edit-subject">件名</label>
+                            <div class="field-editor">
+                                <div id="subject-highlight" class="field-highlight" aria-hidden="true"></div>
+                                <input type="text" id="edit-subject" maxlength="200" autocomplete="off" placeholder="例: {{対象月}}分 月次報告書のご送付">
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="form-step">
+                        <legend><span class="step-num">2</span>本文</legend>
+                        <div class="body-toolbar">
+                            <div class="chip-row" id="insert-var-chips" aria-label="変数を本文に挿入"></div>
+                        </div>
+                        <label for="edit-body">本文</label>
+                        <div class="field-editor is-multiline">
+                            <div id="body-highlight" class="field-highlight" aria-hidden="true"></div>
+                            <textarea id="edit-body" rows="12" spellcheck="false" placeholder="{{取引先名}} {{担当者名}}様&#10;&#10;いつもお世話になっております。"></textarea>
+                        </div>
+                        <p class="field-hint">可変部分をなぞると「変数にする」が出ます。<code>{{取引先名}}</code> と直接書いても自動で差し込み変数になります。本文中の変数にカーソルを置くと編集・削除できます。</p>
+                    </fieldset>
+
+                    <fieldset class="form-step">
+                        <legend><span class="step-num">3</span>差し込み変数</legend>
+                        <div id="edit-variables"></div>
+                        <p id="edit-variables-empty" class="empty-note" hidden>差し込み変数はまだありません。</p>
+                        <div id="var-type-warn" class="var-type-warn" role="alert" hidden></div>
+                        <div class="action-row">
+                            <button type="button" id="add-variable-btn" class="btn btn-ghost btn-sm">＋ 変数を追加</button>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="form-step">
+                        <legend><span class="step-num">4</span>HTML 出力設定</legend>
+                        <details id="html-settings">
+                            <summary>HTML メールの見た目を設定する</summary>
+                            <div class="details-body">
+                                <div class="field-block">
+                                    <span class="pseudo-label">HTML 本文の作り方</span>
+                                    <div class="radio-row" role="radiogroup" aria-label="HTML本文の作り方">
+                                        <label class="radio-chip"><input type="radio" name="html-mode" value="auto" checked><span>本文から自動変換</span></label>
+                                        <label class="radio-chip"><input type="radio" name="html-mode" value="manual"><span>HTML を手書き</span></label>
+                                    </div>
+                                    <p class="field-hint">自動変換では、空行で段落に分け、単一改行を改行タグに、URL をリンクに、行頭の「- 」を箇条書きに変換します。</p>
+                                </div>
+
+                                <div class="field-block" id="manual-html-wrap" hidden>
+                                    <label for="edit-body-html">HTML 本文</label>
+                                    <textarea id="edit-body-html" rows="8" spellcheck="false" placeholder="&lt;p&gt;{{取引先名}} ご担当者様&lt;/p&gt;"></textarea>
+                                </div>
+
+                                <div class="style-grid">
+                                    <div class="field-block">
+                                        <label for="style-font">フォント</label>
+                                        <select id="style-font">
+                                            <option value="sans-serif">ゴシック体（sans-serif）</option>
+                                            <option value="serif">明朝体（serif）</option>
+                                            <option value="monospace">等幅（monospace）</option>
+                                            <option value="meiryo">メイリオ系</option>
+                                        </select>
+                                    </div>
+                                    <div class="field-block">
+                                        <label for="style-size">文字サイズ</label>
+                                        <select id="style-size">
+                                            <option value="12px">12px</option>
+                                            <option value="13px">13px</option>
+                                            <option value="14px">14px</option>
+                                            <option value="15px">15px</option>
+                                            <option value="16px">16px</option>
+                                        </select>
+                                    </div>
+                                    <div class="field-block">
+                                        <label for="style-line-height">行間</label>
+                                        <select id="style-line-height">
+                                            <option value="1.4">1.4（詰め気味）</option>
+                                            <option value="1.7">1.7（標準）</option>
+                                            <option value="2.0">2.0（ゆったり）</option>
+                                        </select>
+                                    </div>
+                                    <div class="field-block">
+                                        <label for="style-max-width">最大幅</label>
+                                        <select id="style-max-width">
+                                            <option value="480px">480px</option>
+                                            <option value="600px">600px</option>
+                                            <option value="720px">720px</option>
+                                            <option value="100%">制限なし</option>
+                                        </select>
+                                    </div>
+                                    <div class="field-block">
+                                        <label for="style-color">文字色</label>
+                                        <input type="color" id="style-color" value="#333333">
+                                    </div>
+                                    <div class="field-block">
+                                        <label for="style-background">背景色</label>
+                                        <input type="color" id="style-background" value="#ffffff">
+                                    </div>
+                                    <div class="field-block">
+                                        <label for="style-link-color">リンク色</label>
+                                        <input type="color" id="style-link-color" value="#1e3a8a">
+                                    </div>
+                                </div>
+
+                                <details class="nested-details">
+                                    <summary>生 CSS を追記する（上級者向け）</summary>
+                                    <div class="details-body">
+                                        <label for="style-custom-css">追加 CSS</label>
+                                        <textarea id="style-custom-css" rows="5" spellcheck="false" placeholder="p { margin-bottom: 1.2em; }"></textarea>
+                                        <p class="field-hint">スタイルタグに出力します。Gmail など一部のメールクライアントではスタイルタグが取り除かれ、反映されないことがあります。プリセットで設定した項目はインライン指定として出力されるため比較的安全です。</p>
+                                    </div>
+                                </details>
+
+                                <div class="field-block">
+                                    <span class="pseudo-label">HTML プレビュー</span>
+                                    <iframe id="edit-frame" class="pv-frame" sandbox="" title="編集中のHTMLメールのプレビュー"></iframe>
+                                </div>
+                            </div>
+                        </details>
+                    </fieldset>
+
+                    <div class="action-row action-row-sticky">
+                        <button type="submit" id="save-template-btn" class="btn btn-primary">保存</button>
+                        <button type="button" id="discard-template-btn" class="btn btn-ghost">破棄</button>
+                        <span id="dirty-note" class="dirty-note" hidden>未保存の変更があります</span>
+                    </div>
+
+                    <!-- どの入力欄からも使う共有メニュー。位置はフォームを基準に算出する -->
+                    <div id="var-float" class="var-float" role="group" aria-label="変数の操作" hidden>
+                        <span id="var-float-label" class="var-float-label"></span>
+                        <button type="button" id="var-float-make" class="var-float-btn">変数にする</button>
+                        <button type="button" id="var-float-edit" class="var-float-btn">編集</button>
+                        <button type="button" id="var-float-delete" class="var-float-btn is-danger">削除</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+
+        <!-- ============ タブ3: データ管理 ============ -->
+        <div class="tab-panel" id="tab-data" role="tabpanel" aria-labelledby="tabbtn-data" tabindex="0" hidden>
+            <section class="settings-card">
+                <h2>データ管理</h2>
+                <p id="data-stats" class="data-stats"></p>
+
+                <div class="action-row">
+                    <button type="button" id="export-all-btn" class="btn btn-primary">すべてエクスポート（JSON）</button>
+                    <input id="import-file" type="file" accept="application/json,.json" hidden>
+                    <button type="button" id="import-btn" class="btn btn-ghost">インポート（JSON）</button>
+                </div>
+
+                <div id="import-choice" class="import-choice" role="group" aria-labelledby="import-choice-title" hidden>
+                    <p id="import-choice-title" class="import-choice-title"></p>
+                    <div class="action-row">
+                        <button type="button" id="import-merge-btn" class="btn btn-primary">追加（マージ）</button>
+                        <button type="button" id="import-replace-btn" class="btn btn-ghost">置き換え</button>
+                        <button type="button" id="import-cancel-btn" class="btn btn-ghost">キャンセル</button>
+                    </div>
+                </div>
+                <p id="import-error" class="field-error" role="alert" hidden></p>
+
+                <h3 class="subheading">テンプレート単体のエクスポート</h3>
+                <ul id="data-template-list" class="tpl-list"></ul>
+                <p id="data-empty" class="empty-note" hidden>まだテンプレートがありません。</p>
+
+                <div class="danger-zone">
+                    <h3 class="subheading">すべて削除</h3>
+                    <p class="field-hint">保存されているテンプレートをすべて削除します。この操作は取り消せません。先にエクスポートしておくことをおすすめします。</p>
+                    <button type="button" id="clear-all-btn" class="btn btn-danger">すべて削除</button>
+                </div>
+            </section>
+        </div>
+
+        <!-- ============ SEO コンテンツ ============ -->
+        <section class="seo-content">
+            <h2>メールテンプレート作成ツールとは</h2>
+            <p>月次報告・請求書送付・日程調整・お礼状といった定型メールは、宛先や件名、本文の大部分が毎回同じで、変わるのは「取引先名」「対象月」「送付日」といった一部だけです。それでも毎回過去のメールを探して手直しすることになり、日付の書き間違いや直し漏れが起きがちです。</p>
+            <p>本ツールは、固定部分と差し込み部分を分けたメールテンプレートをブラウザに保存し、利用時は差し込み欄を埋めるだけで完成メールを生成します。送付日のように機械的に決まる値は自動で計算されます。出力はプレーンテキストと HTML の両方に対応し、クリップボードへのコピー、<code>mailto:</code> でのメールアプリ起動、<code>.eml</code> ファイルのダウンロードで受け渡せます。テンプレートは JSON でエクスポート／インポートでき、端末間で持ち運べます。</p>
+
+            <h2>使い方</h2>
+            <ol class="howto-steps">
+                <li>「作成・編集」タブで新規作成し、テンプレート名・宛先・件名・本文を登録します。</li>
+                <li>本文の可変部分を <code>{{取引先名}}</code> のように書くと、未登録の差し込み変数として自動検出されます。</li>
+                <li>検出された変数に種類（1行テキスト／複数行／選択肢／日付）と初期値を設定して保存します。</li>
+                <li>「使う」タブでテンプレートを選び、差し込み欄を入力します。日付の変数は基準日とオフセットから自動計算されます。</li>
+                <li>プレーンテキストか HTML を選び、本文をコピーするか、メールアプリで開く・.eml をダウンロードして送信します。</li>
+            </ol>
+
+            <h2>差し込み変数の種類</h2>
+            <ul class="feature-list">
+                <li><strong>1行テキスト</strong> — 取引先名・担当者名など、都度入力する短い値。</li>
+                <li><strong>複数行テキスト</strong> — 備考欄や補足など、改行を含む値。</li>
+                <li><strong>選択肢</strong> — 担当部署のように決まった候補から選ぶ値。</li>
+                <li><strong>日付</strong> — 今日・明日・月初・月末などの基準日にオフセット（日／営業日／月）を加えて自動計算。書式は <code>YYYY年M月D日(ddd)</code> などから選べます。</li>
+            </ul>
+
+            <h2>よくある質問</h2>
+            <div class="faq-list">
+                <details>
+                    <summary>入力内容やテンプレートは外部に送信されますか？</summary>
+                    <p>送信されません。テンプレートの保存も含めてすべてお使いのブラウザ内（LocalStorage）で完結します。サーバへのアップロードは一切行わないため、取引先名などを含む定型文でも安心してご利用いただけます。</p>
+                </details>
+                <details>
+                    <summary>HTML メールを既定のメールアプリで開けますか？</summary>
+                    <p><code>mailto:</code> は仕様上プレーンテキストの本文しか渡せないため、HTML 出力時は「メールアプリで開く」を無効にしています。HTML メールを送りたい場合は、「.eml ファイルをダウンロード」して既定のメールアプリで開くか、「本文をコピー」で書式付きコピーを行い、Gmail や Outlook の作成画面に貼り付けてください。</p>
+                </details>
+                <details>
+                    <summary>営業日の計算は祝日を考慮しますか？</summary>
+                    <p>土曜・日曜のみをスキップして計算し、祝日には対応していません。祝日を挟む日付を扱う場合は、差し込み欄の「上書きする」にチェックを入れて手動で修正してください。</p>
+                </details>
+                <details>
+                    <summary>ブラウザのデータを消すとテンプレートは失われますか？</summary>
+                    <p>失われます。テンプレートはブラウザの LocalStorage にのみ保存されるため、履歴やサイトデータの削除、別の端末・別のブラウザでの利用時には引き継がれません。「データ管理」タブの JSON エクスポートで定期的にバックアップを取り、必要に応じてインポートで復元してください。</p>
+                </details>
+                <details>
+                    <summary>HTML メールのスタイルがメールソフトで反映されません</summary>
+                    <p>Gmail をはじめ多くのメールクライアントは <code>&lt;style&gt;</code> ブロックを取り除きます。本ツールではプリセットで指定したフォント・文字色・行間・最大幅をラッパー要素のインライン指定として出力するため比較的反映されやすくなっていますが、「生 CSS を追記する」で書いたスタイルは無視される場合があります。重要な装飾はプリセット側で指定してください。</p>
+                </details>
+                <details>
+                    <summary>メールアプリで開こうとすると警告が出るのはなぜですか？</summary>
+                    <p><code>mailto:</code> の URL 長には環境依存の上限があり、Windows 版 Outlook などでは 2000 文字前後で切り詰められます。本ツールではエンコード後 1800 文字を超えた時点で警告を表示します。長い本文は「本文をコピー」または「.eml ファイルをダウンロード」をご利用ください。</p>
+                </details>
+                <details>
+                    <summary>他に業務連絡を効率化するツールはありますか？</summary>
+                    <p>Slack のリマインダー設定を日本語フォームから作れる<a href="../slackremind/index.html">Slack /remind ジェネレーター</a>や、修正前後の文面を並べて差分を確認できる<a href="../diff/index.html">テキスト比較ツール</a>もあわせてご利用ください。テンプレートを改訂したときの変更点チェックにも役立ちます。</p>
+                </details>
+            </div>
+        </section>
+    </main>
+
+    <dialog id="var-dialog" class="var-dialog" aria-labelledby="var-dialog-title">
+        <form method="dialog" id="var-dialog-form">
+            <h2 id="var-dialog-title">差し込み変数にする</h2>
+
+            <div class="field-block">
+                <label for="var-dialog-key">変数名 <span class="req">*</span></label>
+                <input type="text" id="var-dialog-key" maxlength="40" autocomplete="off" placeholder="例: 取引先名">
+                <p class="field-hint">本文には <code id="var-dialog-token">{{変数名}}</code> として挿入されます。</p>
+                <p id="var-dialog-key-error" class="field-error" role="alert" hidden></p>
+            </div>
+
+            <div class="field-block">
+                <label for="var-dialog-label">画面に出すラベル</label>
+                <input type="text" id="var-dialog-label" maxlength="60" autocomplete="off">
+                <p class="field-hint">空欄なら変数名がそのまま使われます。</p>
+            </div>
+
+            <div class="field-block">
+                <label for="var-dialog-type">種類</label>
+                <select id="var-dialog-type"></select>
+                <p id="var-dialog-guess" class="field-hint field-hint-guess" hidden></p>
+                <p id="var-dialog-kind-note" class="field-hint" hidden></p>
+            </div>
+
+            <div id="var-dialog-date-block" class="var-dialog-sub" hidden>
+                <div class="var-dialog-grid">
+                    <div class="field-block">
+                        <label for="var-dialog-base">基準日</label>
+                        <select id="var-dialog-base"></select>
+                    </div>
+                    <div class="field-block">
+                        <label for="var-dialog-offset">オフセット（マイナスで過去）</label>
+                        <input type="number" id="var-dialog-offset" min="-999" max="999" step="1" value="0">
+                    </div>
+                    <div class="field-block">
+                        <label for="var-dialog-offset-unit">オフセットの単位</label>
+                        <select id="var-dialog-offset-unit"></select>
+                    </div>
+                    <div class="field-block">
+                        <label for="var-dialog-format-preset">書式プリセット</label>
+                        <select id="var-dialog-format-preset"></select>
+                    </div>
+                </div>
+                <div class="field-block">
+                    <label for="var-dialog-format">書式（YYYY / MM / M / DD / D / ddd / HH / mm）</label>
+                    <input type="text" id="var-dialog-format" maxlength="60" autocomplete="off">
+                </div>
+                <p id="var-dialog-date-preview" class="field-hint field-hint-guess" hidden></p>
+            </div>
+
+            <div id="var-dialog-select-block" class="var-dialog-sub" hidden>
+                <div class="field-block">
+                    <label for="var-dialog-options">選択肢（改行区切り）</label>
+                    <textarea id="var-dialog-options" rows="3" placeholder="1行に1つの選択肢"></textarea>
+                </div>
+            </div>
+
+            <div class="field-block">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="var-dialog-required">
+                    <span>入力必須にする</span>
+                </label>
+                <p id="var-dialog-required-note" class="field-hint" hidden>日付は自動計算されるため、必須にはできません。</p>
+            </div>
+
+            <div class="action-row var-dialog-actions">
+                <button type="button" id="var-dialog-ok" class="btn btn-primary">追加して本文に挿入</button>
+                <button type="button" id="var-dialog-cancel" class="btn btn-ghost">キャンセル</button>
+            </div>
+        </form>
+    </dialog>
+
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="../index.html">ホーム</a>
+                <a href="../passgen/index.html">パスワード生成</a>
+                <a href="../slackemojigen/index.html">Slack絵文字生成</a>
+                <a href="../slackremind/index.html">Slack /remind ジェネレーター</a>
+                <a href="../diff/index.html">テキスト比較</a>
+                <a href="../colorpallet/index.html">カラーパレット生成</a>
+                <a href="../qrgen/index.html">QRコード生成</a>
+                <a href="../sealgen/index.html">印鑑生成</a>
+                <a href="../amida/index.html">あみだくじ</a>
+                <a href="../filmfilter/index.html">フィルム風フィルター</a>
+                <a href="../mdkanban/index.html">mdカンバン</a>
+                <a href="../mailtemplate/index.html">メールテンプレート作成</a>
+            </div>
+            <div class="footer-links">
+                <a href="../about/index.html">このサイトについて</a>
+                <a href="../privacy/index.html">プライバシーポリシー</a>
+                <a href="../terms/index.html">利用規約</a>
+                <a href="../contact/index.html">お問い合わせ</a>
+            </div>
+            <p>&copy; 2025 Kiricab. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+    <script src="script.js"></script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "メールテンプレート作成ツール",
+      "url": "https://kiricab.github.io/mailtemplate/",
+      "description": "宛先・件名・本文を保存し、差し込み項目を埋めるだけで定型メールを作成できる無料ツール。日付は自動計算、HTMLメールと.emlダウンロードにも対応。",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Any",
+      "inLanguage": "ja",
+      "image": "https://kiricab.github.io/common/og-image.svg",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "JPY"
+      },
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "KIRICAB Tools",
+        "url": "https://kiricab.github.io/"
+      }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "ホーム", "item": "https://kiricab.github.io/" },
+        { "@type": "ListItem", "position": 2, "name": "メールテンプレート作成", "item": "https://kiricab.github.io/mailtemplate/" }
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "メールテンプレート作成ツールの使い方",
+      "description": "定型メールのテンプレートを登録し、差し込み項目を埋めるだけで完成メールを生成する手順です。",
+      "step": [
+        { "@type": "HowToStep", "position": 1, "name": "テンプレートを作成", "text": "「作成・編集」タブで新規作成し、テンプレート名・宛先・件名・本文を登録します。" },
+        { "@type": "HowToStep", "position": 2, "name": "差し込み記法を書く", "text": "本文の可変部分を二重波かっこの変数記法で書くと、未登録の差し込み変数として自動検出されます。" },
+        { "@type": "HowToStep", "position": 3, "name": "変数の種類を設定", "text": "検出された変数に種類（1行テキスト／複数行／選択肢／日付）と初期値を設定して保存します。" },
+        { "@type": "HowToStep", "position": 4, "name": "差し込み欄を入力", "text": "「使う」タブでテンプレートを選び、差し込み欄を入力します。日付の変数は基準日とオフセットから自動計算されます。" },
+        { "@type": "HowToStep", "position": 5, "name": "出力して送信", "text": "プレーンテキストか HTML を選び、本文をコピーするか、メールアプリで開く・.eml をダウンロードして送信します。" }
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "入力内容やテンプレートは外部に送信されますか？", "acceptedAnswer": { "@type": "Answer", "text": "送信されません。テンプレートの保存も含めてすべてブラウザ内（LocalStorage）で完結し、サーバへのアップロードは一切行いません。" } },
+        { "@type": "Question", "name": "HTML メールを既定のメールアプリで開けますか？", "acceptedAnswer": { "@type": "Answer", "text": "mailto: は仕様上プレーンテキストの本文しか渡せないため、HTML 出力時は「メールアプリで開く」を無効にしています。.eml ファイルをダウンロードして既定のメールアプリで開くか、書式付きコピーを行い作成画面に貼り付けてください。" } },
+        { "@type": "Question", "name": "営業日の計算は祝日を考慮しますか？", "acceptedAnswer": { "@type": "Answer", "text": "土曜・日曜のみをスキップして計算し、祝日には対応していません。祝日を挟む場合は差し込み欄の「上書きする」にチェックを入れて手動で修正してください。" } },
+        { "@type": "Question", "name": "ブラウザのデータを消すとテンプレートは失われますか？", "acceptedAnswer": { "@type": "Answer", "text": "失われます。テンプレートはブラウザの LocalStorage にのみ保存されます。「データ管理」タブの JSON エクスポートで定期的にバックアップを取り、必要に応じてインポートで復元してください。" } },
+        { "@type": "Question", "name": "HTML メールのスタイルがメールソフトで反映されません", "acceptedAnswer": { "@type": "Answer", "text": "多くのメールクライアントは style ブロックを取り除きます。本ツールではプリセットで指定したフォント・文字色・行間・最大幅をラッパー要素のインライン指定として出力しますが、生 CSS で書いたスタイルは無視される場合があります。重要な装飾はプリセット側で指定してください。" } },
+        { "@type": "Question", "name": "メールアプリで開こうとすると警告が出るのはなぜですか？", "acceptedAnswer": { "@type": "Answer", "text": "mailto: の URL 長には環境依存の上限があり、Windows 版 Outlook などでは 2000 文字前後で切り詰められます。本ツールではエンコード後 1800 文字を超えた時点で警告を表示します。長い本文はコピーまたは .eml ダウンロードをご利用ください。" } },
+        { "@type": "Question", "name": "他に業務連絡を効率化するツールはありますか？", "acceptedAnswer": { "@type": "Answer", "text": "Slack のリマインダー設定を日本語フォームから作れる Slack /remind ジェネレーターや、修正前後の文面を並べて差分を確認できるテキスト比較ツールもあわせてご利用ください。" } }
+      ]
+    }
+    </script>
+</body>
+</html>
