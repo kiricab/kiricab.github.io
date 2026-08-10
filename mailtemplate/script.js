@@ -453,6 +453,52 @@
         ].join(';');
     }
 
+    /* プレビュー iframe を更新し、実際に使う iframe 要素を返す。
+
+       display:none だった iframe を再表示すると、srcdoc の中身は残っているのに
+       レイアウトが復帰せず真っ白のままになることがある（出力形式をテキストと
+       HTML で往復すると2回目以降で発生していた）。srcdoc の入れ直しでは
+       同一タスク内で差分なしと見なされて効かないため、
+       「直前にレイアウトされていなかったのに今から見せる」場合は
+       要素ごと作り直して確実に描画させる。
+
+       前回いつ「見えている状態で描画したか」を要素に覚えさせ、
+       見えていなかったところから見せるときだけ作り直す。
+       html に null を渡すと中身は変えず表示状態の記録だけ更新する
+       （テキスト表示中も記録を残さないと往復を検知できない）。 */
+    var FRAME_LAID_OUT_ATTR = 'data-laid-out';
+
+    function updateFrameHtml(frame, html, visible) {
+        if (!frame) return frame;
+        if (html === null) {
+            frame.setAttribute(FRAME_LAID_OUT_ATTR, visible ? '1' : '0');
+            return frame;
+        }
+        var wasLaidOut = frame.getAttribute(FRAME_LAID_OUT_ATTR) === '1';
+        if (visible && !wasLaidOut && frame.parentNode) {
+            var fresh = frame.cloneNode(false);
+            fresh.setAttribute(FRAME_LAID_OUT_ATTR, '1');
+            fresh.srcdoc = html;
+            frame.parentNode.replaceChild(fresh, frame);
+            return fresh;
+        }
+        frame.srcdoc = html;
+        frame.setAttribute(FRAME_LAID_OUT_ATTR, visible ? '1' : '0');
+        return frame;
+    }
+
+    /** その要素がいまレイアウトされているか（display:none の連鎖に入っていないか） */
+    function isLaidOut(el) {
+        return !!(el && el.offsetParent !== null);
+    }
+
+    /** タブ移動などで親ごと隠れたときは、次に見せる際に作り直させる */
+    function invalidateFrameLayout() {
+        [dom['pv-frame'], dom['edit-frame']].forEach(function (f) {
+            if (f) f.setAttribute(FRAME_LAID_OUT_ATTR, '0');
+        });
+    }
+
     /** iframe プレビュー・クリップボード・.eml に共通で使う HTML ドキュメントを組み立てる */
     function buildHtmlDocument(bodyHtml, rawStyle) {
         var style = normalizeStyle(rawStyle);
@@ -945,8 +991,11 @@
             panel.classList.toggle('active', key === name);
             panel.hidden = key !== name;
         });
+        // 隠れていた iframe はレイアウトを失うので、次に見せるとき作り直させる
+        invalidateFrameLayout();
         if (name === 'data') renderDataTab();
         if (name === 'use') renderUseTab();
+        if (name === 'edit' && state.editing) updateEditPreview();
     }
 
     function initTabs() {
@@ -1160,11 +1209,16 @@
         dom['pv-html-preview-wrap'].hidden = !isHtml || state.htmlSubTab !== 'preview';
         dom['pv-html-source'].hidden = !isHtml || state.htmlSubTab !== 'source';
 
+        // 表示フラグを反映したあとの実際のレイアウト状態で判定する
+        // （タブ移動やサブタブ切替で親ごと非表示になる場合も拾える）
+        var frameVisible = isLaidOut(dom['pv-frame']);
         if (isHtml) {
-            dom['pv-frame'].srcdoc = rendered.html;
+            dom['pv-frame'] = updateFrameHtml(dom['pv-frame'], rendered.html, frameVisible);
             dom['pv-html-source'].textContent = rendered.html;
         } else {
             dom['pv-body-text'].textContent = rendered.body;
+            // 非表示のあいだにレイアウトを失うので記録だけ更新しておく
+            updateFrameHtml(dom['pv-frame'], null, frameVisible);
         }
 
         // 未定義変数の警告
@@ -2260,6 +2314,14 @@
         });
 
         // メニューの操作
+        // details を開いた時点では iframe のレイアウトが失われているので描き直す
+        var htmlSettings = document.getElementById('html-settings');
+        if (htmlSettings) {
+            htmlSettings.addEventListener('toggle', function () {
+                if (this.open) updateEditPreview();
+            });
+        }
+
         dom['var-float-make'].addEventListener('click', function () {
             // クリックでフォーカスがこのボタンへ移るため activeElement は当てにできない。
             // メニューを出した時点の欄と選択範囲を使う
@@ -2642,7 +2704,9 @@
         });
         var body = applyVariables(t.body, values);
         var inner = (t.htmlMode === 'manual' && t.bodyHtml) ? applyVariables(t.bodyHtml, values) : textToHtml(body);
-        dom['edit-frame'].srcdoc = buildHtmlDocument(inner, t.style);
+        // details の開閉やタブ移動で非表示になっていた場合は作り直す
+        dom['edit-frame'] = updateFrameHtml(dom['edit-frame'], buildHtmlDocument(inner, t.style),
+            isLaidOut(dom['edit-frame']));
     }
 
     // ==================== タブ3: データ管理 ====================
