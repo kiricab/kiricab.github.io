@@ -249,6 +249,10 @@
                     <summary>Slack 絵文字をリマインドと一緒に使いたい</summary>
                     <p>本サイトの<a href="../slackemojigen/index.html">Slack絵文字ジェネレーター</a>で絵文字画像を作成 → Slack にアップロード後、リマインド本文に <code>:emoji_name:</code> の形で記述できます。タスク管理を可視化したい場合は<a href="../mdkanban/index.html">mdカンバン</a>もあわせてどうぞ。</p>
                 </details>
+                <details>
+                    <summary>定型の連絡をメールでも送りたい</summary>
+                    <p>同じ内容をメールでも定期的に送っている場合は、<a href="../mailtemplate/index.html">メールテンプレート作成ツール</a>が便利です。宛先・件名・本文をテンプレート化し、取引先名や送付日などの差し込み項目を埋めるだけで完成メールを生成できます。</p>
+                </details>
             </div>
         </section>
 
@@ -271,6 +275,7 @@
                 <a href="../amida/index.html">あみだくじ</a>
                 <a href="../filmfilter/index.html">フィルム風フィルター</a>
                 <a href="../mdkanban/index.html">mdカンバン</a>
+                <a href="../mailtemplate/index.html">メールテンプレート作成</a>
             </div>
             <div class="footer-links">
                 <a href="../about/index.html">このサイトについて</a>
@@ -325,7 +330,8 @@
         { "@type": "Question", "name": "「明日の朝9時」のような自然な指定はできますか？", "acceptedAnswer": { "@type": "Answer", "text": "フォームの今日・明日タブで明日を選び、時刻に 09:00 を指定すると at 9am tomorrow が生成されます。" } },
         { "@type": "Question", "name": "設定したリマインダーをあとから削除できますか？", "acceptedAnswer": { "@type": "Answer", "text": "はい。Slack の入力欄で /remind list を実行するとリマインダー一覧が表示され、各項目から削除できます。" } },
         { "@type": "Question", "name": "タイムゾーンはどうなりますか？", "acceptedAnswer": { "@type": "Answer", "text": "Slack ワークスペースで設定されたタイムゾーンで通知されます。本ツールは時刻文字列を変換するのみで、サーバには送信しません。" } },
-        { "@type": "Question", "name": "Slack 絵文字をリマインドと一緒に使いたい", "acceptedAnswer": { "@type": "Answer", "text": "本サイトのSlack絵文字ジェネレーターで絵文字画像を作成 → Slackにアップロード後、リマインド本文に :emoji_name: の形で記述できます。" } }
+        { "@type": "Question", "name": "Slack 絵文字をリマインドと一緒に使いたい", "acceptedAnswer": { "@type": "Answer", "text": "本サイトのSlack絵文字ジェネレーターで絵文字画像を作成 → Slackにアップロード後、リマインド本文に :emoji_name: の形で記述できます。" } },
+        { "@type": "Question", "name": "定型の連絡をメールでも送りたい", "acceptedAnswer": { "@type": "Answer", "text": "同じ内容をメールでも定期的に送っている場合は、メールテンプレート作成ツールが便利です。宛先・件名・本文をテンプレート化し、取引先名や送付日などの差し込み項目を埋めるだけで完成メールを生成できます。" } }
       ]
     }
     </script>
