@@ -1,5 +1,8 @@
 /* メールテンプレート作成ツール
- * 完全クライアントサイド。外部ライブラリ・外部通信なし。
+ * 変換・保存はすべてブラウザ内で完結し、入力内容を外部へ送信することはない。
+ * 外部依存: marked (MIT) / DOMPurify (Apache-2.0 / MPL-2.0) を CDN から読み込む
+ *   本文を Markdown で書いた場合の変換にのみ使用する。読み込めない環境では
+ *   Markdown 入力を無効化し、プレーンテキストのみで従来どおり動作する。
  */
 (function () {
     'use strict';
@@ -412,6 +415,207 @@
         return html.join('\n');
     }
 
+    // ==================== Markdown 変換 ====================
+    /* メール向けに絞った対応記法。ここに無いタグは DOMPurify が剥がし、
+       中のテキストだけが残る（表やタスクリストを書いても壊れない） */
+    var MD_ALLOWED_TAGS = ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'a',
+        'blockquote', 'hr', 'code', 'pre', 'h1', 'h2', 'h3'];
+
+    /* メールクライアントは <style> を落とすことがあるため、
+       変換後の各タグへインラインで指定し直す */
+    var MD_EMAIL_STYLES = {
+        p: 'margin:0 0 1em',
+        h1: 'font-size:1.5em;font-weight:bold;line-height:1.3;margin:1.2em 0 .5em',
+        h2: 'font-size:1.25em;font-weight:bold;line-height:1.3;margin:1.2em 0 .5em',
+        h3: 'font-size:1.1em;font-weight:bold;line-height:1.3;margin:1.2em 0 .5em',
+        ul: 'margin:0 0 1em;padding-left:1.5em',
+        ol: 'margin:0 0 1em;padding-left:1.5em',
+        li: 'margin:0 0 .25em',
+        blockquote: 'margin:0 0 1em;padding:.25em 0 .25em 1em;border-left:3px solid #d1d5db;color:#6b7280',
+        hr: 'border:0;border-top:1px solid #e5e7eb;margin:1.5em 0',
+        pre: 'margin:0 0 1em;padding:.75em 1em;background:#f3f4f6;border-radius:4px;overflow-x:auto',
+        code: 'font-family:Consolas,Monaco,monospace;background:#f3f4f6;padding:.1em .3em;border-radius:3px'
+    };
+
+    var MD_URI_PATTERN = /^(?:https?:|mailto:|tel:)/i;
+
+    /** marked と DOMPurify が両方使えるか */
+    function markdownAvailable() {
+        return typeof window.marked !== 'undefined' && typeof window.DOMPurify !== 'undefined';
+    }
+
+    /* Markdown を解析し、サニタイズ済みの DocumentFragment を返す。
+       HTML 化・プレーンテキスト化・編集プレビューの共通の中間表現。
+       ライブラリが無い、または解析に失敗した場合は null を返す（呼び出し側で従来の変換へ退避） */
+    function markdownToFragment(md) {
+        if (!markdownAvailable()) return null;
+        var source = String(md == null ? '' : md).replace(/\r\n?/g, '\n');
+        try {
+            var rawHtml = window.marked.parse(source, {
+                gfm: true,
+                breaks: true,
+                headerIds: false,
+                mangle: false
+            });
+            return window.DOMPurify.sanitize(rawHtml, {
+                ALLOWED_TAGS: MD_ALLOWED_TAGS,
+                ALLOWED_ATTR: ['href'],
+                ALLOWED_URI_REGEXP: MD_URI_PATTERN,
+                RETURN_DOM_FRAGMENT: true
+            });
+        } catch (e) {
+            return null;
+        }
+    }
+
+    /** タグ名からインラインスタイル文字列を得る。pre 直下の code は装飾を重ねない */
+    function mdInlineStyleFor(el, linkColor) {
+        var tag = el.tagName.toLowerCase();
+        if (tag === 'a') return 'color:' + linkColor;
+        if (tag === 'code' && el.parentNode && el.parentNode.nodeName.toLowerCase() === 'pre') {
+            return 'font-family:Consolas,Monaco,monospace;background:none;padding:0';
+        }
+        return MD_EMAIL_STYLES[tag] || '';
+    }
+
+    /** Markdown 本文を、メールクライアント向けにインラインスタイルを付けた HTML へ変換する */
+    function markdownToHtml(md, rawStyle) {
+        var frag = markdownToFragment(md);
+        if (!frag) return textToHtml(md);
+        var style = normalizeStyle(rawStyle);
+        var host = document.createElement('div');
+        host.appendChild(frag);
+        var nodes = host.querySelectorAll('*');
+        Array.prototype.forEach.call(nodes, function (el) {
+            var css = mdInlineStyleFor(el, style.linkColor);
+            if (css) el.setAttribute('style', css);
+        });
+        // 先頭ブロックの上余白は本文の頭に不要な隙間を作るので潰す
+        var first = host.firstElementChild;
+        if (first && first.getAttribute('style')) {
+            first.setAttribute('style', first.getAttribute('style').replace(/margin:([^;]+)/, function (m, v) {
+                var parts = v.trim().split(/\s+/);
+                if (parts.length === 4) return 'margin:0 ' + parts[1] + ' ' + parts[2] + ' ' + parts[3];
+                if (parts.length === 3) return 'margin:0 ' + parts[1] + ' ' + parts[2];
+                if (parts.length === 2) return 'margin:0 ' + parts[1];
+                return m;
+            }));
+        }
+        return host.innerHTML;
+    }
+
+    /* Markdown を読みやすいプレーンテキストへ落とす。
+       記号を正規表現で剥がすと取りこぼすため、解析済みの DOM を歩いて組み立てる */
+    function markdownToPlainText(md) {
+        var frag = markdownToFragment(md);
+        if (!frag) return String(md == null ? '' : md);
+        var lines = [];
+
+        /** インライン要素をまとめて1つの文字列にする（<br> は改行として残す） */
+        function inline(node) {
+            var out = '';
+            Array.prototype.forEach.call(node.childNodes, function (child) {
+                if (child.nodeType === 3) { out += child.nodeValue; return; }
+                if (child.nodeType !== 1) return;
+                var tag = child.tagName.toLowerCase();
+                if (tag === 'br') { out += '\n'; return; }
+                if (tag === 'a') {
+                    var text = inline(child).trim();
+                    var href = child.getAttribute('href') || '';
+                    if (!href) { out += text; return; }
+                    out += (!text || text === href) ? href : text + ' (' + href + ')';
+                    return;
+                }
+                out += inline(child);
+            });
+            return out;
+        }
+
+        function pushBlank() {
+            if (lines.length && lines[lines.length - 1] !== '') lines.push('');
+        }
+
+        function pushLines(text, prefix) {
+            text.split('\n').forEach(function (line) {
+                lines.push(prefix + line.replace(/\s+$/, ''));
+            });
+        }
+
+        function walkList(el, indent) {
+            var ordered = el.tagName.toLowerCase() === 'ol';
+            var n = 0;
+            Array.prototype.forEach.call(el.children, function (li) {
+                if (li.tagName.toLowerCase() !== 'li') return;
+                n += 1;
+                var marker = ordered ? n + '. ' : '・';
+                // 直下のネストしたリストは行を分けて字下げする
+                var nested = [];
+                var own = document.createElement('li');
+                Array.prototype.forEach.call(li.childNodes, function (child) {
+                    var tag = child.nodeType === 1 ? child.tagName.toLowerCase() : '';
+                    if (tag === 'ul' || tag === 'ol') { nested.push(child); return; }
+                    own.appendChild(child.cloneNode(true));
+                });
+                var text = inline(own).replace(/^\s+|\s+$/g, '');
+                if (text) pushLines(text, indent + marker);
+                nested.forEach(function (child) { walkList(child, indent + '  '); });
+            });
+        }
+
+        function walkBlock(el) {
+            var tag = el.tagName.toLowerCase();
+            if (tag === 'h1' || tag === 'h2' || tag === 'h3') {
+                pushBlank();
+                pushLines('■ ' + inline(el).replace(/^\s+|\s+$/g, ''), '');
+                lines.push('');
+                return;
+            }
+            if (tag === 'ul' || tag === 'ol') { walkList(el, ''); pushBlank(); return; }
+            if (tag === 'blockquote') {
+                Array.prototype.forEach.call(el.children, function (child) {
+                    var text = inline(child).replace(/^\s+|\s+$/g, '');
+                    if (text) pushLines(text, '> ');
+                });
+                pushBlank();
+                return;
+            }
+            if (tag === 'hr') { pushBlank(); lines.push('────────────'); lines.push(''); return; }
+            if (tag === 'pre') {
+                pushLines(el.textContent.replace(/\n+$/, ''), '');
+                pushBlank();
+                return;
+            }
+            var body = inline(el).replace(/^\s+|\s+$/g, '');
+            if (body) { pushLines(body, ''); pushBlank(); }
+        }
+
+        Array.prototype.forEach.call(frag.childNodes, function (node) {
+            if (node.nodeType === 1) { walkBlock(node); return; }
+            if (node.nodeType === 3 && node.nodeValue.replace(/\s/g, '')) {
+                pushLines(node.nodeValue.replace(/^\s+|\s+$/g, ''), '');
+                pushBlank();
+            }
+        });
+
+        return lines.join('\n').replace(/\n{3,}/g, '\n\n').replace(/^\n+|\n+$/g, '');
+    }
+
+    /** テンプレートの本文を HTML 化する（入力方式に応じて変換器を切り替える） */
+    function bodyToHtml(tpl, body) {
+        if (tpl && tpl.bodyFormat === 'markdown' && markdownAvailable()) {
+            return markdownToHtml(body, tpl.style);
+        }
+        return textToHtml(body);
+    }
+
+    /** テンプレートの本文をプレーンテキスト出力用に整える */
+    function bodyToPlainText(tpl, body) {
+        if (tpl && tpl.bodyFormat === 'markdown' && markdownAvailable()) {
+            return markdownToPlainText(body);
+        }
+        return body;
+    }
+
     /** style 由来の値を CSS に埋める前に検証する。危険な文字を含む場合は既定値へ */
     function safeCssValue(value, fallback) {
         var s = String(value == null ? '' : value).trim();
@@ -732,6 +936,8 @@
             bcc: String(raw.bcc == null ? '' : raw.bcc).slice(0, 500),
             subject: String(raw.subject == null ? '' : raw.subject).slice(0, 300),
             body: String(raw.body == null ? '' : raw.body).slice(0, 20000),
+            // 未設定の旧テンプレートはプレーンテキスト扱い（後方互換）
+            bodyFormat: raw.bodyFormat === 'markdown' ? 'markdown' : 'text',
             htmlMode: raw.htmlMode === 'manual' ? 'manual' : 'auto',
             bodyHtml: String(raw.bodyHtml == null ? '' : raw.bodyHtml).slice(0, 20000),
             style: normalizeStyle(raw.style),
@@ -789,6 +995,7 @@
             bcc: '',
             subject: '',
             body: '',
+            bodyFormat: 'text',
             htmlMode: 'auto',
             bodyHtml: '',
             style: normalizeStyle(null),
@@ -892,6 +1099,24 @@
                     { key: '第3候補', label: '第3候補日', type: 'date', base: 'today', offset: 5, offsetUnit: 'businessDay', format: 'M月D日(ddd)' },
                     { key: '備考', label: '備考', type: 'textarea', required: false, default: '' }
                 ]
+            },
+            {
+                name: 'セミナー開催のご案内（Markdown）',
+                to: '',
+                bodyFormat: 'markdown',
+                subject: '【{{開催日}}】{{セミナー名}}開催のご案内',
+                body: '{{取引先名}}\n{{担当者名}}様\n\nいつもお世話になっております。{{自社名}}の{{差出人名}}です。\n\n## {{セミナー名}}\n\n下記のとおり開催いたしますので、ぜひご参加ください。\n\n- **日時**: {{開催日}} {{開始時刻}}〜\n- **形式**: {{開催形式}}\n- **参加費**: 無料\n\n### お申し込み\n\n[申込フォームはこちら](https://example.com/seminar)\n\n> 申込期限は{{申込期限}}です。定員に達し次第、締め切らせていただきます。\n\n---\n\nご不明な点がございましたら、本メールへご返信ください。\nどうぞよろしくお願いいたします。',
+                variables: [
+                    { key: '取引先名', label: '取引先名', type: 'text', required: true, default: '', placeholder: '例: 株式会社〇〇' },
+                    { key: '担当者名', label: '担当者名', type: 'text', required: true, default: '' },
+                    { key: 'セミナー名', label: 'セミナー名', type: 'text', required: true, default: '', placeholder: '例: 業務改善セミナー' },
+                    { key: '開催形式', label: '開催形式', type: 'select', options: ['オンライン（Zoom）', '会場開催', 'ハイブリッド'], default: 'オンライン（Zoom）' },
+                    { key: '開催日', label: '開催日', type: 'date', base: 'today', offset: 10, offsetUnit: 'businessDay', format: 'M月D日(ddd)' },
+                    { key: '開始時刻', label: '開始時刻', type: 'text', required: false, default: '14:00' },
+                    { key: '申込期限', label: '申込期限', type: 'date', base: 'today', offset: 5, offsetUnit: 'businessDay', format: 'M月D日(ddd)' },
+                    { key: '自社名', label: '自社名', type: 'text', required: false, default: '' },
+                    { key: '差出人名', label: '差出人名', type: 'text', required: false, default: '' }
+                ]
             }
         ].map(normalizeTemplate).filter(Boolean);
     }
@@ -907,6 +1132,7 @@
         touched: {},       // blur 済みフラグ（key -> boolean）
         outputFormat: 'text',
         htmlSubTab: 'preview',
+        mdPreviewOpen: false,       // 本文直下の Markdown プレビューの開閉（編集をまたいで保持）
         editing: null,     // 編集中テンプレートの複製
         editingIsNew: false,
         dirty: false,
@@ -936,7 +1162,8 @@
             'editor-card', 'back-to-list-btn', 'editor-title', 'editor-form',
             'edit-name', 'edit-name-error', 'edit-to', 'edit-to-warn',
             'edit-cc', 'edit-cc-warn', 'edit-bcc', 'edit-bcc-warn', 'edit-subject',
-            'insert-var-chips', 'edit-body', 'body-highlight',
+            'insert-var-chips', 'edit-body', 'body-highlight', 'body-hint',
+            'md-toolbar', 'md-preview', 'md-preview-details', 'md-lib-warn', 'html-auto-hint',
             'to-highlight', 'cc-highlight', 'bcc-highlight', 'subject-highlight',
             'var-float', 'var-float-label', 'var-float-make', 'var-float-edit', 'var-float-delete',
             'var-dialog', 'var-dialog-title', 'var-dialog-key', 'var-dialog-key-error',
@@ -1185,8 +1412,10 @@
             // 手書き HTML は利用者自身が書いたものをそのまま使う（表示は sandbox iframe 内）
             innerHtml = applyVariables(tpl.bodyHtml, state.inputs);
         } else {
-            innerHtml = textToHtml(rendered.body);
+            innerHtml = bodyToHtml(tpl, rendered.body);
         }
+        // Markdown の場合はテキスト出力（プレビュー・コピー・mailto・.eml）も記法を落として整形する
+        rendered.body = bodyToPlainText(tpl, rendered.body);
         rendered.html = buildHtmlDocument(innerHtml, tpl.style);
         return rendered;
     }
@@ -1475,6 +1704,10 @@
         dom['edit-subject'].value = t.subject;
         dom['edit-body'].value = t.body;
         dom['edit-body-html'].value = t.bodyHtml;
+        Array.prototype.forEach.call(document.querySelectorAll('input[name="body-format"]'), function (r) {
+            r.checked = r.value === t.bodyFormat;
+        });
+        applyBodyFormatUi();
         Array.prototype.forEach.call(document.querySelectorAll('input[name="html-mode"]'), function (r) {
             r.checked = r.value === t.htmlMode;
         });
@@ -1493,6 +1726,123 @@
         updateVarFloat();
         updateEditPreview();
         validateAllAddressFields();
+    }
+
+    // ==================== 本文の入力方式（テキスト / Markdown） ====================
+    var HTML_HINT_TEXT = '自動変換では、空行で段落に分け、単一改行を改行タグに、URL をリンクに、行頭の「- 」を箇条書きに変換します。';
+    var HTML_HINT_MD = 'Markdown を HTML に変換します。見出し・太字・斜体・箇条書き・番号付きリスト・リンク・引用・区切り線・コードに対応します。表やタスクリストには対応していません。';
+
+    /** 本文欄のヒント文を入力方式に合わせて組み直す */
+    function renderBodyHint(isMd) {
+        var hint = dom['body-hint'];
+        if (!hint) return;
+        clearNode(hint);
+        if (isMd) {
+            hint.appendChild(document.createTextNode(
+                'Markdown で書けます。見出し・太字・斜体・箇条書き・番号付きリスト・リンク・引用・区切り線に対応。'
+                + '可変部分をなぞると「変数にする」が出ます。'));
+            return;
+        }
+        hint.appendChild(document.createTextNode('可変部分をなぞると「変数にする」が出ます。'));
+        hint.appendChild(el('code', null, ['{{取引先名}}']));
+        hint.appendChild(document.createTextNode(
+            ' と直接書いても自動で差し込み変数になります。本文中の変数にカーソルを置くと編集・削除できます。'));
+    }
+
+    /** ラジオの現在値。ライブラリが無い環境では常にテキスト扱いにする */
+    function currentBodyFormat() {
+        var checked = document.querySelector('input[name="body-format"]:checked');
+        return checked && checked.value === 'markdown' ? 'markdown' : 'text';
+    }
+
+    /** 入力方式に合わせてツールバー・プレビュー・ヒント文の表示を切り替える */
+    function applyBodyFormatUi() {
+        // ライブラリが無い環境では Markdown 用の UI を出さず、テキストとして扱う
+        var isMd = !!(state.editing && state.editing.bodyFormat === 'markdown') && markdownAvailable();
+        if (dom['md-toolbar']) dom['md-toolbar'].hidden = !isMd;
+        if (dom['md-preview-details']) {
+            dom['md-preview-details'].hidden = !isMd;
+            dom['md-preview-details'].open = isMd && state.mdPreviewOpen;
+        }
+        renderBodyHint(isMd);
+        if (dom['html-auto-hint']) dom['html-auto-hint'].textContent = isMd ? HTML_HINT_MD : HTML_HINT_TEXT;
+    }
+
+    /* marked / DOMPurify が読み込めなかった場合の縮退。
+       Markdown を選べなくし、既存の Markdown テンプレートもテキストとして安全に扱う */
+    function applyMarkdownAvailability() {
+        var available = markdownAvailable();
+        Array.prototype.forEach.call(document.querySelectorAll('input[name="body-format"]'), function (r) {
+            if (r.value === 'markdown') r.disabled = !available;
+        });
+        var warn = dom['md-lib-warn'];
+        if (!warn) return;
+        warn.hidden = available;
+        if (!available) {
+            warn.textContent = 'Markdown の変換に必要なライブラリを読み込めませんでした。'
+                + 'プレーンテキストとして編集・出力されます。';
+        }
+    }
+
+    // ---- Markdown ツールバー ----
+    /* 選択範囲を記法で囲む。選択が無いときはプレースホルダを入れて選択状態にし、
+       そのまま上書き入力できるようにする */
+    function wrapSelection(textarea, before, after, placeholder) {
+        var start = textarea.selectionStart;
+        var end = textarea.selectionEnd;
+        var selected = textarea.value.slice(start, end);
+        var inner = selected || placeholder;
+        insertAtRange(textarea, before + inner + after, { start: start, end: end });
+        textarea.setSelectionRange(start + before.length, start + before.length + inner.length);
+        textarea.focus();
+    }
+
+    /** 選択中の各行の行頭に記法を付ける。すべての行に付いていれば外す（トグル） */
+    function toggleLinePrefix(textarea, prefix, ordered) {
+        var value = textarea.value;
+        var start = textarea.selectionStart;
+        var end = textarea.selectionEnd;
+        var lineStart = value.lastIndexOf('\n', start - 1) + 1;
+        var lineEnd = value.indexOf('\n', end);
+        if (lineEnd === -1) lineEnd = value.length;
+        var lines = value.slice(lineStart, lineEnd).split('\n');
+        var pattern = ordered ? /^\d+\.\s/ : new RegExp('^' + prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+        var allPrefixed = lines.every(function (line) { return pattern.test(line); });
+        var next = lines.map(function (line, i) {
+            if (allPrefixed) return line.replace(pattern, '');
+            return (ordered ? (i + 1) + '. ' : prefix) + line;
+        }).join('\n');
+        insertAtRange(textarea, next, { start: lineStart, end: lineEnd });
+        textarea.setSelectionRange(lineStart, lineStart + next.length);
+        textarea.focus();
+    }
+
+    /* 区切り線は選択範囲を消さず、その直後の行に入れる。
+       すでに行頭・行末にいるときは余計な空行を足さない */
+    function insertHorizontalRule(textarea) {
+        var pos = textarea.selectionEnd;
+        var value = textarea.value;
+        var before = (pos === 0 || /\n\n$/.test(value.slice(0, pos))) ? ''
+            : (/\n$/.test(value.slice(0, pos)) ? '\n' : '\n\n');
+        var after = (pos === value.length || /^\n\n/.test(value.slice(pos))) ? ''
+            : (/^\n/.test(value.slice(pos)) ? '\n' : '\n\n');
+        insertAtRange(textarea, before + '---' + after, { start: pos, end: pos });
+    }
+
+    function applyMarkdownCommand(command) {
+        var textarea = dom['edit-body'];
+        if (!textarea) return;
+        switch (command) {
+            case 'bold': wrapSelection(textarea, '**', '**', '太字テキスト'); break;
+            case 'italic': wrapSelection(textarea, '*', '*', '斜体テキスト'); break;
+            case 'link': wrapSelection(textarea, '[', '](https://example.com)', 'リンクテキスト'); break;
+            case 'heading': toggleLinePrefix(textarea, '## ', false); break;
+            case 'ul': toggleLinePrefix(textarea, '- ', false); break;
+            case 'ol': toggleLinePrefix(textarea, '1. ', true); break;
+            case 'quote': toggleLinePrefix(textarea, '> ', false); break;
+            case 'hr': insertHorizontalRule(textarea); break;
+            default: break;
+        }
     }
 
     function renderInsertChips() {
@@ -2458,6 +2808,33 @@
             handleVariableFieldChange(e.target, true);
         });
 
+        // 本文の入力方式。本文テキストは変換も破棄もせず、表示だけ切り替える
+        Array.prototype.forEach.call(document.querySelectorAll('input[name="body-format"]'), function (radio) {
+            radio.addEventListener('change', function () {
+                if (!radio.checked || !state.editing) return;
+                state.editing.bodyFormat = currentBodyFormat();
+                applyBodyFormatUi();
+                setDirty(true);
+                updateEditPreview();
+            });
+        });
+
+        if (dom['md-toolbar']) {
+            dom['md-toolbar'].addEventListener('click', function (e) {
+                var btn = e.target.closest ? e.target.closest('[data-md]') : null;
+                if (!btn) return;
+                applyMarkdownCommand(btn.getAttribute('data-md'));
+            });
+        }
+
+        if (dom['md-preview-details']) {
+            dom['md-preview-details'].addEventListener('toggle', function () {
+                state.mdPreviewOpen = dom['md-preview-details'].open;
+                // 閉じているあいだは更新をスキップしているので、開いた瞬間に組み直す
+                if (state.mdPreviewOpen) updateEditPreview();
+            });
+        }
+
         // HTML 出力設定
         Array.prototype.forEach.call(document.querySelectorAll('input[name="html-mode"]'), function (radio) {
             radio.addEventListener('change', function () {
@@ -2721,10 +3098,33 @@
             else if (v.type === 'select' && v.options && v.options.length) values[v.key] = v.options[0];
         });
         var body = applyVariables(t.body, values);
-        var inner = (t.htmlMode === 'manual' && t.bodyHtml) ? applyVariables(t.bodyHtml, values) : textToHtml(body);
+        var inner = (t.htmlMode === 'manual' && t.bodyHtml) ? applyVariables(t.bodyHtml, values) : bodyToHtml(t, body);
         // details の開閉やタブ移動で非表示になっていた場合は作り直す
         dom['edit-frame'] = updateFrameHtml(dom['edit-frame'], buildHtmlDocument(inner, t.style),
             isLaidOut(dom['edit-frame']));
+        updateMarkdownPreview(body);
+    }
+
+    /* 本文欄の直下に置いた折りたたみプレビュー。
+       メール用のインラインスタイルではなく style.css 側のクラスで描画し、読みやすさを優先する。
+       閉じているあいだは DOM を組まない */
+    function updateMarkdownPreview(body) {
+        var details = dom['md-preview-details'];
+        var host = dom['md-preview'];
+        if (!details || !host) return;
+        if (details.hidden || !details.open) return;
+        while (host.firstChild) host.removeChild(host.firstChild);
+        var frag = markdownToFragment(body);
+        if (!frag) {
+            host.appendChild(el('p', { class: 'empty-note' },
+                ['Markdown を変換できませんでした。プレーンテキストとして扱われます。']));
+            return;
+        }
+        if (!String(body || '').replace(/\s/g, '')) {
+            host.appendChild(el('p', { class: 'empty-note' }, ['本文を入力するとここにプレビューが表示されます。']));
+            return;
+        }
+        host.appendChild(frag);
     }
 
     // ==================== テンプレート管理: インポート／エクスポート ====================
@@ -2892,6 +3292,7 @@
         initUseTab();
         initManageTab();
         initImportExport();
+        applyMarkdownAvailability();
         renderAll();
     }
 
