@@ -963,17 +963,16 @@ input.is-readonly {
 
 .style-grid .field-block { margin-bottom: 0; }
 
-/* ========== データ管理 ========== */
+/* ========== テンプレート管理 ========== */
 .data-stats {
     margin: 0 0 0.5rem;
     color: var(--gray-text-color);
     font-size: 0.9rem;
 }
 
-.subheading {
-    margin: 1.75rem 0 0.5rem;
-    font-size: 1rem;
-    color: var(--primary-color);
+/* 一覧とエディタは排他表示。戻る導線を本文の先頭に置く */
+.editor-back-row {
+    margin-bottom: 0.75rem;
 }
 
 .import-choice {
@@ -990,17 +989,24 @@ input.is-readonly {
     font-weight: 600;
 }
 
+/* 破壊的操作は畳んでおき、開いたときだけ危険色の枠を見せる */
+.danger-details {
+    margin-top: 1.75rem;
+}
+
+.danger-details > summary {
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--mt-danger);
+}
+
 .danger-zone {
-    margin-top: 2rem;
+    margin-top: 0.5rem;
     padding: 1rem;
     border: 1px solid var(--mt-danger-border);
     border-radius: var(--border-radius);
     background: var(--mt-danger-bg);
-}
-
-.danger-zone .subheading {
-    margin-top: 0;
-    color: var(--mt-danger);
 }
 
 .danger-zone .field-hint {
@@ -1135,7 +1141,6 @@ input.is-readonly {
     .tab-btn:hover,
     .tab-btn.active,
     .var-row-title,
-    .subheading,
     .form-step legend,
     #html-settings > summary,
     .nested-details > summary {

@@ -60,8 +60,7 @@
 
         <div class="tabs" id="main-tabs" role="tablist" aria-label="メールテンプレート作成ツールの機能切替">
             <button type="button" class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-use" id="tabbtn-use" data-tab="use">使う</button>
-            <button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-edit" id="tabbtn-edit" data-tab="edit" tabindex="-1">作成・編集</button>
-            <button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-data" id="tabbtn-data" data-tab="data" tabindex="-1">データ管理</button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-manage" id="tabbtn-manage" data-tab="manage" tabindex="-1">テンプレート管理</button>
         </div>
 
         <!-- ============ タブ1: 使う ============ -->
@@ -69,10 +68,10 @@
 
             <section class="settings-card empty-state" id="use-empty" hidden>
                 <h2>まだテンプレートがありません</h2>
-                <p>「作成・編集」タブから新しいテンプレートを作るか、まずはサンプルを読み込んで動きを確認してください。</p>
+                <p>「テンプレート管理」タブから新しいテンプレートを作るか、まずはサンプルを読み込んで動きを確認してください。</p>
                 <div class="action-row">
                     <button type="button" id="load-samples-btn" class="btn btn-primary">サンプルテンプレートを読み込む</button>
-                    <button type="button" id="goto-edit-btn" class="btn btn-ghost">作成・編集タブへ移動</button>
+                    <button type="button" id="goto-edit-btn" class="btn btn-ghost">テンプレート管理タブへ移動</button>
                 </div>
             </section>
 
@@ -133,19 +132,46 @@
             </section>
         </div>
 
-        <!-- ============ タブ2: 作成・編集 ============ -->
-        <div class="tab-panel" id="tab-edit" role="tabpanel" aria-labelledby="tabbtn-edit" tabindex="0" hidden>
+        <!-- ============ タブ2: テンプレート管理 ============ -->
+        <div class="tab-panel" id="tab-manage" role="tabpanel" aria-labelledby="tabbtn-manage" tabindex="0" hidden>
 
-            <section class="settings-card">
+            <section class="settings-card" id="manage-list-card">
                 <h2>テンプレート一覧</h2>
+                <p id="data-stats" class="data-stats"></p>
+
                 <div class="action-row">
                     <button type="button" id="new-template-btn" class="btn btn-primary">＋ 新規作成</button>
+                    <input id="import-file" type="file" accept="application/json,.json" hidden>
+                    <button type="button" id="import-btn" class="btn btn-ghost">インポート（JSON）</button>
+                    <button type="button" id="export-all-btn" class="btn btn-ghost">すべてエクスポート（JSON）</button>
                 </div>
+
+                <div id="import-choice" class="import-choice" role="group" aria-labelledby="import-choice-title" hidden>
+                    <p id="import-choice-title" class="import-choice-title"></p>
+                    <div class="action-row">
+                        <button type="button" id="import-merge-btn" class="btn btn-primary">追加（マージ）</button>
+                        <button type="button" id="import-replace-btn" class="btn btn-ghost">置き換え</button>
+                        <button type="button" id="import-cancel-btn" class="btn btn-ghost">キャンセル</button>
+                    </div>
+                </div>
+                <p id="import-error" class="field-error" role="alert" hidden></p>
+
                 <ul id="edit-template-list" class="tpl-list"></ul>
                 <p id="edit-empty" class="empty-note" hidden>まだテンプレートがありません。「＋ 新規作成」から作成してください。</p>
+
+                <details class="danger-details">
+                    <summary>すべて削除（取り消せません）</summary>
+                    <div class="danger-zone">
+                        <p class="field-hint">保存されているテンプレートをすべて削除します。この操作は取り消せません。先にエクスポートしておくことをおすすめします。</p>
+                        <button type="button" id="clear-all-btn" class="btn btn-danger">すべて削除</button>
+                    </div>
+                </details>
             </section>
 
             <section class="settings-card" id="editor-card" hidden>
+                <div class="editor-back-row">
+                    <button type="button" id="back-to-list-btn" class="btn btn-ghost btn-sm">← 一覧へ戻る</button>
+                </div>
                 <h2 id="editor-title">テンプレートを編集</h2>
                 <form id="editor-form" novalidate>
 
@@ -319,40 +345,6 @@
             </section>
         </div>
 
-        <!-- ============ タブ3: データ管理 ============ -->
-        <div class="tab-panel" id="tab-data" role="tabpanel" aria-labelledby="tabbtn-data" tabindex="0" hidden>
-            <section class="settings-card">
-                <h2>データ管理</h2>
-                <p id="data-stats" class="data-stats"></p>
-
-                <div class="action-row">
-                    <button type="button" id="export-all-btn" class="btn btn-primary">すべてエクスポート（JSON）</button>
-                    <input id="import-file" type="file" accept="application/json,.json" hidden>
-                    <button type="button" id="import-btn" class="btn btn-ghost">インポート（JSON）</button>
-                </div>
-
-                <div id="import-choice" class="import-choice" role="group" aria-labelledby="import-choice-title" hidden>
-                    <p id="import-choice-title" class="import-choice-title"></p>
-                    <div class="action-row">
-                        <button type="button" id="import-merge-btn" class="btn btn-primary">追加（マージ）</button>
-                        <button type="button" id="import-replace-btn" class="btn btn-ghost">置き換え</button>
-                        <button type="button" id="import-cancel-btn" class="btn btn-ghost">キャンセル</button>
-                    </div>
-                </div>
-                <p id="import-error" class="field-error" role="alert" hidden></p>
-
-                <h3 class="subheading">テンプレート単体のエクスポート</h3>
-                <ul id="data-template-list" class="tpl-list"></ul>
-                <p id="data-empty" class="empty-note" hidden>まだテンプレートがありません。</p>
-
-                <div class="danger-zone">
-                    <h3 class="subheading">すべて削除</h3>
-                    <p class="field-hint">保存されているテンプレートをすべて削除します。この操作は取り消せません。先にエクスポートしておくことをおすすめします。</p>
-                    <button type="button" id="clear-all-btn" class="btn btn-danger">すべて削除</button>
-                </div>
-            </section>
-        </div>
-
         <!-- ============ SEO コンテンツ ============ -->
         <section class="seo-content">
             <h2>メールテンプレート作成ツールとは</h2>
@@ -361,7 +353,7 @@
 
             <h2>使い方</h2>
             <ol class="howto-steps">
-                <li>「作成・編集」タブで新規作成し、テンプレート名・宛先・件名・本文を登録します。</li>
+                <li>「テンプレート管理」タブで新規作成し、テンプレート名・宛先・件名・本文を登録します。</li>
                 <li>本文の可変部分を <code>{{取引先名}}</code> のように書くと、未登録の差し込み変数として自動検出されます。</li>
                 <li>検出された変数に種類（1行テキスト／複数行／選択肢／日付）と初期値を設定して保存します。</li>
                 <li>「使う」タブでテンプレートを選び、差し込み欄を入力します。日付の変数は基準日とオフセットから自動計算されます。</li>
@@ -392,7 +384,7 @@
                 </details>
                 <details>
                     <summary>ブラウザのデータを消すとテンプレートは失われますか？</summary>
-                    <p>失われます。テンプレートはブラウザの LocalStorage にのみ保存されるため、履歴やサイトデータの削除、別の端末・別のブラウザでの利用時には引き継がれません。「データ管理」タブの JSON エクスポートで定期的にバックアップを取り、必要に応じてインポートで復元してください。</p>
+                    <p>失われます。テンプレートはブラウザの LocalStorage にのみ保存されるため、履歴やサイトデータの削除、別の端末・別のブラウザでの利用時には引き継がれません。「テンプレート管理」タブの JSON エクスポートで定期的にバックアップを取り、必要に応じてインポートで復元してください。</p>
                 </details>
                 <details>
                     <summary>HTML メールのスタイルがメールソフトで反映されません</summary>
@@ -551,7 +543,7 @@
       "name": "メールテンプレート作成ツールの使い方",
       "description": "定型メールのテンプレートを登録し、差し込み項目を埋めるだけで完成メールを生成する手順です。",
       "step": [
-        { "@type": "HowToStep", "position": 1, "name": "テンプレートを作成", "text": "「作成・編集」タブで新規作成し、テンプレート名・宛先・件名・本文を登録します。" },
+        { "@type": "HowToStep", "position": 1, "name": "テンプレートを作成", "text": "「テンプレート管理」タブで新規作成し、テンプレート名・宛先・件名・本文を登録します。" },
         { "@type": "HowToStep", "position": 2, "name": "差し込み記法を書く", "text": "本文の可変部分を二重波かっこの変数記法で書くと、未登録の差し込み変数として自動検出されます。" },
         { "@type": "HowToStep", "position": 3, "name": "変数の種類を設定", "text": "検出された変数に種類（1行テキスト／複数行／選択肢／日付）と初期値を設定して保存します。" },
         { "@type": "HowToStep", "position": 4, "name": "差し込み欄を入力", "text": "「使う」タブでテンプレートを選び、差し込み欄を入力します。日付の変数は基準日とオフセットから自動計算されます。" },
@@ -567,7 +559,7 @@
         { "@type": "Question", "name": "入力内容やテンプレートは外部に送信されますか？", "acceptedAnswer": { "@type": "Answer", "text": "送信されません。テンプレートの保存も含めてすべてブラウザ内（LocalStorage）で完結し、サーバへのアップロードは一切行いません。" } },
         { "@type": "Question", "name": "HTML メールを既定のメールアプリで開けますか？", "acceptedAnswer": { "@type": "Answer", "text": "mailto: は仕様上プレーンテキストの本文しか渡せないため、HTML 出力時は「メールアプリで開く」を無効にしています。.eml ファイルをダウンロードして既定のメールアプリで開くか、書式付きコピーを行い作成画面に貼り付けてください。" } },
         { "@type": "Question", "name": "営業日の計算は祝日を考慮しますか？", "acceptedAnswer": { "@type": "Answer", "text": "土曜・日曜のみをスキップして計算し、祝日には対応していません。祝日を挟む場合は差し込み欄の「上書きする」にチェックを入れて手動で修正してください。" } },
-        { "@type": "Question", "name": "ブラウザのデータを消すとテンプレートは失われますか？", "acceptedAnswer": { "@type": "Answer", "text": "失われます。テンプレートはブラウザの LocalStorage にのみ保存されます。「データ管理」タブの JSON エクスポートで定期的にバックアップを取り、必要に応じてインポートで復元してください。" } },
+        { "@type": "Question", "name": "ブラウザのデータを消すとテンプレートは失われますか？", "acceptedAnswer": { "@type": "Answer", "text": "失われます。テンプレートはブラウザの LocalStorage にのみ保存されます。「テンプレート管理」タブの JSON エクスポートで定期的にバックアップを取り、必要に応じてインポートで復元してください。" } },
         { "@type": "Question", "name": "HTML メールのスタイルがメールソフトで反映されません", "acceptedAnswer": { "@type": "Answer", "text": "多くのメールクライアントは style ブロックを取り除きます。本ツールではプリセットで指定したフォント・文字色・行間・最大幅をラッパー要素のインライン指定として出力しますが、生 CSS で書いたスタイルは無視される場合があります。重要な装飾はプリセット側で指定してください。" } },
         { "@type": "Question", "name": "メールアプリで開こうとすると警告が出るのはなぜですか？", "acceptedAnswer": { "@type": "Answer", "text": "mailto: の URL 長には環境依存の上限があり、Windows 版 Outlook などでは 2000 文字前後で切り詰められます。本ツールではエンコード後 1800 文字を超えた時点で警告を表示します。長い本文はコピーまたは .eml ダウンロードをご利用ください。" } },
         { "@type": "Question", "name": "他に業務連絡を効率化するツールはありますか？", "acceptedAnswer": { "@type": "Answer", "text": "Slack のリマインダー設定を日本語フォームから作れる Slack /remind ジェネレーターや、修正前後の文面を並べて差分を確認できるテキスト比較ツールもあわせてご利用ください。" } }

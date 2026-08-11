@@ -932,7 +932,8 @@
             'pv-to', 'pv-cc', 'pv-cc-row', 'pv-bcc', 'pv-bcc-row', 'pv-subject',
             'pv-subtabs', 'pv-body-text', 'pv-html-preview-wrap', 'pv-frame', 'pv-html-source',
             'copy-body-btn', 'copy-subject-btn', 'copy-to-btn', 'mailto-btn', 'eml-btn', 'action-note',
-            'new-template-btn', 'edit-template-list', 'edit-empty', 'editor-card', 'editor-title', 'editor-form',
+            'manage-list-card', 'new-template-btn', 'edit-template-list', 'edit-empty',
+            'editor-card', 'back-to-list-btn', 'editor-title', 'editor-form',
             'edit-name', 'edit-name-error', 'edit-to', 'edit-to-warn',
             'edit-cc', 'edit-cc-warn', 'edit-bcc', 'edit-bcc-warn', 'edit-subject',
             'insert-var-chips', 'edit-body', 'body-highlight',
@@ -951,7 +952,7 @@
             'edit-frame', 'save-template-btn', 'discard-template-btn', 'dirty-note',
             'data-stats', 'export-all-btn', 'import-file', 'import-btn', 'import-choice',
             'import-choice-title', 'import-merge-btn', 'import-replace-btn', 'import-cancel-btn',
-            'import-error', 'data-template-list', 'data-empty', 'clear-all-btn', 'toast'
+            'import-error', 'clear-all-btn', 'toast'
         ].forEach(function (id) {
             var node = document.getElementById(id);
             // 取り違えを早期に気づけるようにする。ここを黙って通すと
@@ -970,12 +971,12 @@
     function switchTab(name, focusButton) {
         if (state.activeTab === name) return;
         // 編集中に未保存の変更があれば確認
-        if (state.activeTab === 'edit' && state.dirty) {
+        if (state.activeTab === 'manage' && state.dirty) {
             if (!window.confirm('未保存の変更があります。破棄して移動しますか？')) return;
             state.editing = null;
             state.editingIsNew = false;
             setDirty(false);
-            renderEditTab();
+            renderManageTab();
         }
         state.activeTab = name;
         getTabButtons().forEach(function (btn) {
@@ -985,7 +986,7 @@
             btn.tabIndex = isActive ? 0 : -1;
             if (isActive && focusButton) btn.focus();
         });
-        ['use', 'edit', 'data'].forEach(function (key) {
+        ['use', 'manage'].forEach(function (key) {
             var panel = document.getElementById('tab-' + key);
             if (!panel) return;
             panel.classList.toggle('active', key === name);
@@ -993,9 +994,8 @@
         });
         // 隠れていた iframe はレイアウトを失うので、次に見せるとき作り直させる
         invalidateFrameLayout();
-        if (name === 'data') renderDataTab();
         if (name === 'use') renderUseTab();
-        if (name === 'edit' && state.editing) updateEditPreview();
+        if (name === 'manage') renderManageTab();
     }
 
     function initTabs() {
@@ -1229,7 +1229,7 @@
         if (missing.length) {
             dom['use-undefined-warn'].textContent =
                 'テンプレートに定義されていない変数があります: ' + missing.map(function (k) { return '{{' + k + '}}'; }).join(' ') +
-                '（そのまま出力されます。「作成・編集」タブで変数を追加できます）';
+                '（そのまま出力されます。「テンプレート管理」タブで変数を追加できます）';
             dom['use-undefined-warn'].hidden = false;
         } else {
             dom['use-undefined-warn'].hidden = true;
@@ -1338,7 +1338,7 @@
             showToast('サンプルテンプレートを ' + samples.length + ' 件読み込みました');
         });
 
-        dom['goto-edit-btn'].addEventListener('click', function () { switchTab('edit', true); });
+        dom['goto-edit-btn'].addEventListener('click', function () { switchTab('manage', true); });
 
         dom['copy-body-btn'].addEventListener('click', onCopyBody);
         dom['copy-subject-btn'].addEventListener('click', function () {
@@ -1416,13 +1416,18 @@
         showToast('.eml ファイルをダウンロードしました');
     }
 
-    // ==================== タブ2: 作成・編集 ====================
+    // ==================== タブ2: テンプレート管理 ====================
     function setDirty(flag) {
         state.dirty = flag;
         dom['dirty-note'].hidden = !flag;
     }
 
-    function renderEditTab() {
+    /** 一覧とエディタは排他表示。state.editing がそのまま「どちらを見せるか」になる */
+    function renderManageTab() {
+        var bytes = storeSizeBytes();
+        var kb = (bytes / 1024).toFixed(1);
+        dom['data-stats'].textContent = '保存件数: ' + state.templates.length + ' / ' + MAX_TEMPLATES + ' 件　概算使用容量: ' + kb + ' KB';
+
         var list = dom['edit-template-list'];
         clearNode(list);
         dom['edit-empty'].hidden = state.templates.length > 0;
@@ -1442,6 +1447,10 @@
                 text: '複製', 'aria-label': tpl.name + ' を複製'
             }));
             actions.appendChild(el('button', {
+                type: 'button', class: 'btn btn-ghost btn-sm', 'data-act': 'export', 'data-id': tpl.id,
+                text: '⤓ エクスポート', 'aria-label': tpl.name + ' を JSON でエクスポート'
+            }));
+            actions.appendChild(el('button', {
                 type: 'button', class: 'btn btn-danger btn-sm', 'data-act': 'delete', 'data-id': tpl.id,
                 text: '削除', 'aria-label': tpl.name + ' を削除'
             }));
@@ -1449,7 +1458,10 @@
             list.appendChild(li);
         });
 
+        dom['manage-list-card'].hidden = !!state.editing;
         dom['editor-card'].hidden = !state.editing;
+        // fillEditorForm() が updateEditPreview() まで面倒を見る。
+        // 一覧表示中はエディタ側の iframe が寸法を失うが、そちらで作り直される
         if (state.editing) fillEditorForm();
     }
 
@@ -2197,12 +2209,20 @@
         state.editing = tpl;
         state.editingIsNew = !!isNew;
         setDirty(false);
-        renderEditTab();
-        dom['editor-card'].hidden = false;
+        renderManageTab();
         dom['edit-name'].focus();
     }
 
-    function initEditTab() {
+    /** エディタを閉じて一覧に戻す。破棄ボタンと「一覧へ戻る」で共有する */
+    function closeEditor(confirmIfDirty) {
+        if (confirmIfDirty && state.dirty && !window.confirm('編集内容を破棄します。よろしいですか？')) return;
+        state.editing = null;
+        state.editingIsNew = false;
+        setDirty(false);
+        renderManageTab();
+    }
+
+    function initManageTab() {
         dom['new-template-btn'].addEventListener('click', function () {
             if (state.templates.length >= MAX_TEMPLATES) {
                 showToast('テンプレートは最大 ' + MAX_TEMPLATES + ' 件までです');
@@ -2238,6 +2258,9 @@
                 saveStore();
                 renderAll();
                 showToast('テンプレートを複製しました');
+            } else if (act === 'export') {
+                downloadBlob(exportPayload([tpl]), safeFileName(tpl.name, '-' + todayStamp() + '.json'), 'application/json');
+                showToast('「' + tpl.name + '」をエクスポートしました');
             } else if (act === 'delete') {
                 if (!window.confirm('「' + tpl.name + '」を削除します。よろしいですか？')) return;
                 state.templates = state.templates.filter(function (t) { return t.id !== id; });
@@ -2462,13 +2485,8 @@
             saveEditing();
         });
 
-        dom['discard-template-btn'].addEventListener('click', function () {
-            if (state.dirty && !window.confirm('編集内容を破棄します。よろしいですか？')) return;
-            state.editing = null;
-            state.editingIsNew = false;
-            setDirty(false);
-            renderEditTab();
-        });
+        dom['discard-template-btn'].addEventListener('click', function () { closeEditor(true); });
+        dom['back-to-list-btn'].addEventListener('click', function () { closeEditor(true); });
 
         window.addEventListener('beforeunload', function (e) {
             if (!state.dirty) return;
@@ -2709,28 +2727,7 @@
             isLaidOut(dom['edit-frame']));
     }
 
-    // ==================== タブ3: データ管理 ====================
-    function renderDataTab() {
-        var bytes = storeSizeBytes();
-        var kb = (bytes / 1024).toFixed(1);
-        dom['data-stats'].textContent = '保存件数: ' + state.templates.length + ' / ' + MAX_TEMPLATES + ' 件　概算使用容量: ' + kb + ' KB';
-
-        var list = dom['data-template-list'];
-        clearNode(list);
-        dom['data-empty'].hidden = state.templates.length > 0;
-        state.templates.forEach(function (tpl) {
-            var li = el('li', { class: 'tpl-item' });
-            li.appendChild(el('span', { class: 'tpl-item-name', text: tpl.name }));
-            var actions = el('div', { class: 'tpl-item-actions' });
-            actions.appendChild(el('button', {
-                type: 'button', class: 'btn btn-ghost btn-sm', 'data-export-id': tpl.id,
-                text: '⤓ エクスポート', 'aria-label': tpl.name + ' を JSON でエクスポート'
-            }));
-            li.appendChild(actions);
-            list.appendChild(li);
-        });
-    }
-
+    // ==================== テンプレート管理: インポート／エクスポート ====================
     function exportPayload(templates) {
         return JSON.stringify({
             schemaVersion: SCHEMA_VERSION,
@@ -2744,7 +2741,7 @@
         return String(d.getFullYear()) + pad2(d.getMonth() + 1) + pad2(d.getDate());
     }
 
-    function initDataTab() {
+    function initImportExport() {
         dom['export-all-btn'].addEventListener('click', function () {
             if (!state.templates.length) {
                 showToast('エクスポートできるテンプレートがありません');
@@ -2752,17 +2749,6 @@
             }
             downloadBlob(exportPayload(state.templates), 'mailtemplate-' + todayStamp() + '.json', 'application/json');
             showToast('全テンプレートをエクスポートしました');
-        });
-
-        dom['data-template-list'].addEventListener('click', function (e) {
-            var btn = e.target.closest ? e.target.closest('button[data-export-id]') : null;
-            if (!btn) return;
-            var id = btn.getAttribute('data-export-id');
-            var tpl = null;
-            state.templates.forEach(function (t) { if (t.id === id) tpl = t; });
-            if (!tpl) return;
-            downloadBlob(exportPayload([tpl]), safeFileName(tpl.name, '-' + todayStamp() + '.json'), 'application/json');
-            showToast('「' + tpl.name + '」をエクスポートしました');
         });
 
         dom['import-btn'].addEventListener('click', function () {
@@ -2889,8 +2875,7 @@
     // ==================== 初期化 ====================
     function renderAll() {
         renderUseTab();
-        renderEditTab();
-        renderDataTab();
+        renderManageTab();
     }
 
     function init() {
@@ -2905,8 +2890,8 @@
         }
         initTabs();
         initUseTab();
-        initEditTab();
-        initDataTab();
+        initManageTab();
+        initImportExport();
         renderAll();
     }
 
