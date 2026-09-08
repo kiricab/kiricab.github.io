@@ -13,6 +13,9 @@
     var MAX_TEMPLATES = 50;
     var MAILTO_WARN_LEN = 1800;
     var MAX_IMPORT_BYTES = 2 * 1024 * 1024;
+    /* リッチテキストではタグの分だけ嵩むので、プレーンテキスト時代の 20000 から広げてある。
+       旧 bodyHtml（20000）が無くなったぶん、1テンプレートあたりの総量は変わらない */
+    var MAX_BODY_LEN = 40000;
     var PREVIEW_DEBOUNCE_MS = 150;
     var AUTO_DETECT_DEBOUNCE_MS = 600;
 
@@ -328,14 +331,17 @@
         return out;
     }
 
-    /** 定義済みの値だけを差し込む。未定義の {{...}} はそのまま残す */
-    function applyVariables(str, values) {
+    /* 定義済みの値だけを差し込む。未定義の {{...}} はそのまま残す。
+       escapeValues は本文が既に HTML の場合（リッチテキスト入力）に使う。
+       入力値の < や & がタグとして解釈されるのを防ぐ */
+    function applyVariables(str, values, escapeValues) {
         if (!str) return '';
         var re = new RegExp(VAR_PATTERN, 'g');
         return String(str).replace(re, function (full, raw) {
             var key = raw.trim();
             if (Object.prototype.hasOwnProperty.call(values, key)) {
-                return values[key] == null ? '' : String(values[key]);
+                var v = values[key] == null ? '' : String(values[key]);
+                return escapeValues ? escapeHtml(v) : v;
             }
             return full;
         });
@@ -434,7 +440,8 @@
         blockquote: 'margin:0 0 1em;padding:.25em 0 .25em 1em;border-left:3px solid #d1d5db;color:#6b7280',
         hr: 'border:0;border-top:1px solid #e5e7eb;margin:1.5em 0',
         pre: 'margin:0 0 1em;padding:.75em 1em;background:#f3f4f6;border-radius:4px;overflow-x:auto',
-        code: 'font-family:Consolas,Monaco,monospace;background:#f3f4f6;padding:.1em .3em;border-radius:3px'
+        code: 'font-family:Consolas,Monaco,monospace;background:#f3f4f6;padding:.1em .3em;border-radius:3px',
+        u: 'text-decoration:underline'
     };
 
     var MD_URI_PATTERN = /^(?:https?:|mailto:|tel:)/i;
@@ -442,6 +449,11 @@
     /** marked と DOMPurify が両方使えるか */
     function markdownAvailable() {
         return typeof window.marked !== 'undefined' && typeof window.DOMPurify !== 'undefined';
+    }
+
+    /** リッチテキストは marked を使わないので DOMPurify だけあれば成立する */
+    function richAvailable() {
+        return typeof window.DOMPurify !== 'undefined';
     }
 
     /* Markdown を解析し、サニタイズ済みの DocumentFragment を返す。
@@ -478,10 +490,9 @@
         return MD_EMAIL_STYLES[tag] || '';
     }
 
-    /** Markdown 本文を、メールクライアント向けにインラインスタイルを付けた HTML へ変換する */
-    function markdownToHtml(md, rawStyle) {
-        var frag = markdownToFragment(md);
-        if (!frag) return textToHtml(md);
+    /* 中間表現のフラグメントへメール向けインラインスタイルを当てて HTML 文字列にする。
+       Markdown とリッチテキストで同じ見た目に揃えるため、両者でこれを共有する */
+    function applyEmailStyles(frag, rawStyle) {
         var style = normalizeStyle(rawStyle);
         var host = document.createElement('div');
         host.appendChild(frag);
@@ -504,11 +515,17 @@
         return host.innerHTML;
     }
 
-    /* Markdown を読みやすいプレーンテキストへ落とす。
-       記号を正規表現で剥がすと取りこぼすため、解析済みの DOM を歩いて組み立てる */
-    function markdownToPlainText(md) {
+    /** Markdown 本文を、メールクライアント向けにインラインスタイルを付けた HTML へ変換する */
+    function markdownToHtml(md, rawStyle) {
         var frag = markdownToFragment(md);
-        if (!frag) return String(md == null ? '' : md);
+        if (!frag) return textToHtml(md);
+        return applyEmailStyles(frag, rawStyle);
+    }
+
+    /* 中間表現のフラグメントを読みやすいプレーンテキストへ落とす。
+       記号を正規表現で剥がすと取りこぼすため、解析済みの DOM を歩いて組み立てる。
+       Markdown とリッチテキストのどちらの平文出力もここを通る */
+    function fragmentToPlainText(frag) {
         var lines = [];
 
         /** インライン要素をまとめて1つの文字列にする（<br> は改行として残す） */
@@ -600,8 +617,113 @@
         return lines.join('\n').replace(/\n{3,}/g, '\n\n').replace(/^\n+|\n+$/g, '');
     }
 
+    /** Markdown を読みやすいプレーンテキストへ落とす */
+    function markdownToPlainText(md) {
+        var frag = markdownToFragment(md);
+        if (!frag) return String(md == null ? '' : md);
+        return fragmentToPlainText(frag);
+    }
+
+    // ==================== リッチテキスト変換 ====================
+    /* contenteditable と貼り付けが吐くタグは幅が広いので、いったん広めに通してから
+       正規化パスで Markdown と同じ語彙（strong / em / p …）へ寄せる。
+       b・i・div・span を通すのは、ここで剥がすと書式そのものが失われるため */
+    var RICH_PURIFY_TAGS = MD_ALLOWED_TAGS.concat(['u', 'b', 'i', 'div', 'span']);
+    var RICH_BLOCK_TAGS = ['p', 'ul', 'ol', 'li', 'blockquote', 'hr', 'pre', 'h1', 'h2', 'h3', 'div'];
+
+    /** 要素を別のタグへ置き換える（子ノードはそのまま引き継ぐ） */
+    function renameElement(el, tagName) {
+        var next = document.createElement(tagName);
+        while (el.firstChild) next.appendChild(el.firstChild);
+        el.parentNode.replaceChild(next, el);
+        return next;
+    }
+
+    /** 要素を外し、中身だけを親へ残す */
+    function unwrapElement(el) {
+        var parent = el.parentNode;
+        if (!parent) return;
+        while (el.firstChild) parent.insertBefore(el.firstChild, el);
+        parent.removeChild(el);
+    }
+
+    function hasBlockChild(el) {
+        var found = false;
+        Array.prototype.forEach.call(el.children, function (c) {
+            if (RICH_BLOCK_TAGS.indexOf(c.tagName.toLowerCase()) !== -1) found = true;
+        });
+        return found;
+    }
+
+    /* execCommand や外部アプリからの貼り付けが残す表記ゆれを吸収する。
+       文書順の逆から回すのは、入れ子の div を内側から順にほどくため */
+    function normalizeRichHost(host) {
+        var list = Array.prototype.slice.call(host.querySelectorAll('div, span, b, i, a'));
+        for (var i = list.length - 1; i >= 0; i--) {
+            var el = list[i];
+            if (!el.parentNode) continue;   // 親ごと外された後
+            var tag = el.tagName.toLowerCase();
+            if (tag === 'span') { unwrapElement(el); continue; }
+            if (tag === 'b') { renameElement(el, 'strong'); continue; }
+            if (tag === 'i') { renameElement(el, 'em'); continue; }
+            // href が落とされた <a>（危険なスキーム）はリンクを解いて文字だけ残す
+            if (tag === 'a') { if (!el.getAttribute('href')) unwrapElement(el); continue; }
+            // div はブロックを含むならほどき、含まないなら段落として扱う
+            if (hasBlockChild(el)) unwrapElement(el); else renameElement(el, 'p');
+        }
+    }
+
+    /* リッチテキスト本文をサニタイズし、共通の中間表現へ落とす。
+       DOMPurify が無い環境では null を返す（呼び出し側でプレーンテキスト扱いへ退避） */
+    function sanitizeRichToFragment(html) {
+        if (!richAvailable()) return null;
+        var frag;
+        try {
+            frag = window.DOMPurify.sanitize(String(html == null ? '' : html), {
+                ALLOWED_TAGS: RICH_PURIFY_TAGS,
+                ALLOWED_ATTR: ['href'],
+                ALLOWED_URI_REGEXP: MD_URI_PATTERN,
+                RETURN_DOM_FRAGMENT: true
+            });
+        } catch (e) {
+            return null;
+        }
+        var host = document.createElement('div');
+        host.appendChild(frag);
+        normalizeRichHost(host);
+        var out = document.createDocumentFragment();
+        while (host.firstChild) out.appendChild(host.firstChild);
+        return out;
+    }
+
+    /** 保存・表示に使う正規化済み HTML。DOMPurify が無ければ null */
+    function sanitizeRichHtml(html) {
+        var frag = sanitizeRichToFragment(html);
+        if (!frag) return null;
+        var host = document.createElement('div');
+        host.appendChild(frag);
+        return host.innerHTML;
+    }
+
+    /** リッチテキスト本文を、メールクライアント向けにインラインスタイルを付けた HTML へ変換する */
+    function richToHtml(html, rawStyle) {
+        var frag = sanitizeRichToFragment(html);
+        if (!frag) return textToHtml(html);
+        return applyEmailStyles(frag, rawStyle);
+    }
+
+    /** リッチテキスト本文をプレーンテキストへ落とす（Markdown と同じ整形規則） */
+    function richToPlainText(html) {
+        var frag = sanitizeRichToFragment(html);
+        if (!frag) return String(html == null ? '' : html);
+        return fragmentToPlainText(frag);
+    }
+
     /** テンプレートの本文を HTML 化する（入力方式に応じて変換器を切り替える） */
     function bodyToHtml(tpl, body) {
+        if (tpl && tpl.bodyFormat === 'rich') {
+            return richToHtml(body, tpl.style);
+        }
         if (tpl && tpl.bodyFormat === 'markdown' && markdownAvailable()) {
             return markdownToHtml(body, tpl.style);
         }
@@ -610,6 +732,9 @@
 
     /** テンプレートの本文をプレーンテキスト出力用に整える */
     function bodyToPlainText(tpl, body) {
+        if (tpl && tpl.bodyFormat === 'rich') {
+            return richToPlainText(body);
+        }
         if (tpl && tpl.bodyFormat === 'markdown' && markdownAvailable()) {
             return markdownToPlainText(body);
         }
@@ -915,6 +1040,10 @@
         return v;
     }
 
+    /* 旧「HTML 手書き」からリッチテキスト入力へ移行した件数。
+       読み込み・インポートのたびに 0 に戻してから数える */
+    var richMigratedCount = 0;
+
     function normalizeTemplate(raw) {
         if (!raw || typeof raw !== 'object') return null;
         var name = String(raw.name == null ? '' : raw.name).trim().slice(0, 60);
@@ -928,6 +1057,32 @@
                 seen[v.key] = true;
                 return true;
             });
+        // 未設定の旧テンプレートはプレーンテキスト扱い（後方互換）
+        var bodyFormat = 'text';
+        if (raw.bodyFormat === 'markdown' || raw.bodyFormat === 'rich') bodyFormat = raw.bodyFormat;
+        var body = String(raw.body == null ? '' : raw.body).slice(0, MAX_BODY_LEN);
+
+        /* 旧「HTML 手書き」（htmlMode:'manual' + bodyHtml）はリッチテキスト入力へ引き継ぐ。
+           プレーンテキスト側の body は破棄され、以後は HTML から平文を組み立てる。
+           DOMPurify が読めていないときは移行せず旧フィールドを残し、次回に持ち越す */
+        if (raw.htmlMode === 'manual' && String(raw.bodyHtml == null ? '' : raw.bodyHtml).trim()) {
+            var migrated = sanitizeRichHtml(String(raw.bodyHtml).slice(0, MAX_BODY_LEN));
+            if (migrated != null) {
+                bodyFormat = 'rich';
+                body = migrated.slice(0, MAX_BODY_LEN);
+                richMigratedCount += 1;
+            } else {
+                return withLegacyHtmlFields(raw, name, variables);
+            }
+        }
+
+        /* リッチテキストの正規化は保存・読み込み・インポートのすべてがここを通るので、
+           サニタイズもここに集約する。打鍵のたびに走らせるとキャレットが飛ぶ */
+        if (bodyFormat === 'rich') {
+            var clean = sanitizeRichHtml(body);
+            if (clean != null) body = clean.slice(0, MAX_BODY_LEN);
+        }
+
         var t = {
             id: String(raw.id || uid()),
             name: name,
@@ -935,11 +1090,31 @@
             cc: String(raw.cc == null ? '' : raw.cc).slice(0, 500),
             bcc: String(raw.bcc == null ? '' : raw.bcc).slice(0, 500),
             subject: String(raw.subject == null ? '' : raw.subject).slice(0, 300),
-            body: String(raw.body == null ? '' : raw.body).slice(0, 20000),
-            // 未設定の旧テンプレートはプレーンテキスト扱い（後方互換）
-            bodyFormat: raw.bodyFormat === 'markdown' ? 'markdown' : 'text',
-            htmlMode: raw.htmlMode === 'manual' ? 'manual' : 'auto',
-            bodyHtml: String(raw.bodyHtml == null ? '' : raw.bodyHtml).slice(0, 20000),
+            body: body,
+            bodyFormat: bodyFormat,
+            style: normalizeStyle(raw.style),
+            variables: variables,
+            createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : Date.now(),
+            updatedAt: typeof raw.updatedAt === 'number' ? raw.updatedAt : Date.now()
+        };
+        migrateFieldTypeRules(t);
+        return t;
+    }
+
+    /* 移行できないときの退避。旧フィールドをそのまま持ち回るだけの入れ物を作り、
+       ライブラリが読める次回の起動で改めて移行させる */
+    function withLegacyHtmlFields(raw, name, variables) {
+        var t = {
+            id: String(raw.id || uid()),
+            name: name,
+            to: String(raw.to == null ? '' : raw.to).slice(0, 500),
+            cc: String(raw.cc == null ? '' : raw.cc).slice(0, 500),
+            bcc: String(raw.bcc == null ? '' : raw.bcc).slice(0, 500),
+            subject: String(raw.subject == null ? '' : raw.subject).slice(0, 300),
+            body: String(raw.body == null ? '' : raw.body).slice(0, MAX_BODY_LEN),
+            bodyFormat: 'text',
+            htmlMode: 'manual',
+            bodyHtml: String(raw.bodyHtml).slice(0, MAX_BODY_LEN),
             style: normalizeStyle(raw.style),
             variables: variables,
             createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : Date.now(),
@@ -956,6 +1131,7 @@
         FIELD_SPECS.forEach(function (s) {
             if (String(t[s.field] || '').indexOf(token) !== -1) kinds[s.kind] = true;
         });
+        // 移行できずに旧フィールドを持ち越しているテンプレートも拾う
         if (String(t.bodyHtml || '').indexOf(token) !== -1) kinds.body = true;
         return Object.keys(kinds);
     }
@@ -996,8 +1172,6 @@
             subject: '',
             body: '',
             bodyFormat: 'text',
-            htmlMode: 'auto',
-            bodyHtml: '',
             style: normalizeStyle(null),
             variables: [],
             createdAt: now,
@@ -1022,10 +1196,21 @@
         try {
             var obj = JSON.parse(raw);
             if (!obj || typeof obj !== 'object' || !Array.isArray(obj.templates)) return [];
+            richMigratedCount = 0;
             return obj.templates.map(normalizeTemplate).filter(Boolean).slice(0, MAX_TEMPLATES);
         } catch (e) {
             return [];
         }
+    }
+
+    /* 旧「HTML 手書き」の移行を知らせ、その場で保存して確定させる。
+       保存しないと読み込みのたびに移行が走り、案内も出続けてしまう */
+    function announceRichMigration() {
+        if (!richMigratedCount) return;
+        var n = richMigratedCount;
+        richMigratedCount = 0;
+        saveStore();
+        showToast(n + ' 件のテンプレートを「リッチテキスト」入力に移行しました（旧・HTML 手書き）');
     }
 
     function saveStore() {
@@ -1144,9 +1329,12 @@
         varDialogFieldKind: 'body', // ダイアログを開いた元の欄の種類（型の制限に使う）
         pendingRange: null,         // ダイアログを開いた時点の選択範囲（inert 対策）
         pendingFieldId: null,       // ダイアログを開いた元の入力欄
+        pendingRichRange: null,     // 同、リッチテキスト編集面から開いた場合の DOM Range
         floatOriginFieldId: null,   // フロートを出した入力欄（Escape の戻り先）
         floatOriginRange: null,     // フロートを出した時点の選択範囲
-        floatDismissedAt: null      // Escape で閉じたときの選択位置
+        floatDismissedAt: null,     // Escape で閉じたときの選択位置
+        richActiveToken: null,      // リッチテキスト編集面でキャレットがかかっている変数
+        richOriginRange: null       // 同、フロートを出した時点の DOM Range
     };
 
     // ==================== DOM 参照 ====================
@@ -1162,7 +1350,7 @@
             'editor-card', 'back-to-list-btn', 'editor-title', 'editor-form',
             'edit-name', 'edit-name-error', 'edit-to', 'edit-to-warn',
             'edit-cc', 'edit-cc-warn', 'edit-bcc', 'edit-bcc-warn', 'edit-subject',
-            'insert-var-chips', 'edit-body', 'body-highlight', 'body-hint',
+            'insert-var-chips', 'edit-body', 'body-editor', 'body-label', 'body-highlight', 'body-hint',
             'md-toolbar', 'md-preview', 'md-preview-details', 'md-lib-warn', 'html-auto-hint',
             'to-highlight', 'cc-highlight', 'bcc-highlight', 'subject-highlight',
             'var-float', 'var-float-label', 'var-float-make', 'var-float-edit', 'var-float-delete',
@@ -1174,7 +1362,8 @@
             'var-dialog-required', 'var-dialog-required-note', 'var-dialog-ok', 'var-dialog-cancel',
             'var-type-warn',
             'edit-variables', 'edit-variables-empty', 'add-variable-btn',
-            'manual-html-wrap', 'edit-body-html', 'style-font', 'style-size', 'style-line-height',
+            'rich-toolbar', 'rich-body', 'rich-body-label',
+            'style-font', 'style-size', 'style-line-height',
             'style-max-width', 'style-color', 'style-background', 'style-link-color', 'style-custom-css',
             'edit-frame', 'save-template-btn', 'discard-template-btn', 'dirty-note',
             'data-stats', 'export-all-btn', 'import-file', 'import-btn', 'import-choice',
@@ -1407,17 +1596,30 @@
         var tpl = getCurrentTemplate();
         if (!tpl) return null;
         var rendered = renderTemplate(tpl, state.inputs);
-        var innerHtml;
-        if (tpl.htmlMode === 'manual' && tpl.bodyHtml) {
-            // 手書き HTML は利用者自身が書いたものをそのまま使う（表示は sandbox iframe 内）
-            innerHtml = applyVariables(tpl.bodyHtml, state.inputs);
-        } else {
-            innerHtml = bodyToHtml(tpl, rendered.body);
-        }
-        // Markdown の場合はテキスト出力（プレビュー・コピー・mailto・.eml）も記法を落として整形する
-        rendered.body = bodyToPlainText(tpl, rendered.body);
-        rendered.html = buildHtmlDocument(innerHtml, tpl.style);
+        var parts = renderBodyParts(tpl, rendered.body, state.inputs);
+        rendered.body = parts.text;
+        rendered.html = buildHtmlDocument(parts.html, tpl.style);
         return rendered;
+    }
+
+    /* 本文の HTML 出力とテキスト出力をまとめて作る。編集プレビューと共用。
+       substituted は body に値を差し込み済みの文字列（text / markdown 用）。
+
+       リッチテキストだけは差し込みの順序が違う。body が既に HTML なので
+       HTML 側は値をエスケープしてから埋め、テキスト側は先に平文へ落としてから
+       素の値を埋める。逆順にするとタグが平文へ漏れる／値がタグとして解釈される */
+    function renderBodyParts(tpl, substituted, values) {
+        if (tpl.bodyFormat === 'rich') {
+            return {
+                html: richToHtml(applyVariables(tpl.body, values, true), tpl.style),
+                text: applyVariables(richToPlainText(tpl.body), values)
+            };
+        }
+        return {
+            html: bodyToHtml(tpl, substituted),
+            // Markdown はテキスト出力（コピー・mailto・.eml）でも記法を落として整形する
+            text: bodyToPlainText(tpl, substituted)
+        };
     }
 
     function updatePreview() {
@@ -1702,16 +1904,15 @@
         dom['edit-cc'].value = t.cc;
         dom['edit-bcc'].value = t.bcc;
         dom['edit-subject'].value = t.subject;
-        dom['edit-body'].value = t.body;
-        dom['edit-body-html'].value = t.bodyHtml;
+        /* 本文は入力方式ごとに置き場所が違う。リッチテキストは HTML なので textarea には入れない。
+           ただしライブラリが読めずリッチ編集面を出せないときは、本文が空に見えないよう
+           HTML のまま textarea に出す（保存しても中身は変わらない） */
+        dom['edit-body'].value = (t.bodyFormat === 'rich' && richAvailable()) ? '' : t.body;
+        fillRichBody(t.body);
         Array.prototype.forEach.call(document.querySelectorAll('input[name="body-format"]'), function (r) {
             r.checked = r.value === t.bodyFormat;
         });
         applyBodyFormatUi();
-        Array.prototype.forEach.call(document.querySelectorAll('input[name="html-mode"]'), function (r) {
-            r.checked = r.value === t.htmlMode;
-        });
-        dom['manual-html-wrap'].hidden = t.htmlMode !== 'manual';
         dom['style-font'].value = t.style.fontFamily;
         dom['style-size'].value = t.style.fontSize;
         dom['style-line-height'].value = t.style.lineHeight;
@@ -1728,19 +1929,28 @@
         validateAllAddressFields();
     }
 
-    // ==================== 本文の入力方式（テキスト / Markdown） ====================
+    // ==================== 本文の入力方式（テキスト / Markdown / リッチテキスト） ====================
     var HTML_HINT_TEXT = '自動変換では、空行で段落に分け、単一改行を改行タグに、URL をリンクに、行頭の「- 」を箇条書きに変換します。';
     var HTML_HINT_MD = 'Markdown を HTML に変換します。見出し・太字・斜体・箇条書き・番号付きリスト・リンク・引用・区切り線・コードに対応します。表やタスクリストには対応していません。';
+    var HTML_HINT_RICH = '本文欄で付けた書式をそのまま HTML にし、各タグへインラインスタイルを付けて出力します。プレーンテキスト出力では書式を落として整形します。';
 
     /** 本文欄のヒント文を入力方式に合わせて組み直す */
-    function renderBodyHint(isMd) {
+    function renderBodyHint(format) {
         var hint = dom['body-hint'];
         if (!hint) return;
         clearNode(hint);
-        if (isMd) {
+        if (format === 'markdown') {
             hint.appendChild(document.createTextNode(
                 'Markdown で書けます。見出し・太字・斜体・箇条書き・番号付きリスト・リンク・引用・区切り線に対応。'
                 + '可変部分をなぞると「変数にする」が出ます。'));
+            return;
+        }
+        if (format === 'rich') {
+            hint.appendChild(document.createTextNode(
+                'ツールバーで書式を付けられます。可変部分をなぞると「変数にする」が出ます。'));
+            hint.appendChild(el('code', null, ['{{取引先名}}']));
+            hint.appendChild(document.createTextNode(
+                ' と直接書いても自動で差し込み変数になります。'));
             return;
         }
         hint.appendChild(document.createTextNode('可変部分をなぞると「変数にする」が出ます。'));
@@ -1752,35 +1962,110 @@
     /** ラジオの現在値。ライブラリが無い環境では常にテキスト扱いにする */
     function currentBodyFormat() {
         var checked = document.querySelector('input[name="body-format"]:checked');
-        return checked && checked.value === 'markdown' ? 'markdown' : 'text';
+        if (!checked) return 'text';
+        if (checked.value === 'markdown') return 'markdown';
+        if (checked.value === 'rich') return 'rich';
+        return 'text';
     }
 
-    /** 入力方式に合わせてツールバー・プレビュー・ヒント文の表示を切り替える */
+    /* 入力方式に合わせて入力面・ツールバー・プレビュー・ヒント文を切り替える。
+       ライブラリが無い環境では Markdown / リッチテキストの UI を出さずテキストとして扱う */
     function applyBodyFormatUi() {
-        // ライブラリが無い環境では Markdown 用の UI を出さず、テキストとして扱う
-        var isMd = !!(state.editing && state.editing.bodyFormat === 'markdown') && markdownAvailable();
+        var format = state.editing ? state.editing.bodyFormat : 'text';
+        if (format === 'markdown' && !markdownAvailable()) format = 'text';
+        if (format === 'rich' && !richAvailable()) format = 'text';
+        var isMd = format === 'markdown';
+        var isRich = format === 'rich';
+
         if (dom['md-toolbar']) dom['md-toolbar'].hidden = !isMd;
         if (dom['md-preview-details']) {
             dom['md-preview-details'].hidden = !isMd;
             dom['md-preview-details'].open = isMd && state.mdPreviewOpen;
         }
-        renderBodyHint(isMd);
-        if (dom['html-auto-hint']) dom['html-auto-hint'].textContent = isMd ? HTML_HINT_MD : HTML_HINT_TEXT;
+        if (dom['rich-toolbar']) dom['rich-toolbar'].hidden = !isRich;
+        if (dom['rich-body']) dom['rich-body'].hidden = !isRich;
+        if (dom['rich-body-label']) dom['rich-body-label'].hidden = !isRich;
+        // textarea 側は .field-editor ごと隠す（ハイライト層と重ねてあるため）
+        if (dom['body-editor']) dom['body-editor'].hidden = isRich;
+        if (dom['body-label']) dom['body-label'].hidden = isRich;
+
+        renderBodyHint(format);
+        if (dom['html-auto-hint']) {
+            dom['html-auto-hint'].textContent = isRich ? HTML_HINT_RICH : (isMd ? HTML_HINT_MD : HTML_HINT_TEXT);
+        }
+    }
+
+    /* 入力方式を切り替える。プレーンテキスト ⇄ Markdown はどちらも本文が平文なので
+       何も変換しない。リッチテキストだけは本文の実体が HTML なので行き来で変換が要る。
+       リッチ → 平文は書式が落ちるため、取り消せるうちに確認を取る */
+    function switchBodyFormat(next) {
+        var t = state.editing;
+        if (!t || next === t.bodyFormat) return;
+        var prev = t.bodyFormat;
+
+        if (prev === 'rich') {
+            if (!window.confirm('リッチテキストで付けた書式（太字・見出し・箇条書きなど）は失われます。よろしいですか？')) {
+                checkBodyFormatRadio(prev);
+                return;
+            }
+            t.body = richToPlainText(t.body);
+            dom['edit-body'].value = t.body;
+            fillRichBody('');
+        } else if (next === 'rich') {
+            // 書いてある内容はそのまま持ち込む（書式が増えるだけで情報は失われない）
+            var html = plainBodyToRichHtml(t, t.body);
+            var clean = sanitizeRichHtml(html);
+            t.body = clean == null ? html : clean;
+            dom['edit-body'].value = '';
+            fillRichBody(t.body);
+        }
+
+        t.bodyFormat = next;
+        applyBodyFormatUi();
+        setDirty(true);
+        renderAllFieldHighlights();
+        updateEditPreview();
+    }
+
+    function checkBodyFormatRadio(value) {
+        Array.prototype.forEach.call(document.querySelectorAll('input[name="body-format"]'), function (r) {
+            r.checked = r.value === value;
+        });
+    }
+
+    /* 平文の本文をリッチテキスト編集面の HTML に持ち上げる。
+       ここで付く style 属性はサニタイズで落ち、見た目は編集面の CSS が担う */
+    function plainBodyToRichHtml(tpl, body) {
+        if (!String(body == null ? '' : body).trim()) return '';
+        if (tpl.bodyFormat === 'markdown') {
+            var frag = markdownToFragment(body);
+            if (frag) {
+                var host = document.createElement('div');
+                host.appendChild(frag);
+                return host.innerHTML;
+            }
+        }
+        return textToHtml(body);
     }
 
     /* marked / DOMPurify が読み込めなかった場合の縮退。
-       Markdown を選べなくし、既存の Markdown テンプレートもテキストとして安全に扱う */
-    function applyMarkdownAvailability() {
-        var available = markdownAvailable();
+       Markdown は両方、リッチテキストは DOMPurify のみに依存する */
+    function applyLibAvailability() {
+        var md = markdownAvailable();
+        var rich = richAvailable();
         Array.prototype.forEach.call(document.querySelectorAll('input[name="body-format"]'), function (r) {
-            if (r.value === 'markdown') r.disabled = !available;
+            if (r.value === 'markdown') r.disabled = !md;
+            if (r.value === 'rich') r.disabled = !rich;
         });
         var warn = dom['md-lib-warn'];
         if (!warn) return;
-        warn.hidden = available;
-        if (!available) {
+        warn.hidden = md && rich;
+        if (!rich) {
+            warn.textContent = '本文の変換に必要なライブラリを読み込めませんでした。'
+                + 'Markdown とリッチテキストは選べません。プレーンテキストとして編集・出力されます。';
+        } else if (!md) {
             warn.textContent = 'Markdown の変換に必要なライブラリを読み込めませんでした。'
-                + 'プレーンテキストとして編集・出力されます。';
+                + 'リッチテキストまたはプレーンテキストをお使いください。';
         }
     }
 
@@ -1843,6 +2128,283 @@
             case 'hr': insertHorizontalRule(textarea); break;
             default: break;
         }
+    }
+
+    /* ==================== リッチテキスト編集面 ====================
+       contenteditable + document.execCommand で組む。execCommand は非推奨だが
+       書式付き編集の標準代替が存在せず全ブラウザで動くため採用する。
+       ブラウザごとに吐くタグの揺れ（<b> / <div> / style 付き <span>）は
+       sanitizeRichHtml() の正規化パスが吸収するので、ここでは気にしない。 */
+
+    /** 編集面へ本文を流し込む。サニタイズ済みでなければ素通しせずテキストとして置く */
+    function fillRichBody(html) {
+        var target = dom['rich-body'];
+        if (!target) return;
+        var clean = sanitizeRichHtml(html);
+        if (clean == null) target.textContent = String(html == null ? '' : html);
+        else target.innerHTML = clean;
+    }
+
+    /** 編集面の内容を state へ書き戻す。サニタイズは保存・出力時にまとめて行う */
+    function syncRichBody() {
+        if (!state.editing || !dom['rich-body']) return;
+        state.editing.body = dom['rich-body'].innerHTML;
+        setDirty(true);
+        scheduleAutoDetect();
+        scheduleEditPreview();
+    }
+
+    function richBodyHasFocus() {
+        return !!dom['rich-body'] && document.activeElement === dom['rich-body'];
+    }
+
+    /** #rich-body の内側にある選択範囲だけを返す */
+    function richSelectionRange() {
+        var host = dom['rich-body'];
+        if (!host) return null;
+        var sel = window.getSelection();
+        if (!sel || !sel.rangeCount) return null;
+        var range = sel.getRangeAt(0);
+        if (!host.contains(range.commonAncestorContainer)) return null;
+        return range;
+    }
+
+    function selectRange(range) {
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+
+    /* 現在の選択（または保存しておいた range）をテキストで置き換え、後ろへキャレットを送る。
+       差し込み変数は素の {{名前}} 文字列として入れるので、テキストノードで足りる */
+    function richReplaceRange(range, text) {
+        var host = dom['rich-body'];
+        if (!host || !range) return;
+        host.focus();
+        range.deleteContents();
+        var node = document.createTextNode(text);
+        range.insertNode(node);
+        var after = document.createRange();
+        after.setStartAfter(node);
+        after.collapse(true);
+        selectRange(after);
+        syncRichBody();
+    }
+
+    function richInsertText(text) {
+        richReplaceRange(richSelectionRange() || richCaretAtEnd(), text);
+    }
+
+    /** 選択が取れないとき（チップを押した直後など）の落とし先 */
+    function richCaretAtEnd() {
+        var host = dom['rich-body'];
+        if (!host) return null;
+        var range = document.createRange();
+        range.selectNodeContents(host);
+        range.collapse(false);
+        return range;
+    }
+
+    /* キャレットが乗っている {{...}} を返す。変数は平文として書かれるため
+       要素境界をまたがない。キャレットのテキストノード1つだけを見れば足りる */
+    function richTokenAtCaret() {
+        var range = richSelectionRange();
+        if (!range || !range.collapsed) return null;
+        var node = range.startContainer;
+        if (node.nodeType !== 3) return null;
+        var token = tokenAtCaret(node.nodeValue, range.startOffset);
+        if (!token) return null;
+        return { node: node, start: token.start, end: token.end, key: token.key, raw: token.raw };
+    }
+
+    /** 変数1か所を編集面から取り除き、跡地へキャレットを置く */
+    function richDeleteToken(token) {
+        var text = token.node.nodeValue;
+        token.node.nodeValue = text.slice(0, token.start) + text.slice(token.end);
+        var range = document.createRange();
+        range.setStart(token.node, Math.min(token.start, token.node.nodeValue.length));
+        range.collapse(true);
+        dom['rich-body'].focus();
+        selectRange(range);
+        syncRichBody();
+    }
+
+    // ---- 書式ツールバー ----
+    function execRich(command, value) {
+        dom['rich-body'].focus();
+        try {
+            // 第3引数を渡すと insertHorizontalRule が値を id にしてしまうため、
+            // 値のないコマンドでは引数そのものを省く
+            if (value == null) document.execCommand(command, false);
+            else document.execCommand(command, false, value);
+        } catch (e) {
+            return;
+        }
+        syncRichBody();
+    }
+
+    /** キャレットが乗っているブロックのタグ名。formatBlock のトグル判定に使う */
+    function richCurrentBlockTag() {
+        var range = richSelectionRange();
+        if (!range) return '';
+        var node = range.startContainer;
+        if (node.nodeType === 3) node = node.parentNode;
+        var host = dom['rich-body'];
+        while (node && node !== host) {
+            var tag = node.tagName ? node.tagName.toLowerCase() : '';
+            if (RICH_BLOCK_TAGS.indexOf(tag) !== -1 && tag !== 'div') return tag;
+            node = node.parentNode;
+        }
+        return '';
+    }
+
+    /** 同じブロック書式をもう一度押したら段落に戻す（Word のトグルと同じ感覚） */
+    function toggleBlockFormat(tag) {
+        execRich('formatBlock', richCurrentBlockTag() === tag ? 'p' : tag);
+    }
+
+    function applyRichCommand(command) {
+        switch (command) {
+            case 'bold': execRich('bold'); break;
+            case 'italic': execRich('italic'); break;
+            case 'underline': execRich('underline'); break;
+            case 'ul': execRich('insertUnorderedList'); break;
+            case 'ol': execRich('insertOrderedList'); break;
+            case 'heading': toggleBlockFormat('h2'); break;
+            case 'quote': toggleBlockFormat('blockquote'); break;
+            case 'hr': execRich('insertHorizontalRule'); break;
+            case 'clear': execRich('removeFormat'); execRich('formatBlock', 'p'); break;
+            case 'link': applyRichLink(); break;
+            default: break;
+        }
+    }
+
+    function applyRichLink() {
+        var range = richSelectionRange();
+        if (!range || range.collapsed) {
+            showToast('リンクにする文字列を選択してください');
+            return;
+        }
+        var url = window.prompt('リンク先の URL を入力してください', 'https://');
+        if (url == null) return;
+        url = String(url).trim();
+        if (!url) return;
+        // 出力時に剥がされる URL をここで弾き、黙って消えるのを防ぐ
+        if (!MD_URI_PATTERN.test(url)) {
+            showToast('http:// https:// mailto: tel: で始まる URL を指定してください');
+            return;
+        }
+        selectRange(range);
+        execRich('createLink', url);
+    }
+
+    /** ツールバーの押下状態をキャレット位置に追随させる */
+    function updateRichToolbarState() {
+        var bar = dom['rich-toolbar'];
+        if (!bar || bar.hidden) return;
+        var block = richCurrentBlockTag();
+        var states = {
+            bold: queryRichState('bold'),
+            italic: queryRichState('italic'),
+            underline: queryRichState('underline'),
+            ul: queryRichState('insertUnorderedList'),
+            ol: queryRichState('insertOrderedList'),
+            heading: block === 'h1' || block === 'h2' || block === 'h3',
+            quote: block === 'blockquote'
+        };
+        Array.prototype.forEach.call(bar.querySelectorAll('[data-rich]'), function (btn) {
+            var key = btn.getAttribute('data-rich');
+            if (!Object.prototype.hasOwnProperty.call(states, key)) return;
+            btn.setAttribute('aria-pressed', states[key] ? 'true' : 'false');
+        });
+    }
+
+    function queryRichState(command) {
+        try {
+            return document.queryCommandState(command);
+        } catch (e) {
+            return false;
+        }
+    }
+
+    // ---- 貼り付け ----
+    /* Word や Outlook からの貼り付けは mso-* の巨大な装飾を伴うので、
+       いったん通してから許可タグだけに落として入れ直す */
+    function handleRichPaste(e) {
+        var data = e.clipboardData || window.clipboardData;
+        if (!data) return;
+        e.preventDefault();
+        var html = data.getData('text/html');
+        var clean = html ? sanitizeRichHtml(html) : null;
+        var range = richSelectionRange() || richCaretAtEnd();
+        if (!range) return;
+        if (clean == null) {
+            richReplaceRange(range, data.getData('text/plain') || '');
+            return;
+        }
+        var host = document.createElement('div');
+        host.innerHTML = clean;
+        var frag = document.createDocumentFragment();
+        while (host.firstChild) frag.appendChild(host.firstChild);
+        var last = frag.lastChild;
+        dom['rich-body'].focus();
+        range.deleteContents();
+        range.insertNode(frag);
+        if (last) {
+            var after = document.createRange();
+            after.setStartAfter(last);
+            after.collapse(true);
+            selectRange(after);
+        }
+        syncRichBody();
+    }
+
+    function initRichEditor() {
+        var host = dom['rich-body'];
+        if (!host) return;
+        /* 既定の段落を <p> にし、色などを style 属性ではなくタグで表させる。
+           非対応環境でも例外にはならないので戻り値は見ない */
+        try {
+            document.execCommand('defaultParagraphSeparator', false, 'p');
+            document.execCommand('styleWithCSS', false, false);
+        } catch (e) { /* 無視 */ }
+
+        host.addEventListener('input', syncRichBody);
+        host.addEventListener('paste', handleRichPaste);
+        // ドロップは貼り付けと違いサニタイズを挟みにくいので平文だけ受ける
+        host.addEventListener('drop', function (e) {
+            e.preventDefault();
+            var text = e.dataTransfer ? e.dataTransfer.getData('text/plain') : '';
+            if (text) richInsertText(text);
+        });
+        host.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && dom['var-float'] && !dom['var-float'].hidden) {
+                e.stopPropagation();
+                dismissVarFloat();
+            }
+        });
+        host.addEventListener('blur', function () {
+            setTimeout(function () {
+                if (dom['var-float'].contains(document.activeElement)) return;
+                if (getActiveFieldSpec() || richBodyHasFocus()) return;
+                hideVarFloat();
+            }, 0);
+        });
+
+        dom['rich-toolbar'].addEventListener('click', function (e) {
+            var btn = e.target && e.target.closest ? e.target.closest('[data-rich]') : null;
+            if (!btn) return;
+            applyRichCommand(btn.getAttribute('data-rich'));
+            updateRichToolbarState();
+        });
+
+        /* contenteditable では select イベントが飛ばないので selectionchange で拾う。
+           変数フロートの出し分けとツールバーの押下状態を同じ契機で更新する */
+        document.addEventListener('selectionchange', function () {
+            if (!richBodyHasFocus()) return;
+            updateRichToolbarState();
+            updateVarFloat();
+        });
     }
 
     function renderInsertChips() {
@@ -2008,6 +2570,8 @@
         // メニュー内を操作している最中に消さない
         if (bar.contains(document.activeElement)) return;
 
+        if (richBodyHasFocus()) { updateVarFloatForRich(); return; }
+
         var spec = getActiveFieldSpec();
         if (!state.editing || !spec) { clearActiveToken(); hideVarFloat(); return; }
 
@@ -2043,6 +2607,7 @@
         // クリックで欄が blur するので、この時点で控えておく
         state.floatOriginFieldId = spec.id;
         state.floatOriginRange = { start: input.selectionStart, end: input.selectionEnd };
+        state.richOriginRange = null;   // 出どころが textarea であることを確定させる
         // 変数上のときはブロックの実測値を、選択中は選択終端を基準にする
         var anchor;
         if (token) {
@@ -2059,7 +2624,57 @@
         positionVarFloat(anchor);
     }
 
+    /* リッチテキスト編集面での出し分け。textarea 版との違いは 3 点だけ:
+       選択の判定が Range、位置がミラー実測ではなく Range の実測、
+       そして背後のハイライト層が無いのでブロック描画を伴わないこと */
+    function updateVarFloatForRich() {
+        var bar = dom['var-float'];
+        var range = richSelectionRange();
+        if (!state.editing || !range) { clearActiveToken(); hideVarFloat(); return; }
+
+        clearActiveToken();
+        var hasSelection = !range.collapsed;
+        var token = hasSelection ? null : richTokenAtCaret();
+        if (!hasSelection && !token) { hideVarFloat(); return; }
+
+        // Escape で閉じたあとは、選択位置が変わるまで出し直さない
+        var sig = richSelectionSignature(range);
+        if (state.floatDismissedAt === sig) { hideVarFloat(); return; }
+        state.floatDismissedAt = null;
+
+        var declared = token && state.editing.variables.some(function (v) { return v.key === token.key; });
+        dom['var-float-make'].hidden = !hasSelection;
+        dom['var-float-edit'].hidden = !token || !declared;
+        dom['var-float-delete'].hidden = !token;
+        dom['var-float-label'].textContent = token ? '{{' + token.key + '}}' : '';
+        dom['var-float-label'].hidden = !token;
+
+        bar.hidden = false;
+        state.floatOriginFieldId = null;
+        state.richActiveToken = token;
+        // クリックで選択が失われるので、押された時に使う範囲をここで控える
+        state.richOriginRange = range.cloneRange();
+
+        // 変数上のときはその文字列を、選択中は選択範囲そのものを基準にする
+        var target = range;
+        if (token) {
+            target = document.createRange();
+            target.setStart(token.node, token.start);
+            target.setEnd(token.node, token.end);
+        }
+        var r = target.getBoundingClientRect();
+        positionVarFloat({ left: r.left + r.width / 2, top: r.top, bottom: r.bottom });
+    }
+
+    /* Escape 抑止用の識別子。テキストノードは使い回されるので
+       ノードの中身と位置を混ぜて、同じ選択かどうかだけ見分けられれば足りる */
+    function richSelectionSignature(range) {
+        return 'rich:' + range.startOffset + ':' + range.endOffset + ':' +
+            (range.startContainer.nodeValue || '').length;
+    }
+
     function clearActiveToken() {
+        state.richActiveToken = null;
         if (!state.activeToken) return;
         var prevField = state.activeFieldId;
         state.activeToken = null;
@@ -2074,6 +2689,12 @@
     /** Escape での明示的な打ち消し。同じ選択位置では出し直さない。
         メニュー内から呼ばれるとフォーカスが外れているので、出した元の欄を使う */
     function dismissVarFloat() {
+        if (richBodyHasFocus() || (!getActiveFieldSpec() && state.richOriginRange)) {
+            var range = richSelectionRange() || state.richOriginRange;
+            if (range) state.floatDismissedAt = richSelectionSignature(range);
+            hideVarFloat();
+            return;
+        }
         var spec = getActiveFieldSpec() || getFieldSpecById(state.floatOriginFieldId);
         if (spec) {
             var input = dom[spec.id];
@@ -2138,20 +2759,28 @@
 
     /** その変数の記述を1か所削除する。どこにも残らなければ定義も消す */
     function deleteActiveToken() {
-        var token = state.activeToken;
-        var spec = getFieldSpecById(state.activeFieldId);
-        if (!token || !spec || !state.editing) return;
-        var input = dom[spec.id];
-        var text = input.value;
-        input.value = text.slice(0, token.start) + text.slice(token.end);
-        state.editing[spec.field] = input.value;
-        input.focus();
-        input.setSelectionRange(token.start, token.start);
-        state.activeToken = null;
-        state.activeFieldId = null;
+        if (!state.editing) return;
+        var key;
+        if (state.richActiveToken) {
+            key = state.richActiveToken.key;
+            richDeleteToken(state.richActiveToken);
+            state.richActiveToken = null;
+        } else {
+            var token = state.activeToken;
+            var spec = getFieldSpecById(state.activeFieldId);
+            if (!token || !spec) return;
+            var input = dom[spec.id];
+            var text = input.value;
+            input.value = text.slice(0, token.start) + text.slice(token.end);
+            state.editing[spec.field] = input.value;
+            input.focus();
+            input.setSelectionRange(token.start, token.start);
+            state.activeToken = null;
+            state.activeFieldId = null;
+            key = token.key;
+        }
 
         // どこにも残っていなければ定義も削除する
-        var key = token.key;
         var t = state.editing;
         var stillUsed = detectVariables([t.to, t.cc, t.bcc, t.subject, t.body, t.bodyHtml].join('\n'))
             .indexOf(key) !== -1;
@@ -2179,26 +2808,39 @@
     /** 新規作成モード。確定すると指定の欄へ挿入される。
         呼び出し元が欄と範囲を渡すこと（フロート経由だと activeElement は
         ボタンに移っていて当てにならないため） */
-    function openVarDialog(seedName, fieldSpec, range) {
+    /* richRange を渡すとリッチテキスト編集面への挿入になり、fieldSpec は使わない。
+       showModal() は背後を inert にし、その際に選択が失われることがあるので、
+       どちらの経路でも開いた時点の範囲を控えて確定時に使う */
+    function openVarDialog(seedName, fieldSpec, range, richRange) {
         if (!state.editing) return;
         var key = sanitizeVarKey(seedName);
         state.varDialogMode = 'create';
         state.varDialogOriginalKey = null;
-        fieldSpec = fieldSpec || getActiveFieldSpec() || getFieldSpecById('edit-body');
-        var input = dom[fieldSpec.id];
-        // showModal() は背後を inert にする。その際 入力欄の選択が失われる
-        // ことがあるので、開いた時点の欄と範囲を控えて確定時に使う
-        state.varDialogFieldKind = fieldSpec.kind;
-        state.pendingFieldId = fieldSpec.id;
-        state.pendingRange = range || { start: input.selectionStart, end: input.selectionEnd };
+
+        var okLabel;
+        if (richRange) {
+            state.varDialogFieldKind = 'body';   // 挿入先は本文で固定
+            state.pendingFieldId = null;
+            state.pendingRange = null;
+            state.pendingRichRange = richRange;
+            okLabel = '本文';
+        } else {
+            fieldSpec = fieldSpec || getActiveFieldSpec() || getFieldSpecById('edit-body');
+            var input = dom[fieldSpec.id];
+            state.varDialogFieldKind = fieldSpec.kind;
+            state.pendingFieldId = fieldSpec.id;
+            state.pendingRange = range || { start: input.selectionStart, end: input.selectionEnd };
+            state.pendingRichRange = null;
+            okLabel = fieldSpec.label;
+        }
 
         var guess = guessVariableSpec(key);
         dom['var-dialog-title'].textContent = '差し込み変数にする';
-        dom['var-dialog-ok'].textContent = fieldSpec.label + 'に挿入して追加';
+        dom['var-dialog-ok'].textContent = okLabel + 'に挿入して追加';
         dom['var-dialog-key'].value = key;
         dom['var-dialog-label'].value = '';
         dom['var-dialog-required'].checked = false;
-        var applied = fillVarDialogTypes(fieldSpec.kind, guess.type);
+        var applied = fillVarDialogTypes(state.varDialogFieldKind, guess.type);
         syncVarDialogGuess(applied === guess.type ? guess.reason : '');
         setVarDialogDateFields(guess.type === 'date' ? guess : null);
         setVarDialogOptions([]);
@@ -2224,6 +2866,7 @@
         state.varDialogFieldKind = kind;
         state.pendingFieldId = null;
         state.pendingRange = null;
+        state.pendingRichRange = null;
 
         dom['var-dialog-title'].textContent = '差し込み変数を編集';
         dom['var-dialog-ok'].textContent = '変更を保存';
@@ -2409,12 +3052,19 @@
             return;
         }
         state.editing.variables.push(variable);
-        var range = state.pendingRange;
-        var targetSpec = getFieldSpecById(state.pendingFieldId) || getFieldSpecById('edit-body');
-        closeVarDialog();
         // 控えておいた範囲を置換する（範囲が無ければキャレット位置に挿入）
-        insertAtRange(dom[targetSpec.id], '{{' + key + '}}', range);
-        state.editing[targetSpec.field] = dom[targetSpec.id].value;
+        if (state.pendingRichRange) {
+            var richRange = state.pendingRichRange;
+            state.pendingRichRange = null;
+            closeVarDialog();
+            richReplaceRange(richRange, '{{' + key + '}}');
+        } else {
+            var range = state.pendingRange;
+            var targetSpec = getFieldSpecById(state.pendingFieldId) || getFieldSpecById('edit-body');
+            closeVarDialog();
+            insertAtRange(dom[targetSpec.id], '{{' + key + '}}', range);
+            state.editing[targetSpec.field] = dom[targetSpec.id].value;
+        }
         setDirty(true);
         refreshEditorAfterVarChange();
         showToast('{{' + key + '}} を追加しました');
@@ -2425,15 +3075,20 @@
         var t = state.editing;
         var from = '{{' + oldKey + '}}';
         var to = '{{' + newKey + '}}';
-        ['to', 'cc', 'bcc', 'subject', 'body', 'bodyHtml'].forEach(function (f) {
+        ['to', 'cc', 'bcc', 'subject', 'body'].forEach(function (f) {
             if (typeof t[f] !== 'string' || t[f].indexOf(from) === -1) return;
             t[f] = t[f].split(from).join(to);
         });
         // 表示中の入力欄へ反映
         [['edit-to', 'to'], ['edit-cc', 'cc'], ['edit-bcc', 'bcc'],
-         ['edit-subject', 'subject'], ['edit-body', 'body'], ['edit-body-html', 'bodyHtml']].forEach(function (p) {
+         ['edit-subject', 'subject'], ['edit-body', 'body']].forEach(function (p) {
             if (dom[p[0]]) dom[p[0]].value = t[p[1]] || '';
         });
+        // リッチテキストは編集面が別なので描き直す（キャレットは頭に戻る）
+        if (t.bodyFormat === 'rich') {
+            dom['edit-body'].value = '';
+            fillRichBody(t.body);
+        }
     }
 
     /** 変数が増減・改名したあとの再描画をひとまとめにする */
@@ -2630,7 +3285,7 @@
 
         // 基本情報・本文
         [['edit-name', 'name'], ['edit-to', 'to'], ['edit-cc', 'cc'], ['edit-bcc', 'bcc'],
-         ['edit-subject', 'subject'], ['edit-body', 'body'], ['edit-body-html', 'bodyHtml']].forEach(function (pair) {
+         ['edit-subject', 'subject'], ['edit-body', 'body']].forEach(function (pair) {
             dom[pair[0]].addEventListener('input', function () {
                 if (!state.editing) return;
                 state.editing[pair[1]] = this.value;
@@ -2650,7 +3305,12 @@
             var target = e.target;
             if (!target || !target.getAttribute) return;
             var key = target.getAttribute('data-insert-key');
-            if (key) insertAtCursor(dom['edit-body'], '{{' + key + '}}');
+            if (!key) return;
+            if (state.editing && state.editing.bodyFormat === 'rich') {
+                richInsertText('{{' + key + '}}');
+                return;
+            }
+            insertAtCursor(dom['edit-body'], '{{' + key + '}}');
         });
 
         // フロートメニューの出し入れ。宛先・件名・本文すべてで同じ挙動にする
@@ -2698,6 +3358,12 @@
         dom['var-float-make'].addEventListener('click', function () {
             // クリックでフォーカスがこのボタンへ移るため activeElement は当てにできない。
             // メニューを出した時点の欄と選択範囲を使う
+            if (state.richOriginRange) {
+                var richRange = state.richOriginRange;
+                openVarDialog(richRange.toString(), null, null, richRange);
+                hideVarFloat();
+                return;
+            }
             var spec = getFieldSpecById(state.floatOriginFieldId);
             var range = state.floatOriginRange;
             if (!spec || !range) return;
@@ -2706,7 +3372,8 @@
             hideVarFloat();
         });
         dom['var-float-edit'].addEventListener('click', function () {
-            if (state.activeToken) openVarDialogForEdit(state.activeToken.key);
+            var active = state.richActiveToken || state.activeToken;
+            if (active) openVarDialogForEdit(active.key);
             hideVarFloat();
         });
         dom['var-float-delete'].addEventListener('click', function () {
@@ -2715,14 +3382,17 @@
         });
         dom['var-float'].addEventListener('keydown', function (e) {
             if (e.key !== 'Escape') return;
-            var spec = getFieldSpecById(state.floatOriginFieldId) || getFieldSpecById('edit-body');
+            var fromRich = !!state.richOriginRange;
             dismissVarFloat();
+            if (fromRich) { dom['rich-body'].focus(); return; }
+            var spec = getFieldSpecById(state.floatOriginFieldId) || getFieldSpecById('edit-body');
             dom[spec.id].focus();
         });
         dom['var-float'].addEventListener('focusout', function () {
             setTimeout(function () {
                 var a = document.activeElement;
-                if (!getActiveFieldSpec() && !dom['var-float'].contains(a)) hideVarFloat();
+                if (getActiveFieldSpec() || richBodyHasFocus()) return;
+                if (!dom['var-float'].contains(a)) hideVarFloat();
             }, 0);
         });
 
@@ -2808,14 +3478,13 @@
             handleVariableFieldChange(e.target, true);
         });
 
-        // 本文の入力方式。本文テキストは変換も破棄もせず、表示だけ切り替える
+        /* 本文の入力方式。プレーンテキスト ⇄ Markdown はどちらも平文なので
+           変換も破棄もせず表示だけ切り替える。リッチテキストだけは本文の実体が
+           HTML になるため、行き来のたびに変換する（switchBodyFormat 参照） */
         Array.prototype.forEach.call(document.querySelectorAll('input[name="body-format"]'), function (radio) {
             radio.addEventListener('change', function () {
                 if (!radio.checked || !state.editing) return;
-                state.editing.bodyFormat = currentBodyFormat();
-                applyBodyFormatUi();
-                setDirty(true);
-                updateEditPreview();
+                switchBodyFormat(currentBodyFormat());
             });
         });
 
@@ -2836,15 +3505,6 @@
         }
 
         // HTML 出力設定
-        Array.prototype.forEach.call(document.querySelectorAll('input[name="html-mode"]'), function (radio) {
-            radio.addEventListener('change', function () {
-                if (!radio.checked || !state.editing) return;
-                state.editing.htmlMode = radio.value;
-                dom['manual-html-wrap'].hidden = radio.value !== 'manual';
-                setDirty(true);
-                updateEditPreview();
-            });
-        });
 
         [['style-font', 'fontFamily'], ['style-size', 'fontSize'], ['style-line-height', 'lineHeight'],
          ['style-max-width', 'maxWidth'], ['style-color', 'color'], ['style-background', 'background'],
@@ -3098,9 +3758,9 @@
             else if (v.type === 'select' && v.options && v.options.length) values[v.key] = v.options[0];
         });
         var body = applyVariables(t.body, values);
-        var inner = (t.htmlMode === 'manual' && t.bodyHtml) ? applyVariables(t.bodyHtml, values) : bodyToHtml(t, body);
+        var parts = renderBodyParts(t, body, values);
         // details の開閉やタブ移動で非表示になっていた場合は作り直す
-        dom['edit-frame'] = updateFrameHtml(dom['edit-frame'], buildHtmlDocument(inner, t.style),
+        dom['edit-frame'] = updateFrameHtml(dom['edit-frame'], buildHtmlDocument(parts.html, t.style),
             isLaidOut(dom['edit-frame']));
         updateMarkdownPreview(body);
     }
@@ -3231,6 +3891,7 @@
             showImportError('対応していないデータ形式です（schemaVersion: ' + String(obj.schemaVersion) + '、対応: ' + SCHEMA_VERSION + '）。');
             return;
         }
+        richMigratedCount = 0;
         var templates = obj.templates.map(normalizeTemplate).filter(Boolean);
         if (!templates.length) {
             showImportError('読み込めるテンプレートが含まれていませんでした。');
@@ -3270,6 +3931,7 @@
         saveStore();
         renderAll();
         showToast(mode === 'replace' ? 'テンプレートを置き換えました' : 'テンプレートを追加しました');
+        announceRichMigration();
     }
 
     // ==================== 初期化 ====================
@@ -3292,8 +3954,10 @@
         initUseTab();
         initManageTab();
         initImportExport();
-        applyMarkdownAvailability();
+        initRichEditor();
+        applyLibAvailability();
         renderAll();
+        announceRichMigration();
     }
 
     if (document.readyState === 'loading') {
